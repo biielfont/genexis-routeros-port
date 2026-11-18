@@ -1,171 +1,186 @@
-# Primera prueba de arranque del 5.6.3 en el ED500
+# First boot test of 5.6.3 on the ED500
 
-## Antes de encender (5 minutos)
+## Before powering on (5 minutes)
 
-1. **Cable de consola**: COM4, 115200 8N1. Es el punto que falló la última vez
-   (la placa estaba encendida y muda, pero por el kernel sin consola, no por el cable).
-   Comprobar que responde: con el router apagado no hay eco; al encender debe salir
-   `ROM VER: 2.1.0`.
-2. **Cable de red**: PC en cualquier boca LAN (`lan1..lan4`). Da igual cuál: el init
-   las puentea todas en `br0`.
-3. **TFTP**: el servidor escucha en `0.0.0.0:69` con raíz `routeros-port/out`.
-   Comprobar que `uImage-563` está ahí y pesa lo que toca.
-4. **PC**: IP estática `192.168.1.160/24` en la interfaz Ethernet (ya configurada).
+1. **Console cable**: COM4, 115200 8N1. This is the point that failed last time
+   (the board was on and silent, but because of the kernel without console, not
+   the cable). Check it responds: with the router off there is no echo; on
+   power-on `ROM VER: 2.1.0` must appear.
+2. **Network cable**: PC on any LAN port (`lan1..lan4`). Any port is fine: the
+   init bridges them all in `br0`.
+3. **TFTP**: server listening on `0.0.0.0:69` with root `routeros-port/out`.
+   Check that `uImage-563` is there and weighs what it should.
+4. **PC**: static IP `192.168.1.160/24` on the Ethernet interface (already
+   configured).
 
-## Arranque
+## Booting
 
-Encender y, durante los 3 segundos de `bootdelay`, mandar CR para cortar el autoboot.
-Debe aparecer `IOPSYS 2 grx500 #`. Entonces:
+Power on and, during the 3 seconds of `bootdelay`, send CR to break autoboot.
+`IOPSYS 2 grx500 #` should appear. Then:
 
 ```
 tftpboot 0x80500000 uImage-563
 bootm 0x80500000
 ```
 
-Si no se caza el prompt: apagar, encender y martillear CR (lo hace `catch_final.py`).
+If you miss the prompt: power off, power on and hammer CR (that is what
+`catch_final.py` does).
 
-## Qué debe salir por consola, en orden
+## What should appear on console, in order
 
-1. `Linux version 5.6.3` — el kernel correcto (el de fábrica dice 4.9.109).
-2. `Console: colour dummy device` / `console [ttyLTQ0] enabled` — consola viva.
-3. `gswip-xrx500 1c000000.switch: probed GSWIP version ...` — el switch portado.
-4. `DSA: tree 0 setup` y `lan1..lan4` — puertos del switch.
-5. `cbm` / `xrx500-conduit` — el conduit que da salida al CPU.
-6. `red: puertos: ...` y `red: 192.168.1.2 en br0` — el init configuró la red.
-7. `web: http://192.168.1.2/` y `telnet: puerto 23`.
+1. `Linux version 5.6.3` — the correct kernel (factory says 4.9.109).
+2. `Console: colour dummy device` / `console [ttyLTQ0] enabled` — console alive.
+3. `gswip-xrx500 1c000000.switch: probed GSWIP version ...` — the ported
+   switch.
+4. `DSA: tree 0 setup` and `lan1..lan4` — switch ports.
+5. `cbm` / `xrx500-conduit` — the conduit giving the CPU its output.
+6. `network: ports: ...` and `network: 192.168.1.2 on br0` — init configured
+   the network.
+7. `web: http://192.168.1.2/` and `telnet: port 23`.
 8. Prompt `~ #`.
 
-## Cómo entrar si la consola falla otra vez
+## How to get in if the console fails again
 
-Desde el PC, sin tocar nada:
+From the PC, without touching anything:
 
 ```
 ping 192.168.1.2
-telnet 192.168.1.2        # root, sin contraseña
-http://192.168.1.2/       # página de estado
+telnet 192.168.1.2        # root, no password
+http://192.168.1.2/       # status page
 ```
 
-## Señales de problema y qué significan
+## Problem signals and what they mean
 
-| síntoma | causa probable |
+| symptom | likely cause |
 |---|---|
-| Nada en consola, pero enlace 1 Gbps | kernel sin consola o UART desconectada |
-| `ROM VER` en bucle | la entry del uImage no es la del ELF |
-| Arranca y no hay `lan*` | el driver GSWIP no enlazó (ver dmesg) |
-| `lan*` pero sin `cbm0` | el conduit no probeó (memoria reservada o DMA) |
-| `br0` sin IP | el switch no reparte y el bridge se quedó sin puertos |
-| `request_firmware` falla | firmware del PHY (va embebido y en /lib/firmware) |
+| Nothing on console, but 1 Gbps link | kernel without console or UART disconnected |
+| `ROM VER` in a loop | the uImage entry is not the ELF's |
+| Boots but no `lan*` | the GSWIP driver did not bind (see dmesg) |
+| `lan*` but no `cbm0` | the conduit did not probe (reserved memory or DMA) |
+| `br0` without IP | the switch does not forward and the bridge kept no ports |
+| `request_firmware` fails | PHY firmware (embedded and in /lib/firmware) |
 
-## Después del arranque (objetivo real: RouterOS)
+## After booting (real goal: RouterOS)
 
-Si el kernel levanta y hay red, el siguiente paso es darle **su rootfs** (el squashfs
-del npk original) en vez de nuestro initramfs. Eso exige UBI/UBIFS o montarlo por NFS,
-y es el paso previo a ver `/nova` y WebFig.
+If the kernel comes up and there is network, the next step is to give it **its
+rootfs** (the squashfs of the original npk) instead of our initramfs. That
+requires UBI/UBIFS or mounting over NFS, and is the step before seeing `/nova`
+and WebFig.
 
-## Fallos ya corregidos de antemano (auditoría previa)
+## Failures already fixed in advance (previous audit)
 
-Estos cinco habrían dado la cara mañana y ya están resueltos en `out/uImage-563`:
+These five would have shown up tomorrow and are already resolved in
+`out/uImage-563`:
 
-| fallo | consecuencia | arreglo |
+| failure | consequence | fix |
 |---|---|---|
-| `CONFIG_SERIAL_LANTIQ` no existía | consola muda | Kconfig `LANTIQ \|\| INTEL_MIPS` |
-| `CONFIG_BRIDGE` apagado | sin bridge, IP en una boca al azar | activado |
-| busybox sin `ip`, `awk`, `wc` | init fallaba en silencio, sin IP | init reescrito con `ifconfig`/`route`/`brctl` |
-| firmware del GPHY ausente | puertos sin enlace | embebido + `/lib/firmware/lantiq/` |
-| sin driver de relojes GRX500 | ASC en `-EPROBE_DEFER` para siempre | portado `clk-grx500` + CGU desde 6.18 |
+| `CONFIG_SERIAL_LANTIQ` did not exist | silent console | Kconfig `LANTIQ \|\| INTEL_MIPS` |
+| `CONFIG_BRIDGE` off | no bridge, IP on a random port | enabled |
+| busybox without `ip`, `awk`, `wc` | init failed silently, no IP | init rewritten with `ifconfig`/`route`/`brctl` |
+| GPHY firmware missing | ports without link | embedded + `/lib/firmware/lantiq/` |
+| no GRX500 clock driver | ASC in `-EPROBE_DEFER` forever | ported `clk-grx500` + CGU from 6.18 |
 
-El `earlycon=lantiq,0x16600000` de los bootargs no depende de nada de eso: si el
-resto falla, al menos se ve por dónde va el arranque.
+The `earlycon=lantiq,0x16600000` in the bootargs does not depend on any of
+that: if the rest fails, at least you can see where booting goes.
 
-## Tercer bloque: cadena de arranque verificada a mano
+## Third block: boot chain verified by hand
 
-Comprobado byte a byte antes de encender:
+Checked byte by byte before powering on:
 
-- `uImage-563`: magic `27051956`, CRC de cabecera **y** de datos válidos, `os=Linux`,
-  `arch=MIPS`, `type=kernel`, sin comprimir, carga = entrada = `0x80500000`.
-- El payload arranca en `kernel_entry` (`sync; ehb; mfc0 t1,c0_config`), no es un ELF.
-- DTB embebido: `__dtb_end - __dtb_start` = **11.296 B**, exactamente `norrland.dtb`.
-- Timer: `intel-mips/time.c` saca `mips_hpt_frequency` del reloj del nodo CPU
-  (`<&cgu 150>` = `CLK_CPU`), y el driver CGU lo registra. Sin eso no hay clocksource.
-- Consola: `lantiq,asc` con relojes `<&cgu 13>` y `<&cgu 117>`, ambos registrados.
-- `/init` dentro del cpio es **0755**; busybox tiene `sed`, `cut`, `grep`, `ifconfig`,
-  `brctl`, `route`, `udhcpc`, `httpd`, `telnetd` y `dmesg` compilados.
+- `uImage-563`: magic `27051956`, valid header **and** data CRC, `os=Linux`,
+  `arch=MIPS`, `type=kernel`, uncompressed, load = entry = `0x80500000`.
+- The payload starts at `kernel_entry` (`sync; ehb; mfc0 t1,c0_config`), not an
+  ELF.
+- Embedded DTB: `__dtb_end - __dtb_start` = **11296 B**, exactly `norrland.dtb`.
+- Timer: `intel-mips/time.c` takes `mips_hpt_frequency` from the CPU node's
+  clock (`<&cgu 150>` = `CLK_CPU`), and the CGU driver registers it. Without
+  it there is no clocksource.
+- Console: `lantiq,asc` with clocks `<&cgu 13>` and `<&cgu 117>`, both
+  registered.
+- `/init` inside the cpio is **0755**; busybox has `sed`, `cut`, `grep`,
+  `ifconfig`, `brctl`, `route`, `udhcpc`, `httpd`, `telnetd` and `dmesg`
+  compiled in.
 
-**Tag de DSA portado**: el XRX500 mete una cabecera de 8 bytes en el puerto CPU, pero
-DSA solo tenía el tag `gswip` de 4. Se ha portado `tag_gswip3` (enum, driver, Kconfig)
- y el switch ya declara `DSA_TAG_PROTO_GSWIP3`. Sin esto los puertos saldrían pero la
-red no pasaría ni un paquete.
+**DSA tag ported**: the XRX500 puts an 8-byte header on the CPU port, but DSA
+only had the 4-byte `gswip` tag. `tag_gswip3` (enum, driver, Kconfig) has been
+ported and the switch now declares `DSA_TAG_PROTO_GSWIP3`. Without this the
+ports come up but no packet passes.
 
-## Quinto bloque: mapa de memoria aclarado (no era un bug)
+## Fifth block: memory map clarified (not a bug)
 
-Parecía raro cargar en `0x80500000` mientras el DTB dice que la RAM está en
-`0x20000000`. Comprobado con el kernel de fábrica: **carga en `0xa0020000`**, o sea
-físico `0x20020000`. En este SoC con EVA, KSEG0/KSEG1 mapean a partir de
-`0x20000000`, así que `0x80500000` es físico `0x20500000`, dentro de la RAM.
-Todo coherente: `mem=224M@512M`, `memory@20000000` y nuestra dirección de carga.
+It looked odd to load at `0x80500000` while the DTB says RAM is at
+`0x20000000`. Checked against the factory kernel: **it loads at `0xa0020000`**,
+i.e. physical `0x20020000`. On this SoC with EVA, KSEG0/KSEG1 map from
+`0x20000000`, so `0x80500000` is physical `0x20500000`, inside RAM. All
+consistent: `mem=224M@512M`, `memory@20000000` and our load address.
 
-El kernel ocupa `0x20500000`–`0x20B6_7000` (6,7 MB) y el pool del CBM empieza en
-`0x23800000`: 33 MB de margen, no hay solape.
+The kernel occupies `0x20500000`–`0x20B6_7000` (6.7 MB) and the CBM pool
+starts at `0x23800000`: 33 MB of margin, no overlap.
 
-**Reinicio resuelto**: el DTB trae un nodo `reboot` con `compatible =
-"syscon-reboot"` (hijo del chiptop, offset 0x10, bit 0x40000000). Con
-`CONFIG_POWER_RESET` + `CONFIG_POWER_RESET_SYSCON` activados, `reboot` funciona y,
-como los bootargs llevan `panic=20`, un panic **reinicia la placa sola**. El cazador
-vuelve a esperar U-Boot, así que un fallo se reintenta sin tocar la corriente.
+**Reboot resolved**: the DTB carries a `reboot` node with `compatible =
+"syscon-reboot"` (child of chiptop, offset 0x10, bit 0x40000000). With
+`CONFIG_POWER_RESET` + `CONFIG_POWER_RESET_SYSCON` enabled, `reboot` works and,
+since the bootargs carry `panic=20`, a panic **reboots the board on its own**.
+The catcher goes back to waiting for U-Boot, so a failure retries without
+touching power.
 
-Si `syscon-reboot` no acertara con el registro, el reboot no haría nada (no rompe
-el arranque). En ese caso, cada intento vuelve a necesitar un corte de corriente.
+If `syscon-reboot` did not hit the right register, reboot does nothing (it does
+not break booting). In that case each attempt needs a power cut again.
 
-## Cuarto bloque: el arranque ya está probado en seco
+## Fourth block: dry-run boot already tested
 
-- **TFTP integrado en el cazador**: `catch_final.py` sirve la imagen él mismo
-  (puerto 69 y, si está ocupado, 6969 + `setenv tftpdstp`). Probado con un cliente
-  real: descarga de 6.702.516 bytes, **idéntica byte a byte**.
-- **Direcciones fijadas antes de cargar**: `setenv ipaddr 192.168.1.1` y
-  `setenv serverip 192.168.1.160`, para no depender de lo que quedara en el entorno
-  de U-Boot. La Ethernet del PC tiene además alias en 192.168.0/30/31/32.160.
-- **Reintento automático**: si el kernel se reinicia, el cazador vuelve a esperar
-  U-Boot y recarga, hasta agotar la ventana de 3 h.
-- **Log por web**: el init deja `/www/dmesg.txt` y `/www/estado.txt`. Sin consola,
-  `http://192.168.1.2/dmesg.txt` da el arranque completo.
-- **Veredicto automático**: al terminar, el cazador imprime en una línea qué ha
-  pasado (`arranco + switch + lan1 + red + http + shell`, `PANIC`, o
-  `bootm mudo`), sin tener que leer el log entero.
-- **`ignore_loglevel`** en los bootargs: el kernel imprime también los mensajes de
-depuración desde el primer instante.
-- **Corregido un fallo mío**: el init metía `eth0` (maestro de DSA) en el bridge
-  junto a sus propios puertos, lo que rompe el datapath. Ahora usa solo `lan*` y
-  solo cae en `eth*`/`cbm*` si no hay puertos DSA.
+- **TFTP integrated in the catcher**: `catch_final.py` serves the image itself
+  (port 69, and if busy, 6969 + `setenv tftpdstp`). Tested with a real client:
+  download of 6,702,516 bytes, **identical byte for byte**.
+- **Addresses fixed before loading**: `setenv ipaddr 192.168.1.1` and
+  `setenv serverip 192.168.1.160`, so it does not depend on whatever was left
+  in U-Boot's environment. The PC's Ethernet also has aliases on
+  192.168.0/30/31/32.160.
+- **Automatic retry**: if the kernel reboots, the catcher goes back to waiting
+  for U-Boot and reloads, until the 3 h window runs out.
+- **Log over web**: init leaves `/www/dmesg.txt` and `/www/estado.txt`. Without
+  console, `http://192.168.1.2/dmesg.txt` gives the full boot.
+- **Automatic verdict**: at the end the catcher prints on one line what happened
+  (`booted + switch + lan1 + network + http + shell`, `PANIC`, or
+  `bootm silent`), without reading the whole log.
+- **`ignore_loglevel`** in the bootargs: the kernel prints debug messages too
+  from the very first instant.
+- **A bug of mine fixed**: init put `eth0` (DSA master) into the bridge along
+  with its own ports, which breaks the datapath. Now it uses only `lan*` and
+  only falls back to `eth*`/`cbm*` if there are no DSA ports.
 
-## Segundo bloque: lo que RouterOS necesitaba del kernel
+## Second block: what RouterOS needed from the kernel
 
-El kernel compilaba, pero la configuración no servía para un userspace real. Estos
-seis estaban **apagados** y habrían matado `/nova` en el primer segundo, sin mensaje:
+The kernel compiled, but the configuration was not enough for a real userspace.
+These six were **off** and would have killed `/nova` in the first second, with
+no message:
 
-| opción | sin ella |
+| option | without it |
 |---|---|
-| `CONFIG_FUTEX` | no hay hilos: cualquier binario con pthreads muere |
-| `CONFIG_EPOLL` / `EVENTFD` / `TIMERFD` / `SIGNALFD` | el bucle de eventos de `/nova` no arranca |
-| `CONFIG_POSIX_TIMERS` / `AIO` | temporizadores y E/S asíncrona |
-| `CONFIG_NETFILTER` / `NF_CONNTRACK` | el firewall no puede engancharse |
-| `CONFIG_MIPS_FP_SUPPORT` | SIGILL si algún binario usa la FPU |
-| `CONFIG_TMPFS` / `SHMEM` | sin `/dev/shm` ni `/tmp` en RAM |
-| `CONFIG_SQUASHFS`+`XZ`, `BLK_DEV_LOOP` | no se puede montar su rootfs |
-| `CONFIG_IP_MULTIPLE_TABLES` | RouterOS enruta con tablas: sin esto, no hay rutas |
+| `CONFIG_FUTEX` | no threads: any binary with pthreads dies |
+| `CONFIG_EPOLL` / `EVENTFD` / `TIMERFD` / `SIGNALFD` | `/nova`'s event loop does not start |
+| `CONFIG_POSIX_TIMERS` / `AIO` | timers and async I/O |
+| `CONFIG_NETFILTER` / `NF_CONNTRACK` | firewall cannot hook in |
+| `CONFIG_MIPS_FP_SUPPORT` | SIGILL if any binary uses the FPU |
+| `CONFIG_TMPFS` / `SHMEM` | no `/dev/shm` nor `/tmp` in RAM |
+| `CONFIG_SQUASHFS`+`XZ`, `BLK_DEV_LOOP` | cannot mount its rootfs |
+| `CONFIG_IP_MULTIPLE_TABLES` | RouterOS routes with tables: without this, no routes |
 
-Un initramfs con busybox no usa nada de eso, así que el fallo no se habría visto
-hasta meter el rootfs de RouterOS dentro. Ya están todas en `y`.
+An initramfs with busybox uses none of that, so the failure would not have been
+seen until RouterOS' rootfs was loaded inside. All are now `y`.
 
-## Pendiente para el rootfs real de RouterOS
+## Pending for RouterOS' real rootfs
 
-1. **NAND**: el árbol 5.6.3 no trae `lantiq-xrx500-nand.c` (sí el 6.18). Para montar
-   su rootfs desde la flash hay que portarlo. Alternativa sin NAND: meter su árbol
-   de ficheros en el initramfs y hacer `switch_root`.
-2. **vermagic**: nuestro kernel dice `5.6.3 mod_unload MIPS32_R2 32BIT`. Si sus `.ko`
-   se compilaron con SMP/preempt, no cargarán hasta compilar un kernel con esos flags.
-3. **Licencia**: `/nova` puede pedir licencia atada al hardware. Ahí se para, sin parchear.
+1. **NAND**: the 5.6.3 tree has no `lantiq-xrx500-nand.c` (6.18 does). To
+   mount its rootfs from flash it must be ported. Alternative without NAND:
+   put its file tree in the initramfs and `switch_root`.
+2. **vermagic**: our kernel says `5.6.3 mod_unload MIPS32_R2 32BIT`. If their
+   `.ko` were built with SMP/preempt, they will not load until a kernel is
+   built with those flags.
+3. **License**: `/nova` may ask for a license tied to the hardware. There it
+   stops, no patching.
 
 ## Rollback
 
-Nada de esto escribe en NAND: `tftpboot` + `bootm` van a RAM. Para volver al
-firmware de fábrica, quitar la corriente y dejar que arranque solo.
+None of this writes to NAND: `tftpboot` + `bootm` go to RAM. To go back to the
+factory firmware, cut power and let it boot on its own.

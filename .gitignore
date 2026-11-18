@@ -1,0 +1,24 @@
+# Large binaries / dumps (not tracked; see README)
+*.zip
+*.img
+*.BIN
+*.bin
+*.y3
+*.elf
+*.sqfs
+*.pyc
+__pycache__/
+
+# Build artifacts except the bootable kernel
+routeros-port/out/uImage
+routeros-port/out/uImage-618
+routeros-port/out/uImage-min
+routeros-port/out/vmlinux.*
+routeros-port/out/ED500-*.y3
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log.bak

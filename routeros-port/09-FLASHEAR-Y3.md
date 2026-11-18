@@ -1,9 +1,9 @@
-# Instalar por la web / U-Boot con un `.y3` propio
+# Installing via web / U-Boot with a custom `.y3`
 
-## 1. El formato ya está descifrado
+## 1. The format is already decoded
 
-Un `.y3` del ED500 es **cabecera de texto de 1024 bytes + rootfs UBIFS + pkginfo + MD5**.
-Cabecera real del firmware oficial `GNX-4.3.6.170-R`:
+A `.y3` of the ED500 is **a 1024-byte text header + UBIFS rootfs + pkginfo + MD5**.
+Real header of the official firmware `GNX-4.3.6.170-R`:
 
 ```
 IntenoIopY
@@ -23,20 +23,20 @@ pkginfo 28342
 scrofs 44978870
 scr 0
 sigofs 44978870
-sig 0          <-- NO hay firma criptografica
+sig 0          <-- NO cryptographic signature
 md5ofs 44978870
 md5 32
 size 44978902
 ```
 
-Dos hechos comprobados, no supuestos:
+Two facts verified, not assumed:
 
-- `sig 0`: **el update no verifica ninguna firma**, solo un MD5 en ASCII.
-- El MD5 cubre todo desde el byte 0 hasta `md5ofs`. Reconstruir el firmware
-  oficial con nuestra herramienta da un fichero **idéntico byte a byte** al de
-  Genexis, así que el contenedor está perfectamente entendido.
+- `sig 0`: **the update verifies no signature**, only an ASCII MD5.
+- The MD5 covers everything from byte 0 up to `md5ofs`. Rebuilding the official
+  firmware with our tool produces a file **identical byte for byte** to Genexis',
+  so the container is fully understood.
 
-Herramienta: `08-y3tool.py`
+Tool: `08-y3tool.py`
 
 ```
 python3 08-y3tool.py info   out/ED500-stock-original.y3
@@ -45,146 +45,148 @@ python3 08-y3tool.py build  nuevo.y3 --ubifs rootfs.ubifs --pkginfo pk.txt \
         --release GNX-4.3.6.999-R
 ```
 
-Geometría del rootfs (deducida del UBIFS oficial y respetada al construirlo):
-PEB 128 KiB, LEB 124 KiB (`126976`), página 2 KiB. Eso encaja con la NAND
-**Macronix MX30LF1G18AC** (1 Gbit SLC, 2 KiB de página, 64 B de OOB, 128 MiB)
-cuyo ID es justo el `0xc2 0xf1` que canta tu U-Boot.
+Rootfs geometry (deduced from the official UBIFS and respected when building):
+PEB 128 KiB, LEB 124 KiB (`126976`), page 2 KiB. This matches the
+**Macronix MX30LF1G18AC** NAND (1 Gbit SLC, 2 KiB page, 64 B OOB, 128 MiB)
+whose ID is exactly the `0xc2 0xf1` that your U-Boot reports.
 
-## 2. Qué hay en `out/`
+## 2. What is in `out/`
 
-| Fichero | Qué es |
+| File | What it is |
 |---|---|
-| `ED500-stock-original.y3` | firmware oficial de referencia (44,9 MB) |
-| `ED500-stock-reconstruido.y3` | **idéntico byte a byte** al oficial, salido de nuestra herramienta |
-| `ED500-nuestro-kernel.y3` | rootfs UBIFS mínimo con nuestro kernel (`/boot/uImage`, `/uImage`, `/kernel`) |
+| `ED500-stock-original.y3` | official reference firmware (44.9 MB) |
+| `ED500-stock-reconstruido.y3` | **byte-identical** to the official, produced by our tool |
+| `ED500-nuestro-kernel.y3` | minimal UBIFS rootfs with our kernel (`/boot/uImage`, `/uImage`, `/kernel`) |
 
-El tercero es el interesante: 10 MB, `release GNX-4.3.6.999-R` (número alto para
-pasar cualquier comprobación de versión), mismo `board`/`chip`/`model` que el
-oficial, MD5 correcto y sin firma. Al arrancar, el kernel lleva su initramfs
-dentro: no necesita el resto del rootfs para dar shell.
+The third is the interesting one: 10 MB, `release GNX-4.3.6.999-R` (high
+number to pass any version check), same `board`/`chip`/`model` as the official,
+correct MD5 and no signature. On boot the kernel carries its initramfs inside:
+it does not need the rest of the rootfs to give a shell.
 
-## 3. Procedimiento seguro en dos pasos
+## 3. Safe two-step procedure
 
-**Paso 1 — validar el contenedor sin riesgo.** Sube `ED500-stock-reconstruido.y3`
-por la web (JUCI → Firmware) o por U-Boot:
+**Step 1 — validate the container with no risk.** Upload
+`ED500-stock-reconstruido.y3` via the web (JUCI → Firmware) or via U-Boot:
 
 ```
-setenv serverip <IP de tu PC>
-# copia el fichero a tu carpeta TFTP con el nombre last.y3
+setenv serverip <IP of your PC>
+# copy the file into your TFTP folder named last.y3
 run update_image
 ```
 
-Como su contenido es idéntico al firmware oficial, si el router reinicia normal
-sabemos que nuestro contenedor pasa el update. Si algo va mal aquí, no hemos
-perdido nada: es el mismo firmware que ya tenía.
+Since its contents are identical to the official firmware, if the router
+reboots normally we know our container passes the update. If anything goes
+wrong here we lose nothing: it is the same firmware it already had.
 
-**Paso 2 — nuestro kernel.** Repite con `ED500-nuestro-kernel.y3`. Si el cargador
-lee el kernel de un fichero dentro del rootfs (que es lo que sugiere que el
-firmware oficial lleve un `uImage` dentro del UBIFS), arrancará nuestro 5.6.3 y
-verás el banner por `ttyLTQ0`.
+**Step 2 — our kernel.** Repeat with `ED500-nuestro-kernel.y3`. If the loader
+reads the kernel from a file inside the rootfs (as the official firmware
+suggests by shipping a `uImage` inside the UBIFS), it will boot our 5.6.3 and
+you will see the banner on `ttyLTQ0`.
 
-## 4. Lo que todavía no sé y necesito del router
+## 4. What I still do not know and need from the router
 
-El U-Boot de Genexis es a medida (`primary system is 1`, `run update_image`,
-`Type run flash_nfs…`). En su entorno hay definido **cómo** carga el kernel
-(qué volumen, qué ruta y en qué dirección). Eso no está en ningún fichero
-público: hay que leerlo del equipo con:
+Genexis' U-Boot is custom (`primary system is 1`, `run update_image`,
+`Type run flash_nfs…`). Its environment defines **how** the kernel is loaded
+(which volume, which path, which address). That is not in any public file: it
+must be read from the device with:
 
 ```
 printenv
 ```
 
-Lo que busco: la definición de `update_image` y de `bootcmd` (líneas con
-`ubifsload`, `ubi write`, `bootm`, `rootfs_0`/`rootfs_1`). Por eso el rootfs que
-he construido lleva el kernel en tres rutas plausibles (`/boot/uImage`,
-`/uImage`, `/kernel`); con el `printenv` lo dejo en la ruta exacta.
+What I look for: the definition of `update_image` and `bootcmd` (lines with
+`ubifsload`, `ubi write`, `bootm`, `rootfs_0`/`rootfs_1`). That is why the
+rootfs I built carries the kernel on three plausible paths (`/boot/uImage`,
+`/uImage`, `/kernel`); with `printenv` I will leave it on the exact path.
 
-## 5. Si sale mal
+## 5. If it goes wrong
 
-El equipo tiene dos bancos (`rootfs_0` / `rootfs_1`) y un contador de arranques:
-un rootfs roto no borra el otro. Y en el peor caso está el modo ROM por UART
-(puente en los dos contactos + cargar U-Boot en RAM), documentado en el repo
+The device has two banks (`rootfs_0` / `rootfs_1`) and a boot counter: a broken
+rootfs does not erase the other. And in the worst case there is ROM mode over
+UART (bridge the two contacts + load U-Boot into RAM), documented in the repo
 `biielfont/Genexis-Pure-ED500/uboot/`.
 
-Antes de flashear: **desconecta el WAN**. Si el router arranca y ve TR-069, el
-ISP puede reescribir el firmware por su cuenta.
+Before flashing: **disconnect the WAN**. If the router boots and sees TR-069, the
+ISP may rewrite the firmware on its own.
 
-## 6. Aviso honesto sobre "acabar en MikroTik"
+## 6. Honest note about "ending up on MikroTik"
 
-El `.y3` resuelve el *cómo se instala*: un contenedor sin firma que el router
-acepta. Lo que no resuelve es *qué se instala*. RouterOS no tiene soporte para
-el GRX350: los `.npk` mipsbe son para placas MikroTik y su userland no trae
-drivers de este SoC (ni NAND, ni switch, ni PHY). Aunque arrancase el kernel con
-`board=norrland`, RouterOS se quedaría sin red y sin flash.
+The `.y3` solves *how to install*: an unsigned container the router accepts.
+What it does not solve is *what to install*. RouterOS has no support for the
+GRX350: the mipsbe `.npk` are for MikroTik boards and their userland ships no
+drivers for this SoC (neither NAND, nor switch, nor PHY). Even if the kernel
+booted with `board=norrland`, RouterOS would be left with no network and no
+flash.
 
-Lo que sí es realista, y es lo que estamos construyendo: **Linux/OpenWrt
-funcionando en el ED500**, instalable desde la web con este `.y3`. Si el
-objetivo final es "RouterOS o nada", el cuello de botella no es el arranque, es
-que MikroTik no escribió drivers para este chip.
+What is realistic, and what we are building: **Linux/OpenWrt running on the
+ED500**, installable from the web with this `.y3`. If the final goal is
+"RouterOS or nothing", the bottleneck is not booting but that MikroTik never
+wrote drivers for this chip.
 
-## 7. Modo headless (sin cable serie)
+## 7. Headless mode (no serial cable)
 
-La initramfs arranca red y servidores por sí sola:
+The initramfs brings up network and servers on its own:
 
-- pide IP por **DHCP**; si en 8 s no hay concesión, se pone **192.168.1.2/24**
-  con gateway 192.168.1.1,
-- levanta **httpd en el puerto 80** con una página de estado,
-- **telnetd en el 23** (root sin contraseña) y **SSH en el 22** si dropbear
-  compiló,
-- y deja la shell en `ttyLTQ0` como siempre.
+- requests an IP via **DHCP**; if no lease in 8 s, sets **192.168.1.2/24**
+  with gateway 192.168.1.1,
+- starts **httpd on port 80** with a status page,
+- **telnetd on 23** (root, no password) and **SSH on 22** if dropbear compiled,
+- and leaves the shell on `ttyLTQ0` as always.
 
-La página (`http://<ip>/`) se refresca sola cada 5 s y el CGI
-`/cgi-bin/status` devuelve texto plano con: host, kernel, uptime, una lista de
-comprobaciones (`[ok] kernel`, `[ok] proc`, `[ok] cpus`, `[ok] memoria`,
-`[ok] red eth0 …`), memoria, interfaces y las últimas 60 líneas de `dmesg`.
+The page (`http://<ip>/`) refreshes itself every 5 s and the CGI
+`/cgi-bin/status` returns plain text with: host, kernel, uptime, a list of
+checks (`[ok] kernel`, `[ok] proc`, `[ok] cpus`, `[ok] memory`, `[ok] network
+eth0 …`), memory, interfaces and the last 60 lines of `dmesg`.
 
-Probado en QEMU con una NIC `e1000` real emulada:
+Tested in QEMU with a real emulated `e1000` NIC:
 
 ```
-red: 10.0.2.15 en eth0
+network: 10.0.2.15 on eth0
 web: http://10.0.2.15/
-telnet: puerto 23 (root, sin password)
+telnet: port 23 (root, no password)
 
-=== ESTADO ===
-[ok] kernel en ejecucion
-[ok] proc montado
-[ok] cpus detectadas
-[ok] memoria: 246 MiB
-[ok] red eth0 10.0.2.15/24
+=== STATUS ===
+[ok] kernel running
+[ok] proc mounted
+[ok] cpus detected
+[ok] memory: 246 MiB
+[ok] network eth0 10.0.2.15/24
 ```
 
-**Lo que falta en el ED500 real:** el kernel ya trae la pila de red
-(`CONFIG_NET`, `INET`, `PACKET`, DHCP), pero **no hay driver Ethernet para el
-GRX500**. El switch del SoC (`GRX500-Switch` en el U-Boot) necesita el driver
-CBM/DQM + switch, que es justo el bloque H2c. Sin él no aparece `eth0`, la
-initramfs lo dice por consola (`red: no hay interfaces`) y no hay página que
-visitar: en hardware, hoy, la única salida es el cable serie.
+**What is missing on the real ED500:** the kernel already carries the network
+stack (`CONFIG_NET`, `INET`, `PACKET`, DHCP), but **there is no Ethernet driver
+for the GRX500**. The SoC switch (`GRX500-Switch` in U-Boot) needs the
+CBM/DQM + switch driver, which is exactly block H2c. Without it no `eth0`
+appears, the initramfs says so on console (`network: no interfaces`) and there
+is no page to visit: on hardware, today, the only output is the serial cable.
 
-Cuando ese driver entre, este `.y3` ya lleva la imagen headless dentro: se
-flashea y la página aparece sin tocar nada más.
+When that driver lands, this `.y3` already carries the headless image inside:
+flash it and the page appears with nothing else to touch.
 
-## 8. Base 6.18 con Ethernet (en pruebas)
+## 8. 6.18 base with Ethernet (under test)
 
-`out/ED500-net618.y3` (34,5 MB) es el primer contenedor con un kernel que **sí
-trae driver Ethernet**: el árbol 6.18 de grische (`intel-mips-xrx500-v6.18`),
-que es el que funciona en el FRITZ!Box 7560 con este mismo GRX350.
+`out/ED500-net618.y3` (34.5 MB) is the first container with a kernel that
+**does ship an Ethernet driver**: the 6.18 tree by grische
+(`intel-mips-xrx500-v6.18`), the one that works on the FRITZ!Box 7560 with
+this same GRX350.
 
-Qué lleva dentro, verificado sobre el binario:
+What it carries inside, verified against the binary:
 
-- `CONFIG_INTEL_XRX500_NET=y`, `INTEL_XRX500_BM=y` → CBM/FSQM, TMU, HDMA y el
-  conduit del CPU compilados y enlazados (3 símbolos de probe presentes).
-- DTB `norrland` **embebido** en la sección `.dtb.init.rodata`
-  (`__dtb_start=0x81390960`, `__dtb_end=0x81392ca8`, 9032 bytes): el U-Boot de
-  Genexis no pasa DTB, así que `prom.c` usa `__dtb_start`.
-- Initramfs headless (DHCP/IP fija + web de estado + telnet).
-- `uImage` con `-a 0x80500000 -e 0x8107484c` (entry del ELF).
+- `CONFIG_INTEL_XRX500_NET=y`, `INTEL_XRX500_BM=y` → CBM/FSQM, TMU, HDMA and
+  the CPU conduit compiled and linked (3 probe symbols present).
+- DTB `norrland` **embedded** in section `.dtb.init.rodata`
+  (`__dtb_start=0x81390960`, `__dtb_end=0x81392ca8`, 9032 bytes): Genexis'
+  U-Boot passes no DTB, so `prom.c` uses `__dtb_start`.
+- Headless initramfs (DHCP/fixed IP + status web + telnet).
+- `uImage` with `-a 0x80500000 -e 0x8107484c` (ELF entry).
 
-Lo que **no** puedo garantizar: nunca se ha arrancado. El DTS es mínimo (el del
-SoC + memoria y consola); las partes de placa que sus drivers esperan — reserva
-de memoria para el firmware del GPHY, numeración de puertos, PHY addresses,
-LEDs — están en `seale_avm.dtsi` para las FRITZ y aquí no existen. Si el switch
-no encuentra su firmware de GPHY, `eth0` no aparecerá aunque el driver esté
-compilado.
+What I **cannot** guarantee: it has never been booted. The DTS is minimal (SoC
++ memory and console); the board parts its drivers expect — reserved memory for
+the GPHY firmware, port numbering, PHY addresses, LEDs — are in
+`seale_avm.dtsi` for the FRITZ and do not exist here. If the switch does not
+find its GPHY firmware, `eth0` will not appear even though the driver is
+compiled.
 
-Orden recomendado de pruebas: `ED500-stock-reconstruido.y3` (cero riesgo) →
-`ED500-net618.y3` → y si no vuelve, el otro banco arranca el stock solo.
+Recommended test order: `ED500-stock-reconstruido.y3` (zero risk) →
+`ED500-net618.y3` → and if it does not come back, the other bank boots stock
+on its own.
