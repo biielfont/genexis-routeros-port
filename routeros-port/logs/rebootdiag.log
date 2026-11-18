@@ -1,0 +1,771 @@
+
+~ # reboot -f
+[ 6201.888000] gswip-xrx500 1c000000.switch lan4: Link is Down
+[ 6201.896000] reboot: Reÿ
+ROM VER: 2.1.0
+CFG 0a
+B
+.
+.
+
+
+U-Boot 2016.07-INTEL-v-3.1.109-01293-g819227e-dirty (Dec 02 2022 - 14:20:11 +0100), Build: jenkins-gnxOS-Build-SE-229
+
+interAptiv
+cps cpu/ddr run in 800/800 Mhz
+DRAM:  224 MiB
+NAND:  device found, Manufacturer ID: 0xc2, Chip ID: 0xf1
+128 MiB
+Bad block table found at page 65472, version 0x01
+Bad block table found at page 65408, version 0x01
+In:    serial
+Out:   serial
+Err:   serial
+Net:   multi type
+Internal phy firmware version: 0x8548
+GRX500-Switch
+
+Type run flash_nfs to mount root filesystem over NFS
+
+Hit any key to stop autoboot:  3  2  1  0 
+      primary system is 0
+primary boot counter is 4
+          alt system is 1
+    alt boot counter is 0
+      selected system is 0
+Kernel command line = [console=ttyLTQ0,115200 root=ubi0:rootfs_0 ubi.mtd=ubi,0,30 rootfstype=ubifs mtdparts=17c00000.nand-parts:1m(uboot),-(ubi) init=/etc/preinit mem=224M@512M]
+Writing to redundant UBI... done
+Loading file '/boot/uImage' to addr 0x80800000...
+Done
+Loading file '/boot/norrland.dtb' to addr 0x84000000...
+** File not found /boot/norrland.dtb **
+Could not run [ubifsload ${fdtaddr} /boo
+ROM VER: 2.1.0
+CFG 0a
+B
+.
+.
+
+
+U-Boot 2016.07-INTEL-v-3.1.109-01293-g819227e-dirty (Dec 02 2022 - 14:20:11 +0100), Build: jenkins-gnxOS-Build-SE-229
+
+interAptiv
+cps cpu/ddr run in 800/800 Mhz
+DRAM:  224 MiB
+NAND:  device found, Manufacturer ID: 0xc2, Chip ID: 0xf1
+128 MiB
+Bad block table found at page 65472, version 0x01
+Bad block table found at page 65408, version 0x01
+In:    serial
+Out:   serial
+Err:   serial
+Net:   multi type
+Internal phy firmware version: 0x8548
+GRX500-Switch
+
+Type run flash_nfs to mount root filesystem over NFS
+
+Hit any key to stop autoboot:  3  2  1  0 
+      primary system is 0
+primary boot counter is 5
+          alt system is 1
+    alt boot counter is 0
+      selected system is 0
+Kernel command line = [console=ttyLTQ0,115200 root=ubi0:rootfs_0 ubi.mtd=ubi,0,30 rootfstype=ubifs mtdparts=17c00000.nand-parts:1m(uboot),-(ubi) init=/etc/preinit mem=224M@512M]
+Writing to UBI... done
+Loading file '/boot/uImage' to addr 0x80800000...
+Done
+Loading file '/boot/norrland.dtb' to addr 0x84000000...
+** File not found /boot/norrland.dtb **
+Could not run [ubifsload ${fdtaddr} /boo
+ROM VER: 2.1.0
+CFG 0a
+B
+.
+.
+
+
+U-Boot 2016.07-INTEL-v-3.1.109-01293-g819227e-dirty (Dec 02 2022 - 14:20:11 +0100), Build: jenkins-gnxOS-Build-SE-229
+
+interAptiv
+cps cpu/ddr run in 800/800 Mhz
+DRAM:  224 MiB
+NAND:  device found, Manufacturer ID: 0xc2, Chip ID: 0xf1
+128 MiB
+Bad block table found at page 65472, version 0x01
+Bad block table found at page 65408, version 0x01
+In:    serial
+Out:   serial
+Err:   serial
+Net:   multi type
+Internal phy firmware version: 0x8548
+GRX500-Switch
+
+Type run flash_nfs to mount root filesystem over NFS
+
+Hit any key to stop autoboot:  3  2  1  0 
+      primary system is 0
+primary boot counter is 5
+          alt system is 1
+    alt boot counter is 1
+      selected system is 1
+Kernel command line = [console=ttyLTQ0,115200 root=ubi0:rootfs_1 ubi.mtd=ubi,0,30 rootfstype=ubifs mtdparts=17c00000.nand-parts:1m(uboot),-(ubi) init=/etc/preinit mem=224M@512M]
+Writing to redundant UBI... done
+Loading file '/boot/uImage' to addr 0x80800000...
+Done
+Loading file '/boot/norrland.dtb' to addr 0x84000000...
+Done
+## Booting kernel from Legacy Image at 80800000 ...
+   Image Name:   MIPS LEDE Linux-4.9.109+
+   Created:      2023-04-04  10:27:51 UTC
+   Image Type:   MIPS Linux Kernel Image (lzma compressed)
+   Data Size:    2321182 Bytes = 2.2 MiB
+   Load Address: a0020000
+   Entry Point:  a0020000
+   Verifying Checksum ... OK
+## Flattened Device Tree blob at 84000000
+   Booting using the fdt blob at 0x84000000
+   Uncompressing Kernel Image ... OK
+   Loading Device Tree to 8cf3b000, end 8cf461f5 ... OK
+[    0.000000] Linux version 4.9.109+ (jenkins@65306639384b) (gcc version 6.3.0 (LEDE GCC 6.3.0 r0+8555-71b8d1b) ) #0 SMP Tue Apr 4 11:27:51 2023
+[    0.000000] SoC: GRX350 rev 1.2
+[    0.000000] bootconsole [early0] enabled
+[    0.000000] CPU0 revision is: 0001a120 (MIPS interAptiv (multi))
+[    0.000000] Enhanced Virtual Addressing (EVA 1GB) activated
+[    0.000000] Using Device tree (DTB) from bootloader 6cf3b000 (8cf3b000)
+[    0.000000] MIPS: machine is NORRLAND (GRX350) Main model
+[    0.000000] Coherence Manager IOCU detected
+[    0.000000] Hardware DMA cache coherency disabled
+[    0.000000] User-defined physical RAM map:
+[    0.000000]  memory: 0e000000 @ 20000000 (usable)
+[    0.000000] Determined physical RAM map:
+[    0.000000]  memory: 0e000000 @ 20000000 (usable)
+[    0.000000]  memory: 00009000 @ 2cf3b000 (reserved)
+[    0.000000]  memory: 00009000 @ 8cf3b000 (reserved)
+[    0.000000] Initrd not found or empty - disabling initrd
+[    0.000000] cma: Reserved 32 MiB at 0x2c000000
+[    0.000000] SMPCMP: CPU0: cmp_smp_setup
+[    0.000000] VPE topology {2,2} total 4
+[    0.000000] Detected 3 available secondary CPU(s)
+[    0.000000] Primary instruction cache 32kB, VIPT, 4-way, linesize 32 bytes.
+[    0.000000] Primary data cache 32kB, 4-way, PIPT, no aliases, linesize 32 bytes
+[    0.000000] MIPS secondary cache 128kB, 4-way, linesize 32 bytes.
+[    0.000000] Zone ranges:
+[    0.000000]   DMA      [mem 0x0000000020000000-0x0000000027ffffff]
+[    0.000000]   Normal   [mem 0x0000000028000000-0x000000002dffffff]
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x0000000020000000-0x000000002dffffff]
+[    0.000000] Initmem setup node 0 [mem 0x0000000020000000-0x000000002dffffff]
+[    0.000000] percpu: Embedded 12 pages/cpu @681e3000 s17456 r8192 d23504 u49152
+[    0.000000] Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 56896
+[    0.000000] Kernel command line: console=ttyLTQ0,115200 root=ubi0:rootfs_1 ubi.mtd=ubi,0,30 rootfstype=ubifs mtdparts=17c00000.nand-parts:1m(uboot),-(ubi) init=/etc/preinit mem=224M@512M
+[    0.000000] PID hash table entries: 1024 (order: 0, 4096 bytes)
+[    0.000000] Dentry cache hash table entries: 32768 (order: 5, 131072 bytes)
+[    0.000000] Inode-cache hash table entries: 16384 (order: 4, 65536 bytes)
+[    0.000000] Writing ErrCtl register=00000000
+[    0.000000] Readback ErrCtl register=00000000
+[    0.000000] Memory: 184136K/229376K available (5636K kernel code, 353K rwdata, 1388K rodata, 224K init, 2379K bss, 12472K reserved, 32768K cma-reserved)
+[    0.000000] SLUB: HWalign=32, Order=0-3, MinObjects=0, CPUs=4, Nodes=1
+[    0.000000] Hierarchical RCU implementation.
+[    0.000000] NR_IRQS:527
+[    0.000000] EIC is off
+[    0.000000] VINT is on
+[    0.000000] CPU Clock: 800000000Hz  mips_hpt_frequency 400000000Hz
+[    0.000000] clocksource: gptc: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 9556302233 ns
+[    0.000010] sched_clock: 32 bits at 200MHz, resolution 5ns, wraps every 10737418237ns
+[    0.008358] Calibrating delay loop... 531.66 BogoMIPS (lpj=2658304)
+[    0.070668] pid_max: default: 32768 minimum: 301
+[    0.075505] Mount-cache hash table entries: 1024 (order: 0, 4096 bytes)
+[    0.082055] Mountpoint-cache hash table entries: 1024 (order: 0, 4096 bytes)
+[    0.090240] CCA is coherent, multi-core is fine
+[    0.094629] MAXCORE = 2, MAXCPU = 4, MAXTCS = 6 MAX_VPE = 2
+[    0.100360] [vmb_cpu_active]:[308], cpu = 0
+[    0.104527] [update_DB_from_DT]:[371], cpuid = 0 name = LINUX
+[    0.110348] [update_DB_from_DT]:[371], cpuid = 1 name = VOICEFW
+[    0.116440] [update_DB_from_DT]:[371], cpuid = 2 name = LINUX
+[    0.122182] [update_DB_from_DT]:[371], cpuid = 3 name = MPEFW
+[    0.128035] [vmb_check_IBL_fw_msg]:[333] vpet[j].bl_status = 2, cpu = 1
+[    0.134654] [vmb_check_IBL_fw_msg]:[333] vpet[j].bl_status = 2, cpu = 2
+[    0.141328] [vmb_check_IBL_fw_msg]:[333] vpet[j].bl_status = 2, cpu = 3
+[    0.147999] 
+[    0.147999] Initial ITC_Address_Map0 00000000
+[    0.154000] 
+def ITC_Address_Map1 01200000[    0.158166] 
+[    0.158166] new ITC_Address_Map1 0120fc00
+
+def ITC_Address_Map0 00000000[    0.166572] 
+[    0.166572] new ITC_Address_Map0 1c300001
+[    0.172142] 
+[    0.172142]  ITC Init done on Core 0 on CPU 0 !!!
+[    0.180636] [vmb_cpu_alloc]:[688] CPU vpet.cpu_status = 11
+[    0.185966] [vmb_cpu_start]:[951] vmb_fw_msg_t = a0000168 cpu = 2 !
+[    0.192399] [vmb_cpu_start]:[966]  start_address = 2690225200 cpu = 2 !!!!
+[    0.199253] [gic_trigger]:[640] VMB_CPU_IPI2 - 21 CPU = 2
+
+Outside WAIT got IPI interrupt to launch from cpu 02
+
+ MSG_ID = 01[    0.204707] [vmb_cpu_start]:[981] WAITING FOR RESPONSE vpet->v_wq.wakeup_vpe = 0 !
+[    0.209628] Primary instruction cache 32kB, VIPT, 4-way, linesize 32 bytes.
+[    0.209636] Primary data cache 32kB, 4-way, PIPT, no aliases, linesize 32 bytes
+[    0.209647] MIPS secondary cache 128kB, 4-way, linesize 32 bytes.
+[    0.209776] 
+[    0.209776] Initial ITC_Address_Map0 00000000
+[    0.209786] 
+[    0.209786] def ITC_Address_Map1 01200000
+[    0.209790] 
+[    0.209790] new ITC_Address_Map1 0120fc00
+[    0.209794] 
+[    0.209794] def ITC_Address_Map0 00000000
+[    0.209800] 
+[    0.209800] new ITC_Address_Map0 1c300001
+[    0.209801] 
+[    0.209801]  ITC Init done on Core 1 on CPU 2 !!!
+[    0.209807] CPU2 revision is: 0001a120 (MIPS interAptiv (multi))
+[    0.253528] [vmb_cpu_active]:[308], cpu = 2
+[    0.284222] [vmb_cpu_start]:[1000] OUTSIDE wakeup_vpe = 1 vpet->fw_vmb.status = 1
+[    0.291784] [vmb_cpu_start]:[1006] ret = 1
+[    0.296169] Brought up 2 CPUs
+[    0.299856] devtmpfs: initialized
+[    0.313275] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604462750000 ns
+[    0.323053] futex hash table entries: 1024 (order: 3, 32768 bytes)
+[    0.331479] pinctrl core: initialized pinctrl subsystem
+[    0.337816] NET: Registered protocol family 16
+[    0.342277] XRX500 GPIO Driver, (C) 2014 Lantiq Deutschland Gmbh
+[    0.351473] dma-grx500 1e300000.dma: dma3 base address be300000 chained_irq 29 irq_base 30
+[    0.361419] dma-grx500 1e300000.dma: Init done - rev: a, ports: 1, channels: 64
+[    0.371218] dma-grx500 1c100000.dma: dma2tx base address bc100000 chained_irq 103 irq_base 104
+[    0.380306] dma-grx500 1c100000.dma: Init done - rev: a, ports: 1, channels: 16
+[    0.388305] dma-grx500 1c200000.dma: dma2rx base address bc200000 chained_irq 120 irq_base 121
+[    0.397735] dma-grx500 1c200000.dma: Init done - rev: a, ports: 1, channels: 32
+[    0.406021] dma-grx500 1a100000.dma: dma1tx base address ba100000 chained_irq 153 irq_base 154
+[    0.415049] dma-grx500 1a100000.dma: Init done - rev: a, ports: 1, channels: 16
+[    0.422921] dma-grx500 1a200000.dma: dma1rx base address ba200000 chained_irq 170 irq_base 171
+[    0.431881] dma-grx500 1a200000.dma: Init done - rev: a, ports: 1, channels: 12
+[    0.447026] dma0-grx500 16e00000.dma: base address b6e00000 chained_irq 228 irq_base 229
+[    0.455053] dma0-grx500 16e00000.dma: Init done - hw rev: A, ports: 4, channels: 16
+[    0.463068] intel-pinctrl 16c80000.pinctrl: pinbank id: 0, reg: 0xb6c80000, pinbase: 0, pin number: 32, pinmap: 0xf1efefff
+[    0.474047] intel-pinctrl 16c80000.pinctrl: pinbank id: 1, reg: 0xb6c80100, pinbase: 32, pin number: 32, pinmap: 0x3bff0c1f
+[    0.485401] intel-pinctrl 16c80000.pinctrl: Total 18 groups, 18 functions
+[    0.492262] intel-pinctrl 16c80000.pinctrl: gpiochip membase: 0xb6c00000
+[    0.499516] intel-pinctrl 16c80000.pinctrl: gpiochip membase: 0xb6c00100
+[    0.558478] cqm_platdev_init is called
+[    0.562063] dev falcon-cqm
+[    0.564841] [parse_dts] .. [30]
+[    0.568228] Unable to get node cqm for falcon-cqm
+[    0.572828] add_cqm_dev(#116): parse_dts fail for falcon-cqm
+[    0.578572] dev grx500-cbm
+[    0.581333] [parse_dts] .. [30]
+[    0.584656] num_res 12
+[    0.587018] intr 94
+[    0.589187] intr 95
+[    0.591326] intr 96
+[    0.593497] intr 97
+[    0.595667] intr 98
+[    0.597833] intr 0
+[    0.599928] No rcu reset for cbm
+[    0.603244] No syscon phandle specified for wan mux
+[    0.608171] parse dts done
+[    0.610935] adding resources
+[    0.613887] resources added
+[    0.616973]  Successfully Registered Platform device grx500-cbm.
+[    0.622890] device added
+[    0.693513] [cbm] { cbm_xrx500_probe : 5264 }reserving 18874368 bytes @ 6c000000 for CBM
+[    0.731779] [cbm] { cbm_xrx500_probe : 5274 }reserving 8388608 bytes @ 6d200000 for CBM
+[    0.739670] [cbm] { cbm_xrx500_probe : 5279 }94 irq
+[    0.744726] [cbm] { cbm_xrx500_probe : 5302 }2
+[    0.749204] [drv_tmu_ll] { get_cbm_clock : 7794 }CBM Clock: 200000000Hz=200MHZ
+[    0.756460] Initializing TMU with Base Address=be700000: ...
+[    0.765738] TMU Initialization Done
+[    0.769094] 0x6c000000 0x1200000 0x800
+[    0.772872] 0x6c000000 0x1200000
+[    0.776178] 0x6d200000 0x800000 0x4000
+[    0.780003] 0x6d200000 0x800000
+[    0.783606] [cbm] { init_fsqm_buf_std : 812 }init fsqm std successfully
+[    0.790069] [cbm] { init_fsqm_buf_jumbo : 854 }init fsqm jbo successfully
+[    0.796890] [cbm] { init_fsqm : 877 }fsqm init successfully
+[    0.802547] [cbm] { init_cbm_basic : 912 }PHY ADDR STD 0x2c000000
+[    0.808709] [cbm] { init_cbm_basic : 913 }PHY ADDR JBO 0x2d200000
+[    0.815022] [cbm] { init_cbm_basic : 931 }init basic CBM successfully
+[    0.821417] [cbm] { cbm_hw_init : 1811 }CBM HW init
+[    0.826424] [cbm] { setup_DMA_p2p : 4711 }setup_DMA_p2p executed
+[    0.832421] [cbm] { reserved_ports_highest : 4770 }2 2 19 35
+[    0.838137] [cbm] { init_cbm_dqm_cpu_port : 1075 }2
+[    0.843096] [cbm] { assign_port_from_DT : 456 }0x0 2
+[    0.848105] [cbm] { assign_port_from_DT : 456 }0x20 2
+[    0.853473] [cbm] { cbm_add_to_list : 250 }1
+[    0.857569] [cbm] { reserved_ports_highest : 4770 }1 1 18 34
+[    0.863310] [cbm] { init_cbm_dqm_cpu_port : 1075 }1
+[    0.868270] [cbm] { assign_port_from_DT : 456 }0x80 1
+[    0.873367] [cbm] { reserved_ports_highest : 4770 }3 3 20 36
+[    0.879109] [cbm] { init_cbm_dqm_cpu_port : 1075 }3
+[    0.884053] [cbm] { assign_port_from_DT : 456 }0x2000000 3
+[    0.889611] [cbm] { cbm_add_to_list : 250 }1
+[    0.893938] [cbm] { reserved_ports_highest : 4770 }6 6 0 16
+[    0.899595] [cbm] { dma_port_enable : 4244 }6 0x4
+[    0.904367] [cbm] { reserved_ports_highest : 4770 }7 7 1 17
+[    0.910010] [cbm] { dma_port_enable : 4244 }7 0x4
+[    0.914782] [cbm] { reserved_ports_highest : 4770 }8 8 2 18
+[    0.920427] [cbm] { dma_port_enable : 4244 }8 0x4
+[    0.925198] [cbm] { reserved_ports_highest : 4770 }9 9 3 19
+[    0.930842] [cbm] { dma_port_enable : 4244 }9 0x4
+[    0.935615] [cbm] { reserved_ports_highest : 4770 }10 10 4 20
+[    0.941434] [cbm] { dma_port_enable : 4244 }10 0x4
+[    0.946291] [cbm] { reserved_ports_highest : 4770 }11 11 5 21
+[    0.952118] [cbm] { dma_port_enable : 4244 }11 0x4
+[    0.956968] [cbm] { reserved_ports_highest : 4770 }12 12 6 22
+[    0.962789] [cbm] { dma_port_enable : 4244 }12 0x4
+[    0.967645] [cbm] { reserved_ports_highest : 4770 }13 13 7 23
+[    0.973463] [cbm] { dma_port_enable : 4244 }13 0x4
+[    0.978337] [cbm] { reserved_ports_highest : 4770 }14 14 8 24
+[    0.984125] [cbm] { dma_port_enable : 4244 }14 0x4
+[    0.989014] [cbm] { reserved_ports_highest : 4770 }15 15 9 25
+[    0.994801] [cbm] { dma_port_enable : 4244 }15 0x4
+[    0.999692] [cbm] { reserved_ports_highest : 4770 }16 16 10 26
+[    1.005565] [cbm] { dma_port_enable : 4244 }16 0x4
+[    1.010459] [cbm] { reserved_ports_highest : 4770 }17 17 11 27
+[    1.016328] [cbm] { dma_port_enable : 4244 }17 0x4
+[    1.021219] [cbm] { reserved_ports_highest : 4770 }18 18 -16 0
+[    1.027092] [cbm] { dma_port_enable : 4244 }18 0x4
+[    1.032001] [cbm] { reserved_ports_highest : 4770 }19 19 12 28
+[    1.037855] [cbm] { dma_port_enable : 4244 }19 0x4
+[    1.042746] [cbm] { reserved_ports_highest : 4770 }20 20 13 29
+[    1.048634] [cbm] { dma_port_enable : 4244 }20 0x4
+[    1.053492] [cbm] { init_special_ports : 4777 }20
+[    1.058269] [cbm] { cbm_add_to_list : 250 }1
+[    1.062595] [cbm] { reserved_ports_highest : 4770 }21 21 14 30
+[    1.068510] [cbm] { dma_port_enable : 4244 }21 0x4
+[    1.073369] [cbm] { init_special_ports : 4777 }21
+[    1.078154] [cbm] { cbm_add_to_list : 250 }1
+[    1.082473] [cbm] { reserved_ports_highest : 4770 }22 22 25 41
+[    1.088390] [cbm] { dma_port_enable : 4244 }22 0x4
+[    1.093250] [cbm] { reserved_ports_highest : 4770 }23 23 15 31
+[    1.099154] [cbm] { init_cbm_dqm_ldma_port : 1108 }23
+[    1.104273] [cbm] { reserved_ports_highest : 4770 }5 5 21 37
+[    1.110004] [cbm] { init_cbm_dqm_scpu_port : 1089 }5
+[    1.115272] [cbm] { reserved_ports_highest : 4770 }4 4 16 32
+[    1.120769] [cbm] { init_cbm_dqm_cpu_port : 1075 }4
+[    1.125711] [cbm] { assign_port_from_DT : 456 }0x8 4
+[    1.130751] [cbm] { reserved_ports_highest : 4770 }24 24 22 38
+[    1.136636] [cbm] { init_cbm_dqm_cpu_port : 1075 }24
+[    1.141698] [cbm] { assign_port_from_DT : 456 }0x8 24
+[    1.146794] [cbm] { reserved_ports_highest : 4770 }25 25 23 39
+[    1.152710] [cbm] { init_cbm_dqm_cpu_port : 1075 }25
+[    1.157741] [cbm] { assign_port_from_DT : 456 }0x8 25
+[    1.162869] [cbm] { reserved_ports_highest : 4770 }26 26 24 40
+[    1.168766] [cbm] { init_cbm_dqm_cpu_port : 1075 }26
+[    1.173800] [cbm] { assign_port_from_DT : 456 }0x8 26
+[    1.178926] [cbm] { init_cbm_eqm_cpu_port : 938 }0
+[    1.183770] [cbm] { init_cbm_eqm_cpu_port : 938 }1
+[    1.188644] [cbm] { init_cbm_eqm_cpu_port : 938 }2
+[    1.193491] [cbm] { init_cbm_eqm_cpu_port : 938 }3
+[    1.198368] [cbm] { dma_port_enable : 4244 }5 0x1
+[    1.203132] [cbm] { dma_port_enable : 4244 }5 0x2
+[    1.207902] [cbm] { dma_port_enable : 4244 }6 0x1
+[    1.212688] random: fast init done
+[    1.216149] [cbm] { dma_port_enable : 4244 }6 0x2
+[    1.220938] [cbm] { dma_port_enable : 4244 }7 0x1
+[    1.225697] [cbm] { dma_port_enable : 4244 }7 0x2
+[    1.230485] [cbm] { dma_port_enable : 4244 }8 0x1
+[    1.235245] [cbm] { dma_port_enable : 4244 }8 0x2
+[    1.240034] [cbm] { dma_toe_port_enable : 4271 }9 0x1
+[    1.245141] [cbm] { dma_vrx318_port_enable : 4284 }15 0x1
+[    1.250630] [cbm] { init_cbm_dqm_cpu_port : 1075 }0
+[    1.255555] [cbm] { init_cbm_dqm_cpu_port : 1075 }2
+[    1.260520] Load spreader init successfully
+[    1.264886] [cbm] { cbm_xrx500_probe : 5358 }CBM Clock: 200000000Hz
+[    1.271116] [cbm] { cbm_xrx500_probe : 5360 }EQM delay Enabled
+[    1.276998] [cbm] { igp_delay_set : 4371 }port0 delay16
+[    1.282306] [cbm] { igp_delay_set : 4371 }port1 delay16
+[    1.287586] [cbm] { igp_delay_set : 4371 }port2 delay16
+[    1.292894] [cbm] { igp_delay_set : 4371 }port3 delay16
+[    1.298190] [cbm] { igp_delay_set : 4371 }port4 delay16
+[    1.303471] [cbm] { igp_delay_set : 4371 }port5 delay16
+[    1.308779] [cbm] { igp_delay_set : 4371 }port6 delay16
+[    1.314061] [cbm] { igp_delay_set : 4371 }port7 delay16
+[    1.319369] [cbm] { igp_delay_set : 4371 }port8 delay16
+[    1.324651] [cbm] { igp_delay_set : 4371 }port9 delay16
+[    1.329959] [cbm] { igp_delay_set : 4371 }port10 delay16
+[    1.335328] [cbm] { igp_delay_set : 4371 }port11 delay16
+[    1.340732] [cbm] { igp_delay_set : 4371 }port12 delay16
+[    1.346091] [cbm] { igp_delay_set : 4371 }port13 delay16
+[    1.351488] [cbm] { igp_delay_set : 4371 }port14 delay16
+[    1.356855] [cbm] { igp_delay_set : 4371 }port15 delay16
+[    1.362252] [cbm] { dequeue_dma_port_init : 4207 }6 0x0 2 1
+[    1.367890] [cbm] { dequeue_dma_port_init : 4207 }7 0x0 2 2
+[    1.373540] [cbm] { dequeue_dma_port_init : 4207 }8 0x0 2 3
+[    1.379182] [cbm] { dequeue_dma_port_init : 4207 }9 0x0 2 4
+[    1.384809] [cbm] { dequeue_dma_port_init : 4207 }10 0x0 2 5
+[    1.390553] [cbm] { dequeue_dma_port_init : 4207 }11 0x0 2 6
+[    1.396267] [cbm] { dequeue_dma_port_init : 4207 }12 0x0 2 9
+[    1.402012] [cbm] { dequeue_dma_port_init : 4207 }13 0x0 2 10
+[    1.407812] [cbm] { dequeue_dma_port_init : 4207 }14 0x0 2 11
+[    1.413643] [cbm] { dequeue_dma_port_init : 4207 }15 0x0 2 12
+[    1.419459] [cbm] { dequeue_dma_port_init : 4207 }16 0x0 2 13
+[    1.425260] [cbm] { dequeue_dma_port_init : 4207 }17 0x0 2 14
+[    1.431091] [cbm] { dequeue_dma_port_init : 4207 }18 0x0 1 13
+[    1.436894] [cbm] { dequeue_dma_port_init : 4207 }19 0x0 1 15
+[    1.442723] [cbm] { dequeue_dma_port_init : 4207 }20 0x0 1 5
+[    1.448450] [cbm] { dequeue_dma_port_init : 4207 }21 0x0 1 6
+[    1.454165] [cbm] { dequeue_dma_port_init : 4207 }22 0x0 1 11
+[    1.460005] [cbm] { enqueue_dma_port_init : 4149 }5 0x2 2 0 30
+[    1.465893] [cbm] { enqueue_dma_port_init : 4149 }5 0x1 2 14 0
+[    1.471810] [cbm] { enqueue_dma_port_init : 4149 }6 0x2 2 0 31
+[    1.477691] [cbm] { enqueue_dma_port_init : 4149 }6 0x1 2 15 0
+[    1.483609] [cbm] { enqueue_dma_port_init : 4149 }7 0x2 1 0 6
+[    1.489424] [cbm] { enqueue_dma_port_init : 4149 }7 0x1 1 0 0
+[    1.495222] [cbm] { enqueue_dma_port_init : 4149 }8 0x2 1 0 11
+[    1.501143] [cbm] { enqueue_dma_port_init : 4149 }8 0x1 1 5 0
+[    1.506941] [cbm] { cbm_xrx500_probe : 5414 }CBM: Init Done !![    1.554557] i2c-lantiq 16a00000.i2c: version 1.01
+[    1.559481] try to register spd_mon driver[    1.563418] spdmon 16080110.speedm: base address: 0xb6080110	
+[    1.569108] spdmon 16080110.speedm: PHY base address: 0x16080110
+[    1.575084] device number :253
+[    1.578817] spdmon 16080110.speedm: spd_mon driver : init done !!
+[    1.587338] spd_mon driver registered
+[    1.591677] NET: Registered protocol family 8
+[    1.595996] NET: Registered protocol family 20
+[    1.601632] clocksource: Switched to clocksource gptc
+[    1.609789] NET: Registered protocol family 2
+[    1.615056] TCP established hash table entries: 2048 (order: 1, 8192 bytes)
+[    1.621963] TCP bind hash table entries: 2048 (order: 2, 16384 bytes)
+[    1.628398] TCP: Hash tables configured (established 2048 bind 2048)
+[    1.634934] UDP hash table entries: 256 (order: 1, 8192 bytes)
+[    1.640714] UDP-Lite hash table entries: 256 (order: 1, 8192 bytes)
+[    1.647415] NET: Registered protocol family 1
+[    1.654898] workingset: timestamp_bits=30 max_order=16 bucket_order=0
+[    1.669072] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+[    1.674901] jffs2: version 2.2 (NAND) (SUMMARY) (LZMA) (RTIME) (CMODE_PRIORITY) (c) 2001-2006 Red Hat, Inc.
+[    1.692539] io scheduler noop registered
+[    1.696298] io scheduler deadline registered (default)
+[    1.702266] intel-pcie-slim-phy 18500000.pciephy: PCIe slim phy[0] init success!
+[    1.709760] intel-pcie-slim-phy 18000000.pciephy: PCIe slim phy[1] init success!
+[    1.717374] intel-pcie-slim-phy 18a00000.pciephy: PCIe slim phy[2] init success!
+[    1.841620] OF: PCI: host bridge /pcie@18900000 ranges:
+[    1.846716] OF: PCI:   MEM 0xb8000000..0xbaffffff -> 0xb8000000
+[    1.852724] OF: PCI:    IO 0xbb800000..0xbb80ffff -> 0xbb800000
+[    1.860846] intel-pcie-slim-phy 18500000.pciephy: PCIe LCPLL SSC Mode Enabled
+[    1.995987] intel-pcie 18900000.pcie: PCI host bridge to bus 0000:00
+[    2.002259] pci_bus 0000:00: root bus resource [bus 00-08]
+[    2.007732] pci_bus 0000:00: root bus resource [mem 0xb8000000-0xbaffffff]
+[    2.014706] pci_bus 0000:00: root bus resource [io  0xbb800000-0xbb80ffff]
+[    2.022103] pci 0000:00:00.0: bridge configuration invalid ([bus 00-00]), reconfiguring
+[    2.030555] pci 0000:00:00.0: PCI bridge to [bus 01-08]
+[    2.035941] pci 0000:00:00.0: BAR 8: assigned [mem 0xb8000000-0xb87fffff]
+[    2.042605] pci 0000:00:00.0: BAR 9: assigned [mem 0xb8800000-0xb88fffff pref]
+[    2.049849] pci 0000:00:00.0: BAR 7: assigned [io  0xbb800000-0xbb800fff]
+[    2.056736] pci 0000:01:00.0: BAR 0: assigned [mem 0xb8000000-0xb87fffff]
+[    2.063602] pci 0000:00:00.0: PCI bridge to [bus 01]
+[    2.068599] pci 0000:00:00.0:   bridge window [io  0xbb800000-0xbb800fff]
+[    2.075480] pci 0000:00:00.0:   bridge window [mem 0xb8000000-0xb87fffff]
+[    2.082337] pci 0000:00:00.0:   bridge window [mem 0xb8800000-0xb88fffff pref]
+[    2.089687] intel-pcie 18900000.pcie: Intel AXI PCIe Root Complex Port 0 Init Done
+[    2.211615] OF: PCI: host bridge /pcie@18400000 ranges:
+[    2.216697] OF: PCI:   MEM 0xb4000000..0xb6ffffff -> 0xb4000000
+[    2.222702] OF: PCI:    IO 0xb7800000..0xb780ffff -> 0xb7800000
+[    2.229687] intel-pcie-slim-phy 18000000.pciephy: SSC has been enabled, count: 2!
+[    2.365394] intel-pcie 18400000.pcie: PCI host bridge to bus 0001:00
+[    2.371656] pci_bus 0001:00: root bus resource [bus 00-08]
+[    2.377139] pci_bus 0001:00: root bus resource [mem 0xb4000000-0xb6ffffff]
+[    2.384110] pci_bus 0001:00: root bus resource [io  0xb7800000-0xb780ffff]
+[    2.391488] pci 0001:00:00.0: bridge configuration invalid ([bus 00-00]), reconfiguring
+[    2.400046] pci 0001:00:00.0: PCI bridge to [bus 01-08]
+[    2.405484] pci 0001:00:00.0: BAR 8: assigned [mem 0xb4000000-0xb47fffff]
+[    2.412143] pci 0001:00:00.0: BAR 9: assigned [mem 0xb4800000-0xb48fffff pref]
+[    2.419394] pci 0001:00:00.0: BAR 7: assigned [io  0xb7800000-0xb7800fff]
+[    2.426282] pci 0001:01:00.0: BAR 0: assigned [mem 0xb4000000-0xb47fffff]
+[    2.433138] pci 0001:00:00.0: PCI bridge to [bus 01]
+[    2.438144] pci 0001:00:00.0:   bridge window [io  0xb7800000-0xb7800fff]
+[    2.445033] pci 0001:00:00.0:   bridge window [mem 0xb4000000-0xb47fffff]
+[    2.451880] pci 0001:00:00.0:   bridge window [mem 0xb4800000-0xb48fffff pref]
+[    2.459235] intel-pcie 18400000.pcie: Intel AXI PCIe Root Complex Port 1 Init Done
+[    2.581616] OF: PCI: host bridge /pcie@18e00000 ranges:
+[    2.586703] OF: PCI:   MEM 0xbc000000..0xbeffffff -> 0xbc000000
+[    2.592710] OF: PCI:    IO 0xbf800000..0xbf80ffff -> 0xbf800000
+[    2.599692] intel-pcie-slim-phy 18a00000.pciephy: SSC has been enabled, count: 3!
+[    2.735345] intel-pcie 18e00000.pcie: PCI host bridge to bus 0002:00
+[    2.741557] pci_bus 0002:00: root bus resource [bus 00-08]
+[    2.747160] pci_bus 0002:00: root bus resource [mem 0xbc000000-0xbeffffff]
+[    2.754061] pci_bus 0002:00: root bus resource [io  0xbf800000-0xbf80ffff]
+[    2.761452] pci 0002:00:00.0: bridge configuration invalid ([bus 00-00]), reconfiguring
+[    2.770014] pci 0002:00:00.0: PCI bridge to [bus 01-08]
+[    2.775501] pci 0002:00:00.0: BAR 8: assigned [mem 0xbc000000-0xbc7fffff]
+[    2.782172] pci 0002:00:00.0: BAR 9: assigned [mem 0xbc800000-0xbc8fffff pref]
+[    2.789408] pci 0002:00:00.0: BAR 7: assigned [io  0xbf800000-0xbf800fff]
+[    2.796296] pci 0002:01:00.0: BAR 0: assigned [mem 0xbc000000-0xbc7fffff]
+[    2.803162] pci 0002:00:00.0: PCI bridge to [bus 01]
+[    2.808158] pci 0002:00:00.0:   bridge window [io  0xbf800000-0xbf800fff]
+[    2.815039] pci 0002:00:00.0:   bridge window [mem 0xbc000000-0xbc7fffff]
+[    2.821896] pci 0002:00:00.0:   bridge window [mem 0xbc800000-0xbc8fffff pref]
+[    2.829252] intel-pcie 18e00000.pcie: Intel AXI PCIe Root Complex Port 2 Init Done
+[    2.838763] [mips_tc_init] dma_zalloc_coherent dev->name=(null) sizeof(struct mips_tc_sg_mem)=1680 shared_phy_mem=27c0c000
+[    2.849713] [mips_tc_init] dma_zalloc_coherent shared_vir_uncached_mem=a7c0c000 shared_vir_cached_mem=67c0c000 shared_working_vir_mem=67c0c000
+[    2.862799] =MIPS TC Shared memory: a7c0c000 67c0c000 67c0c000 | Data: a7c10000
+[    2.870028] [vmb_tc_alloc]:[1046] CPU tct tc_status = 1
+[    2.875284] UMT initialize success on processor: 0 !
+[    2.880258] HW MCPY driver: Version: 1.1.0, Init Done!
+[    2.886451] 16600000.serial: ttyLTQ0 at MMIO 0x16600000 (irq = 213, base_baud = 0) is a lantiq,asc
+[    2.902581] console [ttyLTQ0] enabled
+[    2.902581] console [ttyLTQ0] enabled
+[    2.909712] bootconsole [early0] disabled
+[    2.909712] bootconsole [early0] disabled
+[    2.918741] Lantiq MIPSInterAptiv MPS driver, version 1.0.0.0, (c) 2006-2013 Lantiq Deutschland GmbH
+[    2.927124] MPS: major Id 251
+[    2.929479] Major Id is 250
+[    2.932208] ICC driver registered
+[    2.935676] sysrst_init: Trying to register System Reset Driver ...
+[    2.942106] sysrst_pre_init: Detect InterAptiv CPU ...
+[    2.947051] sysrst_init: Lantiq CPE GRX500 System driver version 1.0.0
+[    2.953401] sysrst_init: GRX500 System Reset initialized successfully!
+[    2.961332] nand: device found, Manufacturer ID: 0xc2, Chip ID: 0xf1
+[    2.966298] nand: Macronix MX30LF1G18AC
+[    2.970038] nand: 128 MiB, SLC, erase size: 128 KiB, page size: 2048, OOB size: 64
+[    2.981298] Bad block table found at page 65472, version 0x01
+[    2.988006] Bad block table found at page 65408, version 0x01
+[    2.992653] nand_read_bbt: bad block at 0x0000047c0000
+[    2.997482] 2 cmdlinepart partitions found on MTD device 17c00000.nand-parts
+[    3.004452] Creating 2 MTD partitions on "17c00000.nand-parts":
+[    3.010357] 0x000000000000-0x000000100000 : "uboot"
+[    3.017060] 0x000000100000-0x000008000000 : "ubi"
+[    3.025541] Lantiq SoC SPI controller rev 9 (TXFS 32, RXFS 32, DMA 1)
+[    3.031046] [ltq_ssc] { ifx_ssc_init : 3819 }[ifx_ssc_init] force ifx_ssc_cs_low to PORT 1
+[    3.038939] [ltq_ssc] { ifx_ssc_init : 3820 }[ifx_ssc_init] force ifx_ssc_cs_high to PORT 1
+[    3.047291] [ltq_ssc] { ifx_ssc_init : 3824 }ifx_ssc_init ifx_ssc_init_count 1
+[    3.054678] [ltq_ssc] { ifx_ssc_init : 3947 }port name ltq_ssc1[    3.060368] [ltq_ssc] { ifx_ssc_init : 4043 }Lantiq SoC SSC controller rev 9 (TXFS 32, RXFS 32, DMA 1)
+[    3.070069] libphy: Fixed MDIO Bus: probed
+[    3.074332] Node name /ssx1@1c000000/gswitch@000000
+[    3.079882] Node name /ssx2@1a000000/gswitch@000000
+[    3.085022] ::::::: SWAPI Reached :::::: 
+[    3.087566] GSWIP devid = 0
+[    3.090344] memres->start = 0x1c000000 memres->end = 0x1c002fff
+[    3.096416] addr_gswl = 0xbc000000
+[    3.099635] drivers/net/ethernet/lantiq/switch-api/gsw_init.c:ltq_gsw_api_register:952 (Register l base:0xbc000000)
+[    3.110089] SWAPI: Registered char device [switch_api] with major no [81]
+[    3.116841] addr_gswl = 0xbc000000
+[    3.120204] 
+[    3.120204] ########## Switch Core INIT for device = 0 ##########
+[    3.127806] Switch Core Base Address = 0xbc000000
+[    3.132481] 
+[    3.132481] GSWIP 3.0 HardWare Capability
+[    3.137911] -----------------------------
+[    3.137911] 
+[    3.143401] Switch Version ID                =  0x30
+[    3.148327] 
+[    3.149804] Number of logical port           =  7
+[    3.154512] Number of ports including V port =  8
+[    3.159180] Number of queues                 =  32
+[    3.163980] Number of meter instance         =  16
+[    3.168728] Number of shapers                =  32
+[    3.173524] Number of PMAC                   =  1
+[    3.178191] Number of CPU PORT               =  0
+[    3.182896] 
+[    3.184354] PPPOE table size                 =  16
+[    3.189128] IP packet length table size      =  16
+[    3.193923] Protocol table size              =  32
+[    3.198677] MAC DA/SA table size             =  64
+[    3.203471] Application table size           =  64
+[    3.208226] IP DA/SA MSB table size          =  64
+[    3.213020] IP DA/SA LSB table size          =  64
+[    3.217775] Multicast table size             =  64
+[    3.222569] Multicast Hw Snoop               =  0
+[    3.227237] TFLOW table size                 =  64
+[    3.232032] MAC bridge table size            =  2048
+[    3.236960] TFLOW RMON counter table Size    =  256
+[    3.241841] Payload Table Size               =  64
+[    3.246595] Extend VLAN Table Size table     =  0
+[    3.251288] VlanFilter table Size            =  0
+[    3.251288] 
+[    3.257472] 
+[    3.258954] Enter PCE micro-code init
+[    3.262881] Exit PCE micro-code init
+[    3.266127] Switch API: PCE MicroCode loaded !!
+[    3.270788] ::::::: SWAPI Reached :::::: 
+[    3.274674] GSWIP devid = 1
+[    3.277415] memres->start = 0x1a000000 memres->end = 0x1a002fff
+[    3.283396] addr_gswr = 0xba000000
+[    3.286706] drivers/net/ethernet/lantiq/switch-api/gsw_init.c:ltq_gsw_api_register:963 (Register r base:0xba000000)
+[    3.297148] 
+[    3.297148] ########## Switch Core INIT for device = 1 ##########
+[    3.304691] Switch Core Base Address = 0xba000000
+[    3.309364] 
+[    3.309364] GSWIP 3.0 HardWare Capability
+[    3.314847] -----------------------------
+[    3.314847] 
+[    3.320296] Switch Version ID                =  0x30
+[    3.325261] 
+[    3.326719] Number of logical port           =  2
+[    3.331413] Number of ports including V port =  17
+[    3.336201] Number of queues                 =  32
+[    3.340956] Number of meter instance         =  64
+[    3.345750] Number of shapers                =  32
+[    3.350505] Number of PMAC                   =  1
+[    3.355212] Number of CPU PORT               =  0
+[    3.359878] 
+[    3.361361] PPPOE table size                 =  16
+[    3.366149] IP packet length table size      =  16
+[    3.370905] Protocol table size              =  32
+[    3.375704] MAC DA/SA table size             =  64
+[    3.380453] Application table size           =  64
+[    3.385261] IP DA/SA MSB table size          =  64
+[    3.390002] IP DA/SA LSB table size          =  64
+[    3.394800] Multicast table size             =  64
+[    3.399551] Multicast Hw Snoop               =  0
+[    3.404258] TFLOW table size                 =  512
+[    3.409100] MAC bridge table size            =  2048
+[    3.414069] TFLOW RMON counter table Size    =  256
+[    3.418910] Payload Table Size               =  64
+[    3.423703] Extend VLAN Table Size table     =  0
+[    3.428372] VlanFilter table Size            =  0
+[    3.428372] 
+[    3.434554] 
+[    3.436036] Enter PCE micro-code init
+[    3.439950] Exit PCE micro-code init
+[    3.443238] Switch API: PCE MicroCode loaded !!
+[    3.453991] lro_sram_membase_res0 from DT: a2013000 
+[    3.457769] ltq_toe_membase: e2000000 and lro_sram_membase_res0: e2013000
+[    3.464955] TOE Init Done !!
+[    3.467267] i2c /dev entries driver
+[    3.477629] NET: Registered protocol family 10
+[    3.482338] Registeration is a success The major device number is 249.
+[    3.487868] NET: Registered protocol family 17
+[    3.492100] bridge: filtering via arp/ip/ip6tables is no longer available by default. Update your scripts to load br_netfilter if you need this.
+[    3.504869] lec:lane_module_init: lec.c: initialized
+[    3.509708] mpoa:atm_mpoa_init: mpc.c: initialized
+[    3.514540] KOAM is loaded successfully.
+[    3.518385] 8021q: 802.1Q VLAN Support v1.8
+[    3.522624] lib80211: common routines for IEEE802.11 drivers
+[    3.533785] ubi0: attaching mtd1
+[    4.170119] ubi0: scanning is finished
+[    4.203532] ubi0: attached mtd1 (name "ubi", size 127 MiB)
+[    4.207552] ubi0: PEB size: 131072 bytes (128 KiB), LEB size: 126976 bytes
+[    4.214480] ubi0: min./max. I/O unit sizes: 2048/2048, sub-page size 2048
+[    4.221178] ubi0: VID header offset: 2048 (aligned 2048), data offset: 4096
+[    4.228143] ubi0: good PEBs: 1011, bad PEBs: 5, corrupted PEBs: 0
+[    4.234220] ubi0: user volume: 5, internal volumes: 1, max. volumes count: 128
+[    4.241413] ubi0: max/mean erase counter: 1074/255, WL threshold: 4096, image sequence number: 607886982
+[    4.250887] ubi0: available PEBs: 2, total reserved PEBs: 1009, PEBs reserved for bad PEB handling: 25
+[    4.261232] usb1_vbus: disabling
+[    4.261655] ubi0: background thread "ubi_bgt0d" sta[    4.428446] UBIFS (ubi0:3): recovery needed
+[    4.657903] UBIFS (ubi0:3): recovery deferred
+[    4.660937] UBIFS (ubi0:3): UBIFS: mounted UBI device 0, volume 3, name "rootfs_1", R/O mode
+[    4.669284] UBIFS (ubi0:3): LEB size: 126976 bytes (124 KiB), min./max. I/O unit sizes: 2048 bytes/2048 bytes
+[    4.679133] UBIFS (ubi0:3): FS size: 59551744 bytes (56 MiB, 469 LEBs), journal size 9023488 bytes (8 MiB, 72 LEBs)
+[    4.689545] UBIFS (ubi0:3): reserved for root: 0 bytes (0 KiB)
+[    4.695368] UBIFS (ubi0:3): media format: w4/r0 (latest is w4/r0), UUID 86FE9767-31AE-47E5-981A-FAC7BE906BDF, small LPT model
+[    4.708409] VFS: Mounted root (ubifs filesystem) readonly on device 0:12.
+[    4.716747] devtmpfs: mounted
+[    4.718845] Freeing unused kernel: 224k freed
+[    4.722704] This architecture does not have kernel memory protection.
+Error mounting /sys/fs/cgroup: No such file or directory
+[    5.097260] init: Console is alive
+[    6.246860] kmodloader: loading kernel modules from /etc/modules-boot.d/*
+[    6.427344] usbcore: registered new interface driver usbfs
+[    6.431459] usbcore: registered new interface driver hub
+[    6.436957] usbcore: registered new device driver usb
+[    6.551043] SCSI subsystem initialized
+[    6.771159] usbcore: registered new interface driver usb-storage
+[    6.784175] kmodloader: done loading kernel modules from /etc/modules-boot.d/*
+[    6.805320] init: - preinit -
+[    7.124696] random: jshn: uninitialized urandom read (4 bytes read)
+[    7.169845] random: jshn: uninitialized urandom read (4 bytes read)
+[    7.195481] random: jshn: uninitialized urandom read (4 bytes read)
+WARNING: Variable 'lan' does not exist or is not an array/object
+Press the [f] key and hit [enter] to enter failsafe mode
+Press the [1], [2], [3] or [4] key and hit [enter] to select the debug level
+[   10.323462] mount_root: mounting /dev/root
+[   10.327471] UBIFS (ubi0:3): completing deferred recovery
+[   10.377879] UBIFS (ubi0:3): background thread "ubifs_bgt0_3" started, PID 595
+[   10.387716] UBIFS (ubi0:3): deferred recovery completed
+[   10.395652] mount_root: loading kmods from internal overlay
+[   10.469828] kmodloader: loading kernel modules from //etc/modules-boot.d/*
+[   10.477497] kmodloader: done loading kernel modules from //etc/modules-boot.d/*
+[   10.705707] block: attempting to load /etc/config/fstab
+[   10.711104] block: unable to load configuration (fstab: Entry not found)
+[   10.716568] block: no usable configuration
+mounting overlay
+[   10.776553] urandom-seed: Seeding with /etc/urandom.seed
+[   10.814411] procd: - early -
+[   10.834191] urandom_read: 1 callbacks suppressed
+[   10.834202] random: procd: uninitialized urandom read (4 bytes read)
+[   11.712065] procd: - ubus -
+[   11.799439] random: ubusd: uninitialized urandom read (4 bytes read)
+[   11.891226] random: ubusd: uninitialized urandom read (4 bytes read)
+[   11.898648] random: ubusd: uninitialized urandom read (4 bytes read)
+[   11.903635] random: ubusd: uninitialized urandom read (4 bytes read)
+[   11.910756] procd: - init -
+Please press Enter to activate this console.
+[   13.210146] hw_quirk: HW quirk check
+[   13.370357] hw_quirk: Workaround already applied
+[   13.968307] kmodloader: loading kernel modules from /etc/modules.d/*
+[   13.989419] IFXOS, Version 1.6.9 (c) Copyright 2009, Lantiq Deutschland GmbH
+[   14.323786] tun: Universal TUN/TAP device driver, 1.6
+[   14.327399] tun: (C) 1999-2004 Max Krasnyansky <maxk@qualcomm.com>
+[   14.452543] l2tp_core: L2TP core driver, V2.0
+[   14.483380] l2tp_netlink: L2TP netlink interface
+[   14.530186] sit: IPv6, IPv4 and MPLS over IPv4 tunneling driver
+[   14.599135] gre: GRE over IPv4 demultiplexor driver
+[   14.647813] ip_gre: GRE over IPv4 tunneling driver
+[   14.800168] ip6_tables: (C) 2000-2006 Netfilter Core Team
+[   14.844333] Netfilter messages via NETLINK v0.30.
+[   14.883557] ip_set: protocol 6
+[   15.237331] Got clock gpio
+[   15.238635] Got data gpio
+[   15.241183] Attempt to set filefs stuff
+[   15.245207] canyon led successfully probed
+[   15.430688] u32 classifier
+[   15.432028]     input device check on
+[   15.435582]     Actions configured
+[   15.459696] Mirror/redirect action on
+[   15.811348] random: crng init done
+[   15.813291] random: 1 urandom warning(s) missed due to ratelimiting
+[   15.870707] fuse init (API version 7.26)
+[   15.931211] Bridge firewalling registered
+[   15.951494] usbcore: registered new interface driver cdc_wdm
+[   16.388599] Ebtables v2.0 registered
+[   16.497116] ip_tables: (C) 2000-2006 Netfilter Core Team
+[   16.667216] nf_conntrack version 0.5.0 (4096 buckets, 16384 max)
+[   16.849472] ctnetlink v0.93: registering with nfnetlink.
+[   16.875502] nf_conntrack_rtsp v0.7 loading
+[   17.173545] nf_nat_rtsp v0.7 loading
+[   17.386404] PPA Stack Adaptation layer Loaded...
+[   17.472932] xhci-hcd xhci-hcd.2.auto: xHCI Host Controller
+[   17.477012] xhci-hcd xhci-hcd.2.auto: new USB bus registered, assigned bus number 1
+[   17.503299] usbcore: registered new interface driver usbserial
+[   17.507859] usbcore: registered new interface driver usbserial_generic
+[   17.514368] usbserial: USB Serial support registered for generic
+[   17.534916] xhci-hcd xhci-hcd.2.auto: hcc params 0x0220f664 hci version 0x100 quirks 0x02010010
+[   17.542358] xhci-hcd xhci-hcd.2.auto: irq 284, io mem 0x1a300000
+[   17.582683] hub 1-0:1.0: USB hub found
+[   17.589280] hub 1-0:1.0: 1 port detected
+[   17.614676] xhci-hcd xhci-hcd.2.auto: xHCI Host Controller
+[   17.618777] xhci-hcd xhci-hcd.2.auto: new USB bus registered, assigned bus number 2
+[   17.706083] usb usb2: We don't know the algorithms for LPM for this host, disabling LPM.
+[   17.776717] hub 2-0:1.0: USB hub found
+[   17.803397] hub 2-0:1.0: 1 port detected
+[   18.020115] xt_time: kernel timezone is -0000
+[   18.050758] usbcore: registered new interface driver cdc_eem
+[   18.102295] xhci-hcd xhci-hcd.3.auto: xHCI Host Controller
+[   18.106384] xhci-hcd xhci-hcd.3.auto: new USB bus registered, assigned bus number 3
+[   18.134189] usbcore: registered new interface driver cdc_ether
+[   18.166347] usbcore: registered new interface driver cdc_ncm
+[   18.172173] xhci-hcd xhci-hcd.3.auto: hcc params 0x0220f664 hci version 0x100 quirks 0x02010010
+[   18.179529] xhci-hcd xhci-hcd.3.auto: irq 285, io mem 0x1a500000
+[   18.233720] hub 3-0:1.0: USB hub found
+[   18.251861] hub 3-0:1.0: 1 port detected
+[   18.260935] xhci-hcd xhci-hcd.3.auto: xHCI Host Controller
+[   18.265089] xhci-hcd xhci-hcd.3.auto: new USB bus registered, assigned bus number 4
+[   18.279517] usbcore: registered new interface driver huawei_cdc_ncm
+[   18.338970] usb usb4: We don't know the algorithms for LPM for this host, disabling LPM.
+[   18.395141] hub 4-0:1.0: USB hub found
+[   18.409988] hub 4-0:1.0: 1 port detected
+[   18.461376] PPP generic driver version 2.4.2
+[   18.503178] PPP MPPE Compression module registered
+[   18.508661] NET: Registered protocol family 24
+[   18.541883] PPTP driver version 0.8.5
+[   18.551219] usbcore: registered new interface driver qmi_wwan
+[   18.604653] usbcore: registered new interface driver rndis_host
+[   18.647184] usbcore: registered new interface driver sierra
+[   18.651486] usbserial: USB Serial support registered for Sierra USB modem
+[   18.693895] usbcore: registered new interface driver sierra_net
+[   18.701322] usbcore: registered new interface driver cdc_mbim
+[   18.768727] l2tp_ppp: PPPoL2TP kernel driver, V2.0
+[   18.815077] kmodloader: done loading kernel modules from /etc/modules.d/*
