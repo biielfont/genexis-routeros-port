@@ -11,6 +11,7 @@ hace bootm. No toca la NAND: todo va a RAM.
 
 import argparse
 import os
+import socket
 import sys
 import time
 
@@ -20,6 +21,24 @@ import tftplib
 PORT = "COM4"
 IMG = "uImage-563"
 LOG = "logs/try563_v2.log"
+PLACA = "192.168.1.1"          # U-Boot del ED500
+PC_POR_DEFECTO = "192.168.1.161"
+
+
+def ip_hacia(destino, por_defecto=PC_POR_DEFECTO):
+    """IP local que el sistema usaria para llegar a `destino`.
+
+    Asi el serverip no se queda clavado a una IP vieja (paso de .160 a .161).
+    No manda ningun paquete: connect() en UDP solo consulta la tabla de rutas.
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect((destino, 80))
+        return s.getsockname()[0]
+    except OSError:
+        return por_defecto
+    finally:
+        s.close()
 
 
 def abrir_puerto():
@@ -37,10 +56,13 @@ def abrir_puerto():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--horas", type=float, default=3.0)
+    ap.add_argument("--pc-ip", help="forzar mi IP (por defecto se detecta sola)")
     args = ap.parse_args()
 
     os.makedirs("logs", exist_ok=True)
-    log = open(LOG, "wb")
+    log = open(LOG, "ab")
+    log.write(f"\n\n### TANDA {time.strftime('%Y-%m-%d %H:%M:%S')} ###\n".encode())
+    log.flush()
 
     def w(b):
         log.write(b)
@@ -48,6 +70,9 @@ def main():
 
     def say(txt):
         print(txt, flush=True)
+
+    pc_ip = args.pc_ip or ip_hacia(PLACA)
+    say(f"U-Boot {PLACA}  ->  TFTP en {pc_ip}")
 
     # --- 1. TFTP ---
     puerto = tftplib.start("out", out=say)
@@ -94,7 +119,7 @@ def main():
 
             w(f"\n### PROMPT U-BOOT CAZADO (intento {intento}) ###\n".encode())
             say(f"prompt cazado (intento {intento}): cargando por TFTP")
-            _arrancar(s, rd, rd_until, w, say, puerto, tam)
+            _arrancar(s, rd, rd_until, w, say, puerto, tam, pc_ip)
 
             if time.time() >= limite:
                 break
@@ -121,7 +146,7 @@ def _cazar(s, rd, limite):
     return False
 
 
-def _arrancar(s, rd, rd_until, w, say, puerto, tam):
+def _arrancar(s, rd, rd_until, w, say, puerto, tam, pc_ip):
 
 
 
@@ -129,13 +154,29 @@ def _arrancar(s, rd, rd_until, w, say, puerto, tam):
     # fijar servidor y puerto, para no depender de lo que quede en el entorno
     s.write(b"setenv ipaddr 192.168.1.1\r")
     rd_until(b"#", 3)
-    s.write(b"setenv serverip 192.168.1.160\r")
+    s.write(b"setenv serverip " + pc_ip.encode() + b"\r")
+    w(f"### serverip = {pc_ip} ###\n".encode())
     rd_until(b"#", 3)
-    if puerto and puerto != 69:
-        s.write(b"setenv tftpdstp " + str(puerto).encode() + b"\r")
+    # el puerto se fija SIEMPRE: si el entorno guarda un tftpdstp viejo, el
+    # TFTP se iria a un puerto donde ya no escucha nadie. Y si no responde,
+    # probamos el otro puerto antes de rendirnos.
+    outs = [puerto] if puerto else [69]
+    if puerto != 6969:
+        outs.append(6969)
+    elif puerto != 69:
+        outs.append(69)
+
+    out = b""
+    for p in outs:
+        s.write(b"setenv tftpdstp " + str(p).encode() + b"\r")
         rd_until(b"#", 3)
-    s.write(b"tftpboot 0x80500000 " + IMG.encode() + b"\r")
-    out = rd_until(b"Bytes transferred", 60)
+        w(f"### probando TFTP en el puerto {p} ###\n".encode())
+        s.write(b"tftpboot 0x80500000 " + IMG.encode() + b"\r")
+        out = rd_until(b"Bytes transferred", 60)
+        if b"Bytes transferred" in out:
+            break
+        w(f"### TFTP sin respuesta en {p} ###\n".encode())
+        say(f"TFTP sin respuesta en el puerto {p}: pruebo el otro")
     w(b"\n### FIN TFTP ###\n")
 
     if b"Bytes transferred" not in out:
