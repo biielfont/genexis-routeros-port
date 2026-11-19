@@ -571,13 +571,18 @@ DTS_NORRLAND = "/opt/ros-port/linux-5.6.3/arch/mips/boot/dts/intel-mips/norrland
 
 
 def parche_nand_dts():
-    """El MX30LF1G18AC del ED500 no tiene ECC on-die.
+    """ECC y particiones del NAND del ED500.
 
     El dtsi de la familia (seale_avm) declara nand-ecc-mode = "on-die"
     pensando en el MX30LF1GE8AB de la FRITZ. En este chip nand_scan_tail
     cae en NAND_ECC_ON_DIE sin step-size y devuelve -EINVAL, asi que el
     controlador detecta el chip (128 MiB SLC) pero el probe falla. Se
     sobreescribe con BCH por software, que el core de 5.6 trae.
+
+    Ademas se declaran las dos particiones del firmware de Genexis:
+    uboot (1 MiB) y ubi (el resto). Sin nodo partitions el driver registra
+    el chip entero como mtd0 y no existen mtdblock0/1; con el, /proc/mtd y
+    los mtdblock se crean y la flash se puede inspeccionar sin escribir.
     """
     with open(DTS_NORRLAND) as f:
         src = f.read()
@@ -591,14 +596,34 @@ def parche_nand_dts():
         " * El NAND del ED500 es un Macronix MX30LF1G18AC: SLC de 128 MiB, 2 KiB\n"
         " * de pagina y 64 B de OOB, sin ECC interno. El \"on-die\" que pone el\n"
         " * dtsi de la familia es para el MX30LF1GE8AB de la FRITZ y aqui hace\n"
-        " * que nand_scan devuelva -EINVAL. BCH-8 por software: 4 pasos de 512 B\n"
-        " * piden 56 B de OOB, caben en los 64.\n"
+        " * que nand_scan devuelva -EINVAL.\n"
+        " *\n"
+        " * BCH-4 y no BCH-8: es el ECC con el que el U-Boot de Genexis escribio\n"
+        " * la UBI stock (el DTS original del ED500 declara strength 4). Si se\n"
+        " * lee con BCH-8 el layout del OOB no coincide y UBI no puede leer los\n"
+        " * headers EC/VID: el chip se detecta, pero los volumenes no montan.\n"
+        " * nand-on-flash-bbt usa la tabla de bloques malos que ya trae la flash.\n"
         " */\n"
         "&nand0 {\n"
         "\tnand-ecc-mode = \"soft\";\n"
         "\tnand-ecc-algo = \"bch\";\n"
         "\tnand-ecc-step-size = <512>;\n"
-        "\tnand-ecc-strength = <8>;\n"
+        "\tnand-ecc-strength = <4>;\n"
+        "\tnand-on-flash-bbt;\n"
+        "\tpartitions {\n"
+        "\t\tcompatible = \"fixed-partitions\";\n"
+        "\t\t#address-cells = <1>;\n"
+        "\t\t#size-cells = <1>;\n"
+        "\t\tpartition@0 {\n"
+        "\t\t\tlabel = \"uboot\";\n"
+        "\t\t\treg = <0x0 0x100000>;\n"
+        "\t\t\tread-only;\n"
+        "\t\t};\n"
+        "\t\tpartition@100000 {\n"
+        "\t\t\tlabel = \"ubi\";\n"
+        "\t\t\treg = <0x100000 0x7f00000>;\n"
+        "\t\t};\n"
+        "\t};\n"
         "};\n"
     )
 
@@ -613,18 +638,39 @@ def parche_nand_dts():
         prev = src.rfind("/*", 0, idx)
         if prev >= 0 and "El NAND del ED500" in src[prev:idx]:
             ini = prev
-        fin = src.find("};", idx)
+        # Emparejar llaves de verdad: el bloque lleva `partitions { ... };`
+        # dentro y un find("};" ) se paraba en el cierre interior, dejando
+        # el resto del nodo suelto y rompiendo el DTS.
+        abre = src.find("{", idx)
+        if abre < 0:
+            break
+        nivel = 0
+        fin = -1
+        for i in range(abre, len(src)):
+            if src[i] == "{":
+                nivel += 1
+            elif src[i] == "}":
+                nivel -= 1
+                if nivel == 0:
+                    fin = i + 1
+                    break
         if fin < 0:
             break
+        if fin < len(src) and src[fin] == ";":
+            fin += 1
         nl = src.find("\n", fin)
         fin = len(src) if nl < 0 else nl + 1
         src = src[:ini] + src[fin:]
+
+    if "ubi.mtd=ubi" not in src:
+        src = src.replace('mem=224M@512M"', 'mem=224M@512M ubi.mtd=ubi"')
+        print("dts: ubi.mtd=ubi en bootargs")
 
     src = src.rstrip("\n") + "\n\n" + nodo
 
     with open(DTS_NORRLAND, "w") as f:
         f.write(src)
-    print("dts: NAND del ED500 a ECC BCH-8 por software (al final del dts)")
+    print("dts: NAND del ED500 a ECC BCH-4 + BBT y particiones uboot/ubi")
     return True
 
 

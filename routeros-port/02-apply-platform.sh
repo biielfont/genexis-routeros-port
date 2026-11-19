@@ -3,7 +3,7 @@
 set -euo pipefail
 
 KDIR=/opt/ros-port/linux-5.6.3
-SRC=/mnt/c/Users/BFR/Documents/Genexis/routeros-port/tree
+SRC="$(cd "$(dirname "$0")" && pwd)/tree"
 
 echo "== copiando plataforma =="
 mkdir -p "$KDIR/arch/mips/intel-mips" "$KDIR/arch/mips/include/asm/mach-intel-mips"

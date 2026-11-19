@@ -37,7 +37,39 @@ if [ -f /ros.squashfs ]; then
 		mount -t tmpfs  tmpfs  $R/rw 2>/dev/null
 		mount -t tmpfs  tmpfs  $R/tmp 2>/dev/null
 		mount -t tmpfs  tmpfs  $R/flash/rw 2>/dev/null
-		[ -e $R/dev/flash ] || ln -sf /dev/mtdblock0 $R/dev/flash 2>/dev/null
+		# No crear /dev/flash a mano: flash.ko lo registra como misc
+		# (char device) y un symlink previo a /dev/mtdblock0 impide que
+		# devtmpfs cree el nodo correcto. mtdblock solo es la vision
+		# cruda de la NAND, no el /dev/flash que espera RouterOS.
+		echo "--- MTD del kernel ---"
+		if [ -r /proc/mtd ]; then sed 's/^/  /' /proc/mtd; else echo "  sin /proc/mtd"; fi
+		ls -l /dev/mtd* /dev/mtdblock* /dev/flash 2>&1 | sed 's/^/  /'
+		echo "--- UBI ---"
+		# Si el bootargs no trajo ubi.mtd=ubi, se adjunta a mano. El indice
+		# 1 es la particion "ubi" (mtd0 es uboot, de 1 MiB).
+		if [ ! -e /dev/ubi0 ]; then
+			if command -v ubiattach >/dev/null 2>&1; then
+				ubiattach -m 1 -d 0 2>&1 | sed 's/^/  /'
+			elif [ -x /bin/busybox ]; then
+				# En este initramfs no hay symlink del applet, pero el
+				# binario de BusyBox si lo trae.
+				/bin/busybox ubiattach -m 1 -d 0 2>&1 | sed 's/^/  /'
+			fi
+		fi
+		ls -l /dev/ubi* 2>&1 | sed 's/^/  /'
+		for d in /sys/class/ubi/ubi0_*; do
+			[ -r "$d/name" ] || continue
+			echo "  $(basename "$d"): $(cat "$d/name")"
+		done
+		for vol in rootfs_0 rootfs_1; do
+			mkdir -p "$R/mnt/$vol"
+			if mount -t ubifs -o ro "ubi0:$vol" "$R/mnt/$vol" 2>/tmp/ubi-$vol.err; then
+				echo "  UBI: $vol montado ro en $R/mnt/$vol"
+				ls "$R/mnt/$vol" 2>/dev/null | head -5 | sed 's/^/    /'
+			else
+				echo "  UBI: $vol no monta: $(cat /tmp/ubi-$vol.err 2>/dev/null)"
+			fi
+		done
 		# RouterOS calcula la validez de su licencia demo con el reloj del
 		# sistema. El GRX350 arranca sin RTC util y el kernel cae en 2010,
 		# con lo que RouterOS dice "Demo license expired!" y se para. Se

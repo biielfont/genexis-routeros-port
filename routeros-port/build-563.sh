@@ -4,25 +4,33 @@
 set -u
 T=/opt/ros-port/linux-5.6.3
 CROSS=/opt/toolchain/bin/mips-buildroot-linux-gnu-
-OUT=/mnt/c/Users/BFR/Documents/Genexis/routeros-port/out
+OUT="$(cd "$(dirname "$0")" && pwd)/out"
+# Hay que resolver la ruta del script ANTES de entrar en el arbol del kernel;
+# si se hace despues, dirname "./build-563.sh" apunta al kernel y no al proyecto.
+AQUI=$(cd "$(dirname "$0")" && pwd)
 
 cd "$T" || exit 1
 
 # arreglos de arranque (idempotentes): gancho netfilter a NULL, bus del switch
 # y reset del RCU visible en INTEL_MIPS
-AQUI=$(cd "$(dirname "$0")" && pwd)
 python3 "$AQUI/parche_arranque.py" || exit 1
 
 # el init del initramfs se mantiene en el proyecto (una sola copia buena)
-cp "$AQUI/init-initramfs.sh" /opt/ros-port/initramfs/init
-chmod 755 /opt/ros-port/initramfs/init
+cp "$AQUI/init-initramfs.sh" /opt/ros-port/initramfs/init || {
+  echo "init FALLO: no se pudo copiar al initramfs"
+  exit 1
+}
+chmod 755 /opt/ros-port/initramfs/init || exit 1
 # rootfs de RouterOS (squashfs extraido del npk oficial mipsbe)
-if [ -f "$AQUI/ros/rootfs.squashfs" ]; then
-  cp "$AQUI/ros/rootfs.squashfs" /opt/ros-port/initramfs/ros.squashfs
-  echo "initramfs: rootfs de RouterOS incluido"
-else
-  rm -f /opt/ros-port/initramfs/ros.squashfs
+if [ ! -s "$AQUI/ros/rootfs.squashfs" ]; then
+  echo "rootfs FALLO: falta $AQUI/ros/rootfs.squashfs"
+  exit 1
 fi
+cp "$AQUI/ros/rootfs.squashfs" /opt/ros-port/initramfs/ros.squashfs || {
+  echo "rootfs FALLO: no se pudo copiar al initramfs"
+  exit 1
+}
+echo "initramfs: rootfs de RouterOS incluido"
 
 # herramienta de diagnostico del PHY (lee BMCR/BMSR por MDIO)
 ${CROSS}gcc -static -O2 -o /opt/ros-port/initramfs/bin/phyreg "$AQUI/phyreg.c" \
@@ -64,6 +72,14 @@ scripts/config \
   --enable OVERLAY_FS \
   --enable MTD_NAND_LANTIQ_XRX500 \
   --enable MTD_OF_PARTS \
+  --enable MTD_UBI \
+  --enable MTD_UBI_BLOCK \
+  --enable UBIFS_FS \
+  --enable UBIFS_FS_ADVANCED_COMPR \
+  --enable UBIFS_FS_LZO \
+  --enable UBIFS_FS_ZLIB \
+  --enable UBIFS_FS_ZSTD \
+  --enable LZO_DECOMPRESS \
   --enable TMPFS \
   --enable SQUASHFS \
   --enable SQUASHFS_XZ \
@@ -96,30 +112,82 @@ scripts/config \
   --enable INTEL_XWAY_PHY \
   --enable DEVMEM
 
-make ARCH=mips CROSS_COMPILE=$CROSS olddefconfig > /opt/olddef.log 2>&1
-echo "olddefconfig=$?"
+if ! make ARCH=mips CROSS_COMPILE=$CROSS olddefconfig > /opt/olddef.log 2>&1; then
+  echo "olddefconfig FALLO"
+  tail -20 /opt/olddef.log
+  exit 1
+fi
+echo "olddefconfig=0"
 
-for s in CONFIG_BINFMT_SCRIPT CONFIG_RESET_CONTROLLER CONFIG_RESET_LANTIQ CONFIG_POWER_RESET CONFIG_POWER_RESET_SYSCON CONFIG_NET_DSA_TAG_GSWIP3 CONFIG_NET_DSA_TAG_GSWIP CONFIG_FUTEX CONFIG_EPOLL CONFIG_EVENTFD CONFIG_TIMERFD CONFIG_POSIX_TIMERS CONFIG_NETFILTER CONFIG_NF_CONNTRACK CONFIG_MULTIUSER CONFIG_BRIDGE CONFIG_SHMEM CONFIG_BLOCK CONFIG_IP_ADVANCED_ROUTER CONFIG_TMPFS CONFIG_SQUASHFS CONFIG_SQUASHFS_XZ CONFIG_BLK_DEV_LOOP CONFIG_INOTIFY_USER CONFIG_SYSVIPC CONFIG_FHANDLE CONFIG_IP_MULTIPLE_TABLES CONFIG_MIPS_FP_SUPPORT CONFIG_FW_LOADER CONFIG_EXTRA_FIRMWARE CONFIG_INTEL_GRX500_CGU_CLK CONFIG_SERIAL_LANTIQ CONFIG_NET_DSA CONFIG_NET_DSA_XR_GSWIP CONFIG_INTEL_XRX500_NET CONFIG_INTEL_XRX500_BM CONFIG_INTEL_XRX500_CBM_CONDUIT CONFIG_INTEL_XWAY_PHY; do
-  echo "$s -> $(grep "^$s=" .config || echo NO)"
+for s in CONFIG_BINFMT_SCRIPT CONFIG_RESET_CONTROLLER CONFIG_RESET_LANTIQ CONFIG_POWER_RESET CONFIG_POWER_RESET_SYSCON CONFIG_NET_DSA_TAG_GSWIP3 CONFIG_NET_DSA_TAG_GSWIP CONFIG_FUTEX CONFIG_EPOLL CONFIG_EVENTFD CONFIG_TIMERFD CONFIG_POSIX_TIMERS CONFIG_NETFILTER CONFIG_NF_CONNTRACK CONFIG_MULTIUSER CONFIG_BRIDGE CONFIG_SHMEM CONFIG_BLOCK CONFIG_IP_ADVANCED_ROUTER CONFIG_TMPFS CONFIG_SQUASHFS CONFIG_SQUASHFS_XZ CONFIG_BLK_DEV_LOOP CONFIG_INOTIFY_USER CONFIG_SYSVIPC CONFIG_FHANDLE CONFIG_IP_MULTIPLE_TABLES CONFIG_MIPS_FP_SUPPORT CONFIG_FW_LOADER CONFIG_EXTRA_FIRMWARE CONFIG_INTEL_GRX500_CGU_CLK CONFIG_SERIAL_LANTIQ CONFIG_NET_DSA CONFIG_NET_DSA_XR_GSWIP CONFIG_INTEL_XRX500_NET CONFIG_INTEL_XRX500_BM CONFIG_INTEL_XRX500_CBM_CONDUIT CONFIG_INTEL_XWAY_PHY CONFIG_MTD CONFIG_MTD_BLOCK CONFIG_MTD_RAW_NAND CONFIG_MTD_NAND_CORE CONFIG_MTD_NAND_ECC_SW_HAMMING CONFIG_MTD_NAND_ECC_SW_BCH CONFIG_MTD_NAND_LANTIQ_XRX500 CONFIG_MTD_OF_PARTS CONFIG_MTD_UBI CONFIG_MTD_UBI_BLOCK CONFIG_UBIFS_FS CONFIG_UBIFS_FS_ADVANCED_COMPR CONFIG_UBIFS_FS_LZO CONFIG_UBIFS_FS_ZLIB CONFIG_UBIFS_FS_ZSTD CONFIG_BCH CONFIG_LZO_DECOMPRESS CONFIG_DEVTMPFS; do
+  if ! grep -q "^$s=" .config; then
+    echo "CONFIG FALLO: $s"
+    exit 1
+  fi
+  echo "$s -> $(grep "^$s=" .config)"
 done
+
+if ! grep -q '^CONFIG_INITRAMFS_SOURCE="/opt/ros-port/initramfs"' .config; then
+  echo "CONFIG FALLO: INITRAMFS_SOURCE no apunta a /opt/ros-port/initramfs"
+  exit 1
+fi
 
 echo "== compilando vmlinux =="
 make ARCH=mips CROSS_COMPILE=$CROSS -j4 vmlinux > /opt/build563.log 2>&1
 rc=$?
 echo "build=$rc"
-grep -E "error:|Error [0-9]" /opt/build563.log | head -8
-
-if [ -f vmlinux ]; then
-  ls -l vmlinux | awk '{print "vmlinux:", $5, "bytes"}'
-  ENTRY=$(${CROSS}readelf -h vmlinux | awk '/Entry point/{print $4}')
-  echo "entry=$ENTRY"
-  ${CROSS}objcopy -O binary vmlinux /tmp/vmlinux.bin
-  mkimage -A mips -O linux -T kernel -C none -a 0x80500000 -e "$ENTRY" \
-          -n "Linux 5.6.3 ED500 (RouterOS base)" \
-          -d /tmp/vmlinux.bin "$OUT/uImage-563" > /dev/null 2>&1
-  if [ -f "$OUT/uImage-563" ]; then
-    ls -l "$OUT/uImage-563" | awk '{print "uImage:", $5, "bytes"}'
-  else
-    echo "mkimage FALLO"
-  fi
+if [ "$rc" -ne 0 ]; then
+  grep -E "error:|Error [0-9]" /opt/build563.log | head -8
+  echo "build FALLO: no se genera uImage"
+  exit 1
 fi
+
+if [ ! -s vmlinux ]; then
+  echo "vmlinux FALLO: no existe o esta vacio"
+  exit 1
+fi
+
+# El DTB va embebido en vmlinux: comprobar que es el de BCH-4/BBT/UBI y no
+# uno viejo de una compilacion anterior.
+DTB="$T/arch/mips/boot/dts/intel-mips/norrland.dtb"
+if [ ! -s "$DTB" ]; then
+  echo "DTB FALLO: no existe $DTB"
+  exit 1
+fi
+if ! "$T/scripts/dtc/dtc" -I dtb -O dts "$DTB" 2>/dev/null | grep -q "nand-ecc-strength = <0x04>"; then
+  echo "DTB FALLO: no tiene BCH-4"
+  exit 1
+fi
+if ! "$T/scripts/dtc/dtc" -I dtb -O dts "$DTB" 2>/dev/null | grep -q "nand-on-flash-bbt"; then
+  echo "DTB FALLO: no tiene nand-on-flash-bbt"
+  exit 1
+fi
+if ! "$T/scripts/dtc/dtc" -I dtb -O dts "$DTB" 2>/dev/null | grep -q "ubi.mtd=ubi"; then
+  echo "DTB FALLO: no tiene ubi.mtd=ubi"
+  exit 1
+fi
+echo "dtb: BCH-4 + BBT + ubi.mtd=ubi"
+
+ls -l vmlinux | awk '{print "vmlinux:", $5, "bytes"}'
+ENTRY=$(${CROSS}readelf -h vmlinux | awk '/Entry point/{print $4}')
+if [ -z "$ENTRY" ]; then
+  echo "ENTRY FALLO: readelf no devolvio entry point"
+  exit 1
+fi
+echo "entry=$ENTRY"
+if ! ${CROSS}objcopy -O binary vmlinux /tmp/vmlinux.bin; then
+  echo "objcopy FALLO"
+  exit 1
+fi
+rm -f "$OUT/uImage-563"
+if ! mkimage -A mips -O linux -T kernel -C none -a 0x80500000 -e "$ENTRY" \
+        -n "Linux 5.6.3 ED500 (RouterOS base)" \
+        -d /tmp/vmlinux.bin "$OUT/uImage-563" > /dev/null 2>&1; then
+  echo "mkimage FALLO"
+  exit 1
+fi
+if [ ! -s "$OUT/uImage-563" ]; then
+  echo "uImage FALLO: no se creo"
+  exit 1
+fi
+ls -l "$OUT/uImage-563" | awk '{print "uImage:", $5, "bytes"}'

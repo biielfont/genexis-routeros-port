@@ -11,7 +11,7 @@
 set -u
 
 K=/opt/ros-port/malta-clean
-OUT=/mnt/c/Users/BFR/Documents/Genexis/routeros-port/out
+OUT="$(cd "$(dirname "$0")" && pwd)/out"
 LOG=/opt/ros-port/qemu-malta.log
 
 [ -f "$K/vmlinux" ] || { echo "falta $K/vmlinux: compila primero el arbol malta"; exit 1; }

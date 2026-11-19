@@ -21,4 +21,9 @@ routeros-port/out/ED500-*.y3
 .idea/
 .DS_Store
 Thumbs.db
-*.log.bak
+*.log.bak
+
+# Build outputs and logs from the port (never commit firmware or dumps)
+routeros-port/out/
+routeros-port/logs/
+routeros-port/ros/

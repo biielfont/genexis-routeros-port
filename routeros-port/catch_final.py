@@ -18,7 +18,7 @@ import time
 import serial
 import tftplib
 
-PORT = "COM4"
+PORT = os.environ.get("ED500_PORT", "COM4")
 IMG = "uImage-563"
 LOG = "logs/try563_v2.log"
 PLACA = "192.168.1.1"          # U-Boot del ED500
@@ -57,6 +57,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--horas", type=float, default=3.0)
     ap.add_argument("--pc-ip", help="forzar mi IP (por defecto se detecta sola)")
+    ap.add_argument("--seguir", action="store_true",
+                    help="seguir vigilando tras arrancar (no libera COM4)")
     args = ap.parse_args()
 
     os.makedirs("logs", exist_ok=True)
@@ -119,7 +121,15 @@ def main():
 
             w(f"\n### PROMPT U-BOOT CAZADO (intento {intento}) ###\n".encode())
             say(f"prompt cazado (intento {intento}): cargando por TFTP")
-            _arrancar(s, rd, rd_until, w, say, puerto, tam, pc_ip)
+            ok = _arrancar(s, rd, rd_until, w, say, puerto, tam, pc_ip,
+                           post=300 if args.seguir else 45)
+            if not ok:
+                say("no se pudo cargar la imagen; sigo esperando U-Boot...")
+                continue
+
+            if not args.seguir:
+                say("imagen arrancada; libero COM4 para que puedas usar la consola")
+                break
 
             if time.time() >= limite:
                 break
@@ -146,7 +156,7 @@ def _cazar(s, rd, limite):
     return False
 
 
-def _arrancar(s, rd, rd_until, w, say, puerto, tam, pc_ip):
+def _arrancar(s, rd, rd_until, w, say, puerto, tam, pc_ip, post=45):
 
 
 
@@ -182,7 +192,7 @@ def _arrancar(s, rd, rd_until, w, say, puerto, tam, pc_ip):
     if b"Bytes transferred" not in out:
         w(b"\n### TFTP NO CONFIRMADO ###\n")
         say("TFTP no confirmo la transferencia; no arranco")
-        return
+        return False
 
     # --- 4. comprobar tamano ---
     try:
@@ -192,15 +202,15 @@ def _arrancar(s, rd, rd_until, w, say, puerto, tam, pc_ip):
         n = -1
     if tam and n not in (-1, tam):
         w(f"\n### TAMANO DISTINTO: {n} != {tam} ###\n".encode())
-        say(f"AVISO: transferidos {n} bytes, el fichero tiene {tam}")
-    else:
-        say(f"transferidos {n} bytes (coincide)")
+        say(f"ERROR: transferidos {n} bytes, el fichero tiene {tam}; no arranco")
+        return False
+    say(f"transferidos {n} bytes (coincide)")
 
     # --- 5. arrancar ---
     say("bootm...")
     time.sleep(0.3)
     s.write(b"bootm 0x80500000\r")
-    salida = rd(300)
+    salida = rd(post)
     w(b"\n### FIN bootm ###\n")
 
     # --- 6. veredicto, para no tener que leer el log entero ---
@@ -208,6 +218,7 @@ def _arrancar(s, rd, rd_until, w, say, puerto, tam, pc_ip):
     w(f"\n### VEREDICTO: {veredicto} ###\n".encode())
     say(f"veredicto: {veredicto}")
     say(f"consola completa en {LOG}")
+    return True
 
 
 def _veredicto(salida):
@@ -220,11 +231,21 @@ def _veredicto(salida):
     if b"Kernel panic" in salida:
         return "arranco e hizo PANIC"
     partes = ["arranco"]
-    for clave, txt in ((b"gswip", "switch"), (b"lan1", "lan1"),
-                       (b"red: ", "red"), (b"web: http", "http")):
+    for clave, txt in (
+            (b"Bad block table found", "BBT"),
+            (b"ubi0: attached", "ubi"),
+            (b"UBI: rootfs_0 montado", "rootfs_0"),
+            (b"UBI: rootfs_1 montado", "rootfs_1"),
+            (b"gswip", "switch"),
+            (b"lan1", "lan1"),
+            (b"red: ", "red"),
+            (b"web: http", "http"),
+            (b"--- shell dentro de RouterOS ---", "shell"),
+    ):
         if clave in salida:
             partes.append(txt)
-    if b"Kernel panic" not in salida and b"red: 192.168" in salida:
+    if b"Kernel panic" not in salida and b"red: 192.168" in salida \
+            and "shell" not in partes:
         partes.append("shell")
     return " + ".join(partes)
 

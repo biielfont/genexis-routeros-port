@@ -1,0 +1,62 @@
+name: Reporte de hardware
+description: Resultado de arrancar el port en un ED500 real.
+title: "[hw] "
+labels: ["hardware"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Este reporte es muy valioso. No publiques números de serie, MACs, IPs
+        públicas, backups de NAND ni el rootfs de RouterOS.
+  - type: input
+    id: board
+    attributes:
+      label: Placa / revisión
+      description: Modelo y revisión visible; no hace falta el número de serie.
+      placeholder: Genexis Pure ED500 (GRX350)
+    validations:
+      required: true
+  - type: input
+    id: uboot
+    attributes:
+      label: Versión de U-Boot
+      description: La línea `U-Boot ...` del arranque.
+    validations:
+      required: true
+  - type: dropdown
+    id: method
+    attributes:
+      label: Método
+      options:
+        - TFTP a RAM (catch_final.py)
+        - TFTP manual desde U-Boot
+        - uboot_cycle.py
+        - otro
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Resultado
+      description: ¿Llegó a kernel, NAND/UBI, rootfs, shell? ¿Qué falló?
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log redactado
+      description: Solo las líneas relevantes, sin datos sensibles.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Seguridad
+      options:
+        - label: No he escrito en NAND para esta prueba.
+          required: true
+        - label: He redactado IPs, MACs y números de serie.
+          required: true
+        - label: El router sigue pudiendo arrancar su firmware original.
+          required: true

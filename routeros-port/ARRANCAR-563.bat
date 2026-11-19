@@ -12,7 +12,7 @@ echo  2. Sirve uImage-563 por TFTP (puerto 69 o, si esta ocupado, 6969).
 echo  3. Cuando enciendas la placa, caza U-Boot y arranca el kernel.
 echo  4. Todo queda en: logs\try563_v2.log
 echo.
-echo  Cable: COM4 a 115200. Red: LAN (PC en 192.168.1.160)
+echo  Cable: COM4 a 115200. Red: LAN (mi IP se detecta sola)
 echo  Ojo: si otra ventana tiene COM4 abierto, cierrala antes.
 echo.
 pause

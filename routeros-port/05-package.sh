@@ -5,7 +5,7 @@
 set -eu
 
 K=/opt/ros-port/linux-5.6.3
-OUT=/mnt/c/Users/BFR/Documents/Genexis/routeros-port/out
+OUT="$(cd "$(dirname "$0")" && pwd)/out"
 CROSS=/opt/toolchain/bin/mips-buildroot-linux-gnu-
 
 [ -f "$K/vmlinux" ] || { echo "falta $K/vmlinux: ejecuta antes 04-build-initramfs.sh"; exit 1; }

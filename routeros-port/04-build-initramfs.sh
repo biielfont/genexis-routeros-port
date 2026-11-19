@@ -11,7 +11,7 @@
 set -u
 
 K=/opt/ros-port/linux-5.6.3
-SRC=/mnt/c/Users/BFR/Documents/Genexis/routeros-port
+SRC="$(cd "$(dirname "$0")" && pwd)"
 CROSS=/opt/toolchain/bin/mips-buildroot-linux-gnu-
 LOG=/opt/ros-port/build5.log
 BBVER=1.36.1

@@ -1,5 +1,5 @@
 #!/bin/bash
-R=/mnt/c/Users/BFR/Documents/Genexis/routeros-port/ros/rootfs
+R="$(cd "$(dirname "$0")" && pwd)/ros/rootfs"
 cd "$R" || exit 1
 for f in nova/bin/cerm nova/bin/loader sbin/sysinit bin/shell; do
     echo "=== $f ==="
