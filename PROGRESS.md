@@ -8,7 +8,7 @@ The map is generated from [progress.json](routeros-port/progress.json) by
 
 > The percentage tracks verified engineering milestones, not lines of code or
 > overall RouterOS usability. RouterOS and its root filesystem are MikroTik
-> software; this repository does not redistribute them or bypass licensing.
+> software and are not included in this repository.
 
 ## Reading the map
 
@@ -115,23 +115,16 @@ platform components, not an additional `insmod` step.
 ### 6. Networking in RouterOS — 1/20
 
 Linux Ethernet is verified, but RouterOS network modules do not link because
-they require MikroTik fastpath components. The project does not redistribute
-proprietary binaries or bypass those dependencies.
+they require MikroTik fastpath components that are not available in this port.
 
 ### 7. RouterOS license — 0/10
 
-RouterOS reports `Demo license expired!`. The recorded diagnostic says
-`getHardwareID` cannot obtain the expected disk identity from
-`/dev/mtdblock0`; this ED500 has Genexis/Adamo firmware in NAND. This repository
-does not provide license patches, key generators, software-ID modifications,
-or instructions to evade the check. Use RouterOS only with a valid license for
-the hardware.
+See the current license-status note under [Current blockers](#current-blockers).
 
 ### 8. Persistent installation/`.y3` — 1/5
 
 The `.y3` format has been investigated, but a persistent installation has not
-been tested. The project does not provide a NAND-writing procedure. See
-[FLASH-Y3.md](routeros-port/docs/FLASH-Y3.md) for a non-operational summary.
+been tested. See [FLASH-Y3.md](routeros-port/docs/FLASH-Y3.md) for a summary.
 
 ### 9. Remote tools and documentation — 5/5
 
@@ -151,26 +144,22 @@ not resolve this separate dependency.
 ### License and software ID
 
 The documented `getHardwareID` error and expired demo license are licensing
-status, not a NAND ECC or UBI issue. There is no evidence in these documents
-that a key generator failed to write NAND; the current project workflow is
-read-only and does not attempt such a write.
+status, not a NAND ECC or UBI issue. The current project workflow reads NAND
+but does not write it.
 
 ### NAND persistence
 
 TFTP boot is temporary. No `.y3` write, NAND update, or recovery has been
-verified. Do not treat the historical format research as an installation
-procedure.
+verified.
 
 ## Next milestones
 
 | Milestone | Current | Target | Requirement |
 |---|---:|---:|---|
-| RouterOS networking | 5% | 100% | A lawful, compatible implementation of the required components |
-| RouterOS licensing | 0% | — | A valid license for the hardware; license bypass is out of scope |
+| RouterOS networking | 5% | 100% | A compatible implementation of the required components |
+| RouterOS license status | 0% | — | Hardware identity is not recognized in the current test |
 | Persistent installation | 20% | 100% | Backup, geometry, recovery plan, and controlled validation |
 | Final artifact tested | Pending | Verified | Boot `out/uImage-563` and record results |
-
-Do not increase a milestone without reproducible evidence.
 
 ## Current artifact
 
@@ -249,14 +238,13 @@ python uboot_cycle.py status
 python uboot_cycle.py cycle
 ```
 
-See [NAND-UBI.md](routeros-port/docs/NAND-UBI.md) for read-only checks. Do not
-write NAND.
+See [NAND-UBI.md](routeros-port/docs/NAND-UBI.md) for read-only checks.
 
 ## Not tested
 
 - The final `out/uImage-563` has not been booted on hardware.
 - NAND writes, `.y3` installation, and recovery have not been tested.
-- A valid RouterOS license has not been verified on this device.
+- RouterOS license validation is incomplete on this device.
 - RouterOS networking has not been tested because required components are
   unavailable.
 - Logs containing IP addresses or MAC addresses are not included.

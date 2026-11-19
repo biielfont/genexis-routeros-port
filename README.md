@@ -10,9 +10,7 @@ without writing flash.
 
 > **Independent project; no MikroTik software is included.** This project is
 > not affiliated with MikroTik, Genexis, or Intel/Lantiq. RouterOS packages and
-> root filesystems must be obtained separately under MikroTik's terms. This
-> repository does not provide license patches, key generators, or license
-> bypasses.
+> root filesystems must be obtained separately under MikroTik's terms.
 
 ## Current status
 
@@ -50,8 +48,7 @@ version-controlled data and is embedded here and in [PROGRESS.md](PROGRESS.md).
   fastpath symbols and a switch driver for MikroTik hardware.
 - RouterOS reports `Demo license expired!`. The documented `getHardwareID`
   failure is that the expected MikroTik disk identity is unavailable from
-  `/dev/mtdblock0`; the ED500 NAND contains Genexis/Adamo firmware. The
-  repository does not establish a key-generator or NAND-write failure.
+  `/dev/mtdblock0`; the ED500 NAND contains Genexis/Adamo firmware.
 - Persistent installation has not been tested. The current workflow boots to
   RAM and does not write NAND.
 - The final `out/uImage-563` artifact needs another on-device test; the latest
@@ -181,7 +178,6 @@ describe it as verified until the exact image has been booted and checked.
 
 - RouterOS, `.npk` files, root filesystems, and NAND dumps are not included or
   redistributed.
-- No license patch, key generator, or license bypass is provided.
 - The default boot path is RAM/TFTP. Do not write to NAND without a verified
   backup and a recovery plan.
 - Sanitize logs before attaching them to issues.

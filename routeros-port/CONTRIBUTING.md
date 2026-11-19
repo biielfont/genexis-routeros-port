@@ -17,8 +17,6 @@ Do not submit:
 
 - `.npk` files, root filesystems, NAND dumps, proprietary firmware, or other
   MikroTik or Genexis software.
-- Key generators, license patches, software-ID bypasses, or instructions to
-  evade license checks.
 - Credentials, public IP addresses, MAC addresses, serial numbers, or personal
   backups.
 

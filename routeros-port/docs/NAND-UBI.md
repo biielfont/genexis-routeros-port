@@ -73,15 +73,13 @@ assume volume indices are the same on every device; inspect
   read-only access to the stock root filesystem.
 - **Not verified:** NAND writes, persistent installation, or recovery after a
   write. TFTP boot does not write NAND.
-- **License:** RouterOS reports that it cannot obtain the expected disk
-  identity from `/dev/mtdblock0`; the ED500 NAND contains Genexis/Adamo
-  firmware. The current documentation records `Demo license expired!`.
-  This does not establish a key-generator or NAND-write failure.
+- **RouterOS status:** `getHardwareID` cannot obtain the expected disk identity
+  from `/dev/mtdblock0`; the ED500 NAND contains Genexis/Adamo firmware. The
+  observed result is `Demo license expired!`.
 
-## NAND safety
+## Persistent installation
 
-This repository does not provide a NAND-writing procedure. Do not attempt
-experimental writes. A persistent installation would require a verified full
-backup, a confirmed partition/UBI map, a compatible image, and a tested recovery
-plan. The `.y3` research status is summarized in [FLASH-Y3.md](FLASH-Y3.md);
-the supported workflow remains TFTP to RAM.
+Persistent installation has not been tested. It would require a verified full
+backup, a confirmed partition/UBI map, a compatible image, and a recovery plan.
+The `.y3` research status is summarized in [FLASH-Y3.md](FLASH-Y3.md); the
+current workflow is TFTP to RAM.

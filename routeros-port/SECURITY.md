@@ -5,7 +5,6 @@
 - A defect that could prevent the device from booting, such as an unsafe NAND
   write or a failed reset.
 - Exposed credentials, keys, personal logs, or backups.
-- A license bypass or instructions that enable one.
 
 ## How to report
 

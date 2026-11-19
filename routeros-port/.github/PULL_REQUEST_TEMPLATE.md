@@ -17,7 +17,6 @@
 
 - [ ] No `.npk`, rootfs, NAND dumps, or proprietary software included.
 - [ ] No credentials, IP addresses, MAC addresses, or serial numbers included.
-- [ ] No license bypass or instructions to evade licensing included.
 - [ ] NAND-related changes explain backup, geometry, and recovery plans.
 
 ## Not tested

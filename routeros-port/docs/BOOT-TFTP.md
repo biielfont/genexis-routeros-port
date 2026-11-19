@@ -53,8 +53,8 @@ and check that the PC firewall permits the transfer.
 
 The console should show the kernel booting, the GSWIP switch probe, and the
 RouterOS root filesystem reaching the `~ #` inspection shell. This is not the
-full RouterOS CLI. The license check runs separately, and RouterOS networking
-remains unavailable because required network components are missing.
+full RouterOS CLI. RouterOS networking remains unavailable because required
+network components are missing.
 
 ## Remote reset
 

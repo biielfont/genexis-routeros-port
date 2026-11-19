@@ -7,8 +7,8 @@ The map is generated from [`progress.json`](../progress.json) by
 [`tools/progress.py`](../tools/progress.py).
 
 The percentage reflects engineering milestones, not overall RouterOS
-usability. RouterOS and its root filesystem are MikroTik software; this
-repository does not redistribute them or bypass licensing.
+usability. RouterOS and its root filesystem are MikroTik software and are not
+included in this repository.
 
 ## Summary
 
@@ -40,8 +40,7 @@ repository does not redistribute them or bypass licensing.
   platform components that are not available in this repository.
 - RouterOS reports `Demo license expired!`. `getHardwareID` is documented as
   unable to obtain the expected disk identity from `/dev/mtdblock0`; the NAND
-  contains Genexis/Adamo firmware. These documents do not establish that a
-  key generator failed to write NAND. The current workflow does not write NAND.
+  contains Genexis/Adamo firmware. The current workflow does not write NAND.
 - Persistent installation and recovery have not been tested.
 - The final `out/uImage-563` artifact needs another on-device test; previous
   recorded tests used builds #29/#62.

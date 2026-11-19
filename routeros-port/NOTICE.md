@@ -26,9 +26,8 @@ compatibility.
 
 ## RouterOS licensing
 
-This repository does not provide or seek to provide a way to bypass RouterOS
-licensing. `Demo license expired!` is the expected result without a valid
-license for the hardware. Use RouterOS only with a valid MikroTik license.
+The current ED500 test reports `Demo license expired!`. This status is separate
+from the kernel, NAND-read, and boot results described elsewhere.
 
 ## Security
 

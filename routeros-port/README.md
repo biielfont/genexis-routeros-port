@@ -11,8 +11,7 @@ TFTP to RAM without writing flash.
 > **Independent project.** Not affiliated with MikroTik, Genexis, or
 > Intel/Lantiq. This repository does not include or redistribute MikroTik
 > software. Obtain RouterOS packages and the root filesystem under MikroTik's
-> terms. Use RouterOS only with a valid license for the hardware; no license
-> bypass is provided here.
+> terms.
 
 ## Overview
 
@@ -39,7 +38,7 @@ not a complete alternative firmware.
 - **License status:** RouterOS reports `Demo license expired!`. The recorded
   `getHardwareID` diagnostic cannot obtain the expected disk identity from
   `/dev/mtdblock0`; the NAND contains Genexis/Adamo firmware. The repository
-  does not establish a key-generator or NAND-write failure.
+  records no further license validation on this device.
 - **Persistence:** not tested. The current method is TFTP to RAM; NAND is not
   written.
 - **Artifact:** `out/uImage-563` builds with `build-563.sh`, but needs another
@@ -120,7 +119,6 @@ python uboot_cycle.py watch --horas 6
 
 - RouterOS, `.npk` files, root filesystems, and NAND dumps are not included or
   redistributed.
-- No license patch, key generator, or license bypass is provided.
 - The default boot method is TFTP to RAM. Do not write NAND without a verified
   backup and a recovery plan.
 - Sanitize logs before publishing them.

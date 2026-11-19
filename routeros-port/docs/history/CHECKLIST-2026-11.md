@@ -36,8 +36,3 @@ included in later builds.
 This checklist does not establish that the final `uImage-563` has been tested.
 The latest recorded hardware results used earlier builds (#29/#62). No NAND
 write was part of the TFTP test.
-
-## Licensing note
-
-The earlier investigation noted that RouterOS may require a license tied to
-hardware. This project does not patch licensing or bypass a license check.

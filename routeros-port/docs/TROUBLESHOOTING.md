@@ -34,7 +34,6 @@ The catcher sets `ipaddr` and `serverip`. For a different PC network, pass
 | Hang after `MIPS: machine is...` | Clock or GIC configuration issue | Review the DTB and use a previously verified image |
 | Panic during rootfs startup | Init, overlay, or UBI issue | Check the console and `dmesg` |
 | `Attempted to kill init` | The inspection shell exited while running as PID 1 | Do not use `switch_root` with a shell as init |
-| `Demo license expired` | No valid license is available for this hardware | This is separate from boot and NAND-read support |
 
 ## NAND and UBI
 
@@ -54,8 +53,7 @@ See [NAND-UBI.md](NAND-UBI.md) for geometry and read-only checks.
 |---|---|---|
 | `Unknown symbol` loading `packet_hook`, `switch`, or `bridge2` | RouterOS modules depend on unavailable MikroTik fastpath symbols | This is not fixed by another `insmod`; no proprietary binaries are included |
 | `phy_helper: Unknown symbol ...` | Module depends on symbols not exported by this kernel | Record the diagnostic; do not treat it as a configuration issue |
-| `getHardwareID: could not get disk /dev/mtdblock0` | RouterOS cannot find the expected MikroTik disk identity on this device | The current NAND is Genexis/Adamo firmware; this does not establish a license workaround |
-| `Demo license expired!` | No valid RouterOS license for this hardware | Use a valid license; this repository does not bypass licensing |
+| `getHardwareID: could not get disk /dev/mtdblock0` / `Demo license expired!` | RouterOS cannot obtain the expected disk identity | The current NAND contains Genexis/Adamo firmware |
 | `applet not found` in the inspection shell | BusyBox applet lookup uses `argv[0]` | Invoke the `busybox` binary directly |
 | Overlay reports missing xattrs | Upper layer is tmpfs without xattr support | Informational; some overlay features are unavailable |
 
