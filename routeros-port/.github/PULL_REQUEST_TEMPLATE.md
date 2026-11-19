@@ -1,25 +1,25 @@
-## Qué cambia
+## What changed
 
-<!-- Una o dos frases. Enlaza el issue si existe. -->
+<!-- Briefly describe the change and link an issue if applicable. -->
 
-## Por qué
+## Why
 
-<!-- El problema que resuelve y cómo lo has comprobado. -->
+<!-- Describe the problem and how you verified the change. -->
 
-## Pruebas
+## Tests
 
-- [ ] `sudo bash build-563.sh` (si toca kernel/init)
-- [ ] Arranque por TFTP en hardware (si toca kernel/init)
-- [ ] `python3 tools/progress.py` (si toca `progress.json`; regenera `progress.svg`)
-- [ ] Enlaces/documentación revisados
+- [ ] `sudo bash build-563.sh` (if kernel or initramfs changes)
+- [ ] TFTP boot on hardware (if kernel or initramfs changes)
+- [ ] `python3 tools/progress.py` (if `progress.json` changes)
+- [ ] Documentation links reviewed
 
-## Checklist legal y de seguridad
+## Legal and security checklist
 
-- [ ] No incluyo `.npk`, rootfs, volcados de NAND ni software propietario.
-- [ ] No incluyo credenciales, IPs, MACs ni números de serie.
-- [ ] No incluyo un bypass de licencia ni instrucciones para evitarla.
-- [ ] Si toca NAND, explico backup, geometría y plan de recuperación.
+- [ ] No `.npk`, rootfs, NAND dumps, or proprietary software included.
+- [ ] No credentials, IP addresses, MAC addresses, or serial numbers included.
+- [ ] No license bypass or instructions to evade licensing included.
+- [ ] NAND-related changes explain backup, geometry, and recovery plans.
 
-## Lo que no he podido probar
+## Not tested
 
-<!-- Sé explícito; es mejor que dar por hecho una prueba que no existe. -->
+<!-- State clearly what you could not test. -->

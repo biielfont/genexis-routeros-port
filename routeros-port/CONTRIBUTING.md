@@ -1,71 +1,68 @@
-# Contribuir
+# Contributing
 
-Gracias por querer ayudar. Este es un proyecto de investigación de hardware:
-la prioridad es **no romper el router de nadie** y que los resultados sean
-reproducibles.
+Thanks for your interest. This is a hardware research project. The priorities
+are to avoid damaging devices and to make results reproducible.
 
-## Alcance
+## Scope
 
-Se aceptan:
+Contributions are welcome for:
 
-- correcciones de documentación y comandos;
-- mejoras de reproducibilidad (rutas, dependencias, scripts portables);
-- diagnóstico de NAND/UBI, switch, PHY, consola o arranque;
-- drivers propios y parches GPL compatibles;
-- pruebas en hardware con logs redactados.
+- Documentation and command corrections.
+- Reproducible builds, dependencies, and portable scripts.
+- Diagnostics for NAND/UBI, switch, PHY, console, or boot.
+- Original drivers and compatible GPL patches.
+- Hardware tests with sanitized logs.
 
-**No se aceptan:**
+Do not submit:
 
-- `.npk`, rootfs, volcados de NAND, firmware propietario o cualquier software de
-  MikroTik/Genexis;
-- *keygens*, parches de licencia, bypass del *software ID* o instrucciones para
-  evitar el chequeo de licencia;
-- credenciales, IPs públicas, MACs, números de serie o backups personales.
+- `.npk` files, root filesystems, NAND dumps, proprietary firmware, or other
+  MikroTik or Genexis software.
+- Key generators, license patches, software-ID bypasses, or instructions to
+  evade license checks.
+- Credentials, public IP addresses, MAC addresses, serial numbers, or personal
+  backups.
 
-## Antes de tocar hardware
+## Before working on hardware
 
-- El método por defecto es **TFTP a RAM**; no escribas NAND.
-- Si propones un cambio de NAND/UBI, incluye backup, geometría y plan de
-  recuperación. Sin eso no se revisa.
-- Prueba primero en tu unidad y documenta la revisión de la placa, el U-Boot y
-  el log.
-- No publiques un `.y3` ni un `uImage` que contenga rootfs de RouterOS.
+- The default method is TFTP to RAM. Do not write to NAND.
+- NAND/UBI changes require a backup, verified geometry, and a recovery plan.
+- Test on your own device and record the board revision, U-Boot version, and
+  sanitized logs.
+- Do not publish a `.y3` or `uImage` containing a RouterOS root filesystem.
 
-## Flujo de trabajo
+## Workflow
 
-1. Abre un issue con el template de bug/hardware antes de un cambio grande.
-2. Crea una rama descriptiva: `docs/...`, `fix/...`, `feat/...`.
-3. Haz cambios pequeños y explicables. No reformatees archivos enteros sin
-   necesidad.
-4. Si tocas el kernel o el init, ejecuta el build y adjunta el resultado:
+1. Open an issue using the hardware or bug template before a large change.
+2. Create a descriptive branch, such as `docs/...`, `fix/...`, or `feat/...`.
+3. Keep changes focused and explainable; avoid unnecessary whole-file
+   reformatting.
+4. For kernel or initramfs changes, run the build and record the result:
    ```bash
    sudo bash build-563.sh
    md5sum out/uImage-563
    ```
-5. Si tocas la documentación, revisa los enlaces relativos y actualiza
-   `progress.json` si cambia un hito. Regenera el SVG:
+5. For documentation changes, check relative links. If a milestone changes,
+   update `progress.json` and regenerate the SVG:
    ```bash
    python3 tools/progress.py
    ```
-6. Abre el PR con la plantilla y marca lo que **no** has podido probar.
+6. Open a PR using the template and identify anything you could not test.
 
-## Estilo
+## Style
 
-- Los documentos y comentarios pueden estar en español; los identificadores y
-  comandos, en el idioma que ya use el archivo.
-- En shell, usa `set -u`/`set -e` cuando tenga sentido y cita variables.
-- En Python, sigue el estilo de los scripts existentes; no añadas dependencias
-  si la biblioteca estándar basta.
-- No dejes rutas absolutas de tu máquina en scripts nuevos. Usa
-  `$(cd "$(dirname "$0")" && pwd)` o una variable de entorno.
-- No añadas logs, `out/`, `ros/` ni `__pycache__/` al commit.
+- Write documentation in English.
+- Follow the style of the existing scripts and avoid dependencies when the
+  standard library is sufficient.
+- Do not hard-code machine-specific absolute paths in new scripts. Use a
+  path relative to the script or an environment variable.
+- Do not commit logs, `out/`, `ros/`, or `__pycache__/`.
 
-## Checklist del PR
+## Pull request checklist
 
-- [ ] El cambio está descrito y limitado a un objetivo.
-- [ ] No incluye software propietario, rootfs, `.npk` ni volcados.
-- [ ] No incluye credenciales, IPs/MACs ni datos personales.
-- [ ] `build-563.sh` sigue funcionando (si aplica).
-- [ ] La documentación afectada está actualizada.
-- [ ] `progress.json` y `progress.svg` están sincronizados (si aplica).
-- [ ] Sé qué parte no he podido probar y lo digo en el PR.
+- [ ] The change has a clear, limited purpose.
+- [ ] It includes no proprietary software, rootfs, `.npk`, or NAND dumps.
+- [ ] It includes no credentials or personal/network identifiers.
+- [ ] `build-563.sh` still works, if applicable.
+- [ ] Related documentation is updated.
+- [ ] `progress.json` and `progress.svg` are synchronized, if applicable.
+- [ ] Untested areas are stated explicitly.

@@ -1,33 +1,33 @@
-# Seguridad
+# Security
 
-## Qué reportar
+## What to report
 
-- Un fallo que pueda dejar la placa sin arranque (por ejemplo, un cambio que
-  escriba NAND o un reset que no funcione).
-- Exposición de credenciales, claves, logs con datos personales o backups.
-- Un bypass de licencia o una instrucción que lo permita.
+- A defect that could prevent the device from booting, such as an unsafe NAND
+  write or a failed reset.
+- Exposed credentials, keys, personal logs, or backups.
+- A license bypass or instructions that enable one.
 
-## Cómo reportarlo
+## How to report
 
-No abras un issue público con datos sensibles. Usa el canal privado del
-mantenedor del repositorio o un *security advisory* de GitHub si está
-disponible. Incluye:
+Do not open a public issue containing sensitive data. Contact the repository
+maintainer privately or use a GitHub security advisory if available. Include:
 
-- versión del repo/commit;
-- modelo y revisión de la placa;
-- pasos mínimos para reproducir;
-- log redactado;
-- impacto y si has probado una recuperación.
+- Repository version or commit.
+- Device model and board revision.
+- Minimal reproduction steps.
+- A sanitized log.
+- Impact and whether recovery was tested.
 
-## Datos que no deben publicarse
+## Do not publish
 
-- IPs públicas, MACs, números de serie y claves;
-- volcados de NAND, `.npk`, rootfs o `.y3` con contenido propietario;
-- credenciales de RouterOS, WiFi o del ISP;
-- logs completos sin redactar.
+- Public IP addresses, MAC addresses, serial numbers, or keys.
+- NAND dumps, `.npk` files, root filesystems, or `.y3` files containing
+  proprietary content.
+- RouterOS, Wi-Fi, or ISP credentials.
+- Unsanitized full logs.
 
-## Alcance
+## Project scope
 
-Este proyecto arranca por TFTP a RAM y no escribe NAND por defecto. Cualquier
-contribución que cambie eso debe explicar el riesgo, el backup y la recuperación
-antes de mergearse.
+The default boot method is TFTP to RAM and does not write to NAND. Contributions
+that change this behavior must document the risks, backup, and recovery plan
+before review.

@@ -1,40 +1,37 @@
-# Notice / Aviso legal
+# Legal notice
 
-Este es un proyecto de investigación independiente. **No está afiliado,
-patrocinado ni respaldado por MikroTik, Genexis o Intel/Lantiq.** Los nombres y
-marcas pertenecen a sus titulares.
+This is an independent research project. It is not affiliated with, sponsored
+by, or endorsed by MikroTik, Genexis, or Intel/Lantiq. Product names and
+trademarks belong to their respective owners.
 
-## Software de terceros
+## Third-party software
 
-- **RouterOS y el `.npk`** son software propietario de MikroTik. No se incluyen
-  en este repositorio y no se redistribuyen. Se obtienen de MikroTik bajo sus
-  propios términos y licencia.
-- **El rootfs de RouterOS** tampoco se incluye. `ros/` está ignorado por git.
-- **El kernel 5.6.3 y el parche GPL de MikroTik** se descargan de las fuentes
-  publicadas por MikroTik. Tienen su propia licencia (GPL-2.0 para el kernel;
-  consulta los archivos `COPYING` del árbol). Los parches de este repo se
-  aplican sobre ese árbol y no cambian esa licencia.
-- **U-Boot, BusyBox, Dropbear y las herramientas del sistema** conservan sus
-  licencias originales.
+- RouterOS and `.npk` files are proprietary MikroTik software. They are not
+  included or redistributed in this repository. Obtain them from MikroTik
+  under its terms and license.
+- The RouterOS root filesystem is also excluded. `ros/` is ignored by Git.
+- The Linux 5.6.3 kernel and MikroTik GPL patch are obtained from published
+  sources. They retain their respective licenses (the kernel is GPL-2.0; see
+  the source tree's `COPYING` files). This repository's patches do not change
+  those licenses.
+- U-Boot, BusyBox, Dropbear, and system tools retain their original licenses.
 
-## Licencia de este repositorio
+## This repository
 
-Este repositorio no incluye un archivo `LICENSE` porque la mezcla de scripts
-propios, parches derivados del kernel GPL y documentación debe decidirse con
-cuidado antes de publicar. **No se concede ninguna licencia implícita sobre el
-código propio más allá de lo que permita la ley aplicable.** Antes de
-redistribuir el proyecto, el mantenedor debe añadir la licencia elegida y
-revisar la compatibilidad con GPL-2.0.
+There is no `LICENSE` file because the repository combines original scripts,
+patches derived from a GPL kernel, and documentation. No implicit license is
+granted for original code beyond what applicable law permits. Before
+redistribution, the maintainer should choose a license and review GPL-2.0
+compatibility.
 
-## Licencia de RouterOS
+## RouterOS licensing
 
-Este repositorio **no contiene ni pretende contener** un método para saltarse la
-licencia de RouterOS. El fallo `Demo license expired!` es el comportamiento
-esperado cuando no hay una licencia válida para el hardware. Si quieres usar
-RouterOS, necesitas una licencia de MikroTik.
+This repository does not provide or seek to provide a way to bypass RouterOS
+licensing. `Demo license expired!` is the expected result without a valid
+license for the hardware. Use RouterOS only with a valid MikroTik license.
 
-## Seguridad
+## Security
 
-No publiques logs con IPs, MACs, números de serie, claves, backups de NAND o
-cualquier dato de tu red. No ejecutes comandos de escritura de NAND sin backup
-y plan de recuperación.
+Do not publish logs containing IP addresses, MAC addresses, serial numbers,
+keys, NAND backups, or other network data. Do not write to NAND without a
+verified backup and a recovery plan.

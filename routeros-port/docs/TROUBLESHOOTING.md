@@ -1,89 +1,82 @@
 # Troubleshooting
 
-Orden recomendado: **consola → U-Boot → TFTP → kernel → NAND/UBI → rootfs →
-RouterOS**. Si falla algo, mira primero el último mensaje que sí aparece; el
-error visible suele ser varios pasos posterior a la causa.
+Check the boot chain in order: **console → U-Boot → TFTP → kernel → NAND/UBI →
+root filesystem → RouterOS**. Start with the last message that appeared; the
+visible failure may be downstream of the cause.
 
-## Consola y U-Boot
+## Console and U-Boot
 
-| Síntoma | Causa probable | Qué hacer |
+| Symptom | Likely cause | Check |
 |---|---|---|
-| Nada en consola | Puerto/baudios incorrectos, cable, placa apagada | `ED500_PORT` correcto, 115200 8N1, comprobar `ROM VER` al encender |
-| `ROM VER` en bucle | La imagen no entra por la entry esperada | Usar `out/uImage-563`; load/entry `0x80500000` |
-| No se caza `grx500 #` | U-Boot autoarranca antes de mandar CR | Aumentar la ventana del cazador; apagar/encender con el cazador ya escuchando |
-| `Bad Magic Number` | Se cargó un ELF o un fichero corrupto | Cargar `uImage-563` con `bootm`, no `bootelf` |
-| El cazador dice `COM4 ocupado` | Otra consola, Tftpd64 o un cazador anterior tiene el puerto | Cerrar el otro proceso; en Linux, comprobar `fuser`/`lsof` |
+| No console output | Wrong port or baud rate, cable, or power | Set `ED500_PORT`, use 115200 8N1, and look for `ROM VER` at power-on |
+| `ROM VER` repeats | Wrong image entry point | Use `out/uImage-563` with load/entry `0x80500000` |
+| U-Boot prompt is not caught | Autoboot starts before the carriage return is sent | Start the catcher before power-on |
+| `Bad Magic Number` | ELF or corrupt file was loaded | Load `uImage-563` with `bootm` |
+| `COM4 busy` | Another process has the serial port | Close the other console or TFTP utility |
 
-El cazador fija `ipaddr 192.168.1.1` y `serverip` a la IP del PC. Si tu red es
-distinta, pásale `--pc-ip`; U-Boot debe estar en `192.168.1.1` o ajustar el
-script.
+The catcher sets `ipaddr` and `serverip`. For a different PC network, pass
+`--pc-ip` and ensure U-Boot is configured for the same subnet.
 
 ## TFTP
 
-| Síntoma | Causa probable | Qué hacer |
+| Symptom | Likely cause | Check |
 |---|---|---|
-| `TFTP error` / timeout | Firewall de Windows, IP equivocada, puerto ocupado | Permitir Python en red privada; probar 69 y 6969; `setenv tftpdstp` |
-| `Bytes transferred` con tamaño distinto | El fichero cambió durante la transferencia | Parar el cazador, reconstruir y repetir |
-| `Retry count exceeded` | No hay ruta PC↔ED500 | Misma LAN, IP del PC correcta, cable en `lan1..lan4` |
-| La transferencia va a 0 | `catch_final.py` no está en la raíz del repo | Ejecutarlo desde `routeros-port`; sirve `out/` |
+| TFTP timeout | Firewall, wrong IP, or occupied port | Allow Python on the private network; check port 69/6969 and `tftpdstp` |
+| Transferred size differs | The image changed during transfer | Stop the catcher and retry with a stable image |
+| Retry limit exceeded | No PC-to-device route | Use the same LAN and check the PC IP and cable |
+| Transfer size is zero | Catcher was started from the wrong directory | Run it from `routeros-port`; it serves `out/` |
 
 ## Kernel
 
-| Síntoma | Causa probable | Qué hacer |
+| Symptom | Likely cause | Check |
 |---|---|---|
-| `Linux version` no aparece | `bootm` mudo, entry incorrecta o imagen truncada | Verificar `uImage-563` y el log de TFTP; no cargar en `0x82000000` |
-| Cuelga tras `MIPS: machine is...` | Frecuencia/reloj o GIC mal en el DTB | Revisar `CPU_HZ`/CGU y el DTB; usar la imagen que ya arrancó |
-| `Kernel panic` al arrancar el rootfs | Init/overlay/UBI no disponible | Ver secciones siguientes; consola y `dmesg` |
-| `Attempted to kill init` | El shell/init de inspección salió y era PID 1 | No usar `switch_root` con un shell; el init actual usa `chroot` |
-| `Demo license expired` | La NAND no es un disco MikroTik | Es el comportamiento esperado; no hay bypass en este repo |
+| No `Linux version` message | Silent `bootm`, wrong entry point, or truncated image | Verify `uImage-563` and the TFTP log |
+| Hang after `MIPS: machine is...` | Clock or GIC configuration issue | Review the DTB and use a previously verified image |
+| Panic during rootfs startup | Init, overlay, or UBI issue | Check the console and `dmesg` |
+| `Attempted to kill init` | The inspection shell exited while running as PID 1 | Do not use `switch_root` with a shell as init |
+| `Demo license expired` | No valid license is available for this hardware | This is separate from boot and NAND-read support |
 
-## NAND y UBI
+## NAND and UBI
 
-| Síntoma | Causa probable | Qué hacer |
+| Symptom | Likely cause | Check |
 |---|---|---|
-| `No such device` al montar `ubi0:rootfs_0` | UBI no está adjunta o el volumen no existe | `cat /proc/mtd`; `ubiattach -m 1 -d 0`; mirar `/sys/class/ubi` |
-| `ecc unrecoverable error` | ECC distinto al usado al escribir la UBI stock | **BCH-4**, no BCH-8; comprobar DTB y bootargs |
-| No aparece `/dev/mtd*` | Driver NAND no probeó o DTB incorrecto | `dmesg \| grep -i nand`; verificar `MTD_NAND_LANTIQ_XRX500` y DTS |
-| `Bad block table` no aparece | Falta `nand-on-flash-bbt` o el chip no se detectó | Comprobar DTB; no forzar BBT a mano |
-| `mkdir /newroot/merged/rw` falla | El rootfs tiene rutas/symlinks que no existen en el overlay | Aviso no fatal; el init continúa |
-| `mount: invalid argument` en UBIFS | Geometría/ECC/volumen incorrectos | No escribir; revisar PEB/LEB y el volumen real |
+| `No such device` mounting `ubi0:rootfs_0` | UBI is not attached or the volume is absent | Check `/proc/mtd`, attach UBI as documented, and inspect `/sys/class/ubi` |
+| `ecc unrecoverable error` | ECC setting differs from the stock UBI | Use BCH-4 and check the DTB and boot arguments |
+| No `/dev/mtd*` | NAND driver did not probe or the DTB is wrong | Check `dmesg` and the NAND driver configuration |
+| No bad-block-table message | BBT option is missing or the chip was not detected | Check the DTB; do not force a BBT write |
+| UBIFS mount reports `invalid argument` | Geometry, ECC, or volume mismatch | Do not write; verify PEB/LEB and the volume |
 
-El detalle de geometría y las comprobaciones están en
-**[NAND-UBI.md](NAND-UBI.md)**.
+See [NAND-UBI.md](NAND-UBI.md) for geometry and read-only checks.
 
 ## RouterOS
 
-| Síntoma | Causa probable | Qué hacer |
+| Symptom | Likely cause | Check |
 |---|---|---|
-| `Unknown symbol` al cargar `packet_hook`/`switch`/`bridge2` | Faltan símbolos del *fastpath* binario de MikroTik | No es un fallo de build; no hay driver GPL para el GSWIP |
-| `phy_helper: Unknown symbol ...` | Módulo propietario con dependencias que el kernel no exporta | Igual: no se puede completar solo con fuentes GPL |
-| `getHardwareID: could not get disk /dev/mtdblock0` | RouterOS busca un disco MikroTik, no la NAND Adamo | Esperado; el chequeo de licencia demo falla |
-| `Demo license expired!` | Sin licencia MikroTik válida para este hardware | No hay método de bypass; se necesita licencia |
-| `applet not found` al usar el shell | BusyBox decide el applet por `argv[0]` | Copiarlo como `busybox`; el init ya lo hace |
-| `Overlayfs: upper fs does not support xattr` | El upper es tmpfs sin xattr | Aviso; se pierde index/metacopy, no impide montar |
+| `Unknown symbol` loading `packet_hook`, `switch`, or `bridge2` | RouterOS modules depend on unavailable MikroTik fastpath symbols | This is not fixed by another `insmod`; no proprietary binaries are included |
+| `phy_helper: Unknown symbol ...` | Module depends on symbols not exported by this kernel | Record the diagnostic; do not treat it as a configuration issue |
+| `getHardwareID: could not get disk /dev/mtdblock0` | RouterOS cannot find the expected MikroTik disk identity on this device | The current NAND is Genexis/Adamo firmware; this does not establish a license workaround |
+| `Demo license expired!` | No valid RouterOS license for this hardware | Use a valid license; this repository does not bypass licensing |
+| `applet not found` in the inspection shell | BusyBox applet lookup uses `argv[0]` | Invoke the `busybox` binary directly |
+| Overlay reports missing xattrs | Upper layer is tmpfs without xattr support | Informational; some overlay features are unavailable |
 
-La red de RouterOS no se arregla con `insmod`: sus módulos esperan el *fastpath*
-de MikroTik y un driver para *sus* switches. El kernel de este repo sí tiene
-Ethernet Linux (DSA/GSWIP), que es lo que se usa para TFTP y diagnóstico.
+Linux Ethernet support does not make RouterOS networking functional. RouterOS
+modules still require their own compatible network components.
 
 ## Build
 
-| Síntoma | Causa probable | Qué hacer |
+| Symptom | Likely cause | Check |
 |---|---|---|
-| `build-563.sh` falla en `olddefconfig` | Falta una dependencia o el árbol está incompleto | Ver `/opt/olddef.log`; ejecutar el bootstrap `01…04` |
-| `CONFIG FALLO: ...` | La opción no existe en este árbol/versión | Revisar el mensaje; no desactivar a ciegas, el script valida el DTB |
-| `DTB FALLO: no tiene BCH-4` | `parche_arranque.py` no se aplicó o el DTB es viejo | Ejecutar el build desde la raíz; revisar el parche |
-| `mkimage FALLO` | Falta `u-boot-tools` | `sudo apt install u-boot-tools` |
-| `rootfs FALLO` | No existe `ros/rootfs.squashfs` | Extraerlo del `.npk` oficial; ver BOOT/BUILD |
-| `endianness` incorrecta | Se compiló little-endian | El target es **mipsbe**; no cambiar el endianness |
+| `build-563.sh` fails in `olddefconfig` | Missing dependency or incomplete source tree | Review `/opt/olddef.log` and run bootstrap steps `01`–`04` |
+| `CONFIG FALLO` (literal script output) | Option is absent from this kernel tree | Review the error; do not disable checks blindly |
+| DTB lacks BCH-4 | Boot patch was not applied or DTB is stale | Rebuild and inspect the generated DTB |
+| `mkimage` fails | `u-boot-tools` is missing | Install the package using the system package manager |
+| Rootfs check fails | `ros/rootfs.squashfs` is absent | Follow [BUILD.md](BUILD.md) and use a lawfully obtained package |
+| Wrong endianness | Little-endian target was built | The target userland is `mipsbe` |
 
-## Recuperación
+## Recovery
 
-- Si el arranque por TFTP falla, **apaga y enciende**: el firmware original de
-  la NAND sigue ahí y arranca solo si no hay cazador.
-- No escribas NAND para “arreglar” un fallo de arranque. El método de este repo
-  es RAM.
-- Para un reseteo remoto, usa `uboot_cycle.py`; si la placa está en Linux, el
-  reset por RCU evita depender de `reboot`.
-- Guarda el log completo (`logs/try563_v2.log`, `logs/uboot_cycle.log`) antes de
-  pedir ayuda, pero **redacta IPs, MACs y números de serie**.
+- If TFTP boot fails, power-cycle the device without the catcher; the stock
+  firmware remains in NAND.
+- Do not write NAND to troubleshoot a RAM boot failure.
+- Save relevant logs before requesting help, but redact IPs, MACs, and serial
+  numbers.

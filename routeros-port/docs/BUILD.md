@@ -1,20 +1,17 @@
-# Compilar el kernel y el `uImage`
+# Build the kernel and `uImage`
 
-Esta guía describe el camino **actual** (`build-563.sh`). Los scripts `01…04`
-son el bootstrap que deja el árbol `/opt/ros-port/linux-5.6.3` y el initramfs
-listos; `05`/`06` y los `patch_*`/`check_*` son históricos.
+This guide covers the current build path, `build-563.sh`. Scripts `01`–`04`
+bootstrap the kernel tree and initramfs; scripts `05`/`06` and older
+`patch_*`/`check_*` scripts are historical.
 
-## Entorno soportado
+## Supported environment
 
-- Linux x86_64 o WSL2. Los scripts escriben en `/opt/ros-port` y `/opt/toolchain`.
-- Usuario con permisos de escritura en `/opt` (o ejecutar con `sudo`).
-- Python 3.8+ para los parches y utilidades.
-- `git` no es necesario para compilar, pero sí para clonar el repo.
-- No se necesita QEMU para el camino TFTP del ED500.
+- Linux x86_64 or WSL2. Scripts use `/opt/ros-port` and `/opt/toolchain`.
+- A user with permission to write under `/opt`, or `sudo`.
+- Python 3.8 or newer.
+- QEMU is not needed for the ED500 TFTP workflow.
 
-### Paquetes del sistema
-
-En Debian/Ubuntu/Kali:
+On Debian/Ubuntu/Kali:
 
 ```bash
 sudo apt-get update
@@ -23,29 +20,28 @@ sudo apt-get install -y --no-install-recommends \
   ca-certificates u-boot-tools squashfs-tools cpio gzip bzip2 python3-pip
 ```
 
-`u-boot-tools` aporta `mkimage`; `squashfs-tools` aporta `unsquashfs`/`mksquashfs`.
+`u-boot-tools` provides `mkimage`; `squashfs-tools` provides `unsquashfs` and
+`mksquashfs`.
 
-## 1. Bootstrap del árbol 5.6.3
+## 1. Bootstrap the 5.6.3 tree
 
-Desde la raíz del repo:
+From the repository root:
 
 ```bash
 sudo bash 01-build-gpl-kernel.sh
 sudo bash 02-apply-platform.sh
-sudo bash 03-build-intel-mips.sh     # primera compilación de control
-sudo bash 04-build-initramfs.sh      # busybox + initramfs base
+sudo bash 03-build-intel-mips.sh
+sudo bash 04-build-initramfs.sh
 ```
 
-Qué hace cada uno:
-
-| Script | Efecto |
+| Script | Purpose |
 |---|---|
-| `01-build-gpl-kernel.sh` | Descarga la toolchain Bootlin, Linux 5.6.3, el parche GPL de MikroTik y `mips.config`; aplica el parche y compila un `vmlinux` de control |
-| `02-apply-platform.sh` | Copia `tree/arch/mips/intel-mips` y `mach-intel-mips`, engancha `INTEL_MIPS` en Kconfig/Kbuild y deja una config mínima |
-| `03-build-intel-mips.sh` | Compila la plataforma mínima y deja el log en `/opt/ros-port/build4.log` |
-| `04-build-initramfs.sh` | Compila BusyBox estático MIPS BE, crea `/opt/ros-port/initramfs` y deja un init de rescate |
+| `01-build-gpl-kernel.sh` | Downloads the Bootlin toolchain, Linux 5.6.3, the MikroTik GPL patch, and `mips.config`; applies the patch and builds a reference kernel |
+| `02-apply-platform.sh` | Adds the platform files and connects them to Kconfig/Kbuild |
+| `03-build-intel-mips.sh` | Builds the minimal platform and writes `/opt/ros-port/build4.log` |
+| `04-build-initramfs.sh` | Builds static MIPS big-endian BusyBox and a base rescue initramfs |
 
-Rutas que espera el build actual:
+The current build expects:
 
 ```text
 /opt/toolchain/bin/mips-buildroot-linux-gnu-*
@@ -54,46 +50,35 @@ Rutas que espera el build actual:
 /opt/ros-port/fw/lantiq/xrx500-phy-fw.bin
 ```
 
-El árbol de kernel **no se versiona** en este repo: son cientos de MiB y tienen
-su propia licencia. El parche y el `mips.config` se descargan de las fuentes
-GPL de MikroTik; el espejo que usa `01` es
+The kernel source tree is not included in this repository. The GPL patch and
+`mips.config` are obtained from MikroTik's published GPL sources; the mirror
+used by script `01` is
 [`tikoci/mikrotik-gpl`](https://github.com/tikoci/mikrotik-gpl).
 
-## 2. Rootfs de RouterOS
+## 2. RouterOS root filesystem
 
-El rootfs no se redistribuye. Descarga el `.npk` oficial de **RouterOS 7.17
-mipsbe** desde MikroTik y extrae `rootfs.squashfs`. Según la herramienta que
-uses, el contenedor se abre con `7z`, `binwalk` o utilidades de RouterOS; el
-objetivo es localizar el squashfs y dejarlo aquí:
+The root filesystem is not redistributed. Obtain an official RouterOS 7.17
+`mipsbe` package from MikroTik and extract `rootfs.squashfs` using an
+appropriate package-inspection tool. Place it at:
 
 ```text
 ros/rootfs.squashfs
 ```
 
-El `.gitignore` excluye `ros/*.npk`, `ros/*.squashfs` y `ros/rootfs/`. No subas
-ese contenido al repositorio.
+The `.gitignore` excludes `ros/*.npk`, `ros/*.squashfs`, and `ros/rootfs/`. Do
+not commit or redistribute those files.
 
-## 3. Build actual
+## 3. Current build
 
 ```bash
 sudo bash build-563.sh
 ```
 
-El script, en este orden:
+The script applies `parche_arranque.py`, prepares the initramfs, compiles the
+diagnostic utilities, enables required kernel options, builds `vmlinux`,
+validates the DTB, and packages `out/uImage-563` for `0x80500000`.
 
-1. ejecuta `parche_arranque.py` sobre `/opt/ros-port/linux-5.6.3` (idempotente);
-2. copia `init-initramfs.sh` al initramfs y `ros/rootfs.squashfs` como
-   `ros.squashfs`;
-3. compila `phyreg` y `swstats` estáticos;
-4. activa las opciones de kernel necesarias (UBI/UBIFS, NAND xrx500, DSA/GSWIP,
-   PHYLINK, netfilter, futex, squashfs, loop, etc.);
-5. compila `vmlinux`, comprueba el DTB y empaqueta `out/uImage-563` para
-   `0x80500000`.
-
-Si falla, el script no deja un `uImage` viejo: sale con error. Los logs están en
-`/opt/olddef.log` y `/opt/build563.log`.
-
-### Verificación mínima
+Minimum checks:
 
 ```bash
 ls -l out/uImage-563
@@ -102,31 +87,28 @@ md5sum out/uImage-563
   /opt/ros-port/linux-5.6.3/vmlinux | grep -E 'Data|Entry'
 ```
 
-Invariantes que comprueba el propio script:
+The build checks for:
 
-- DTB con `nand-ecc-strength = <4>`;
-- DTB con `nand-on-flash-bbt`;
-- bootargs con `ubi.mtd=ubi`;
-- initramfs con el rootfs de RouterOS;
-- `entry` y `load` en `0x80500000`;
-- endianness **big-endian** (el userland de RouterOS es mipsbe).
+- DTB `nand-ecc-strength = <4>` and `nand-on-flash-bbt`.
+- `ubi.mtd=ubi` in the boot arguments.
+- RouterOS rootfs present in the initramfs.
+- Load and entry addresses at `0x80500000`.
+- Big-endian MIPS output (`mipsbe`).
 
-El `uImage-563` de referencia de esta investigación mide **19.672.756 bytes** y
-tiene md5 **`1a780fdd76b9da701974b17af1102be6`**. El tamaño cambia si tocas
-initramfs, rootfs o configuración; no es un valor fijo del build.
+The reference `uImage-563` measured 19,672,756 bytes and had MD5
+`1a780fdd76b9da701974b17af1102be6`. Output size changes with the initramfs,
+rootfs, or configuration.
 
-## 4. Notas de reproducibilidad
+## 4. Reproducibility notes
 
-- `build-563.sh` usa `AQUI=$(cd "$(dirname "$0")" && pwd)`, así que funciona
-  desde cualquier directorio mientras se invoque con su ruta.
-- `02`, `04`, `05` y `06` ya calculan su propia ruta; no dependen de
-  `C:\Users\BFR\...`. `01` y el árbol del kernel siguen usando `/opt/ros-port`
-  a propósito.
-- El build no es hermético: descarga toolchain y fuentes, y usa el rootfs que
-  pongas en `ros/`. Para reproducibilidad exacta, anota la versión del `.npk`,
-  del parche GPL y de la toolchain que uses.
-- La última prueba de hardware registrada es anterior al artefacto final; si
-  cambias el kernel, vuelve a probar en placa antes de dar por bueno el
-  `uImage`.
+- `build-563.sh` resolves its own directory, so it can be invoked from another
+  working directory.
+- Scripts `02`, `04`, `05`, and `06` also resolve their own paths. Scripts
+  `01` and the kernel tree intentionally use `/opt/ros-port`.
+- The build is not hermetic: it downloads the toolchain and source and uses the
+  rootfs supplied under `ros/`. Record the package, GPL patch, and toolchain
+  versions when reproducing a build.
+- The latest recorded hardware test predates the final artifact. Retest each
+  changed image before describing it as hardware-verified.
 
-Siguiente paso: **[BOOT-TFTP.md](BOOT-TFTP.md)**.
+Next: [BOOT-TFTP.md](BOOT-TFTP.md).

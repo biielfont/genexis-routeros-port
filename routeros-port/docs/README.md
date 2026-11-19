@@ -1,41 +1,41 @@
-# Documentación
+# Documentation
 
-El punto de entrada del proyecto es el [README](../README.md). Esta carpeta
-separa lo que está vigente de lo que es historia de la investigación.
+The project entry point is the [repository README](../README.md). This folder
+separates current guides from historical research notes.
 
-## Guías actuales
+## Current guides
 
-| Documento | Para qué |
+| Document | Purpose |
 |---|---|
-| [BUILD.md](BUILD.md) | Preparar toolchain/fuentes, compilar y verificar `out/uImage-563` |
-| [BOOT-TFTP.md](BOOT-TFTP.md) | Arrancar por TFTP a RAM, cazar U-Boot y resetear en remoto |
-| [NAND-UBI.md](NAND-UBI.md) | Geometría NAND, BCH-4/BBT, attach UBI y montaje en lectura |
-| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Fallos típicos, logs y qué comprobar |
-| [PROGRESS.md](PROGRESS.md) | Cómo se calcula y se actualiza el mapa de progreso |
-| [FLASH-Y3.md](FLASH-Y3.md) | Investigación del contenedor `.y3` (experimental, no método actual) |
+| [BUILD.md](BUILD.md) | Prepare the toolchain and sources, build, and verify `out/uImage-563` |
+| [BOOT-TFTP.md](BOOT-TFTP.md) | Boot to RAM over TFTP, catch U-Boot, and reset remotely |
+| [NAND-UBI.md](NAND-UBI.md) | NAND geometry, BCH-4/BBT, UBI attach, and read-only mounts |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common failures and diagnostic checks |
+| [PROGRESS.md](PROGRESS.md) | Progress map and milestone status |
+| [FLASH-Y3.md](FLASH-Y3.md) | Non-operational summary of the experimental `.y3` investigation |
 
-## Mapa de progreso
+## Progress map
 
-El gráfico es **[../progress.svg](../progress.svg)** y se embebe en el
-[README](../README.md) y en [PROGRESS.md](PROGRESS.md). Se genera desde
-`progress.json` con `tools/progress.py`; no hay página HTML ni tabla visual
-mantenida a mano.
+The graphic is [../progress.svg](../progress.svg), embedded in the
+[repository README](../README.md) and [PROGRESS.md](PROGRESS.md). It is
+generated from `progress.json` by `tools/progress.py`; there is no separate
+HTML page or manually maintained graphic.
 
-## Histórico
+## Historical notes
 
-Estos documentos se conservan para que se vea **cómo** se llegó hasta aquí. No
-describen el estado actual y pueden contener rutas o conclusiones antiguas:
+These files are retained as a record of earlier research. They may describe
+outdated paths or conclusions:
 
-- [history/CHECKLIST-2026-11.md](history/CHECKLIST-2026-11.md) — primera puesta
-  en marcha y auditoría previa.
-- [history/NOTES-5.6.3-port.md](history/NOTES-5.6.3-port.md) — notas del port
-  del driver GSWIP y errores de compilación.
+- [history/CHECKLIST-2026-11.md](history/CHECKLIST-2026-11.md) — initial boot
+  checklist and earlier audit.
+- [history/NOTES-5.6.3-port.md](history/NOTES-5.6.3-port.md) — GSWIP driver
+  port notes and build errors.
 
-## Reglas de documentación
+## Documentation guidelines
 
-- Los comandos deben poder copiarse y ejecutarse desde la raíz del repo.
-- Las rutas absolutas de una máquina concreta no deben ser necesarias para
-  entender el procedimiento; si un script las usa, se documenta como histórico.
-- Los logs, el rootfs, el `.npk` y los artefactos de `out/` no se commitean.
-- Si cambia un hito, actualiza `progress.json` y regenera `progress.svg` con
-  `python3 tools/progress.py`.
+- Commands should work when copied from the repository root.
+- Machine-specific absolute paths should not be needed to understand a
+  procedure; document them as historical when a script requires them.
+- Do not commit logs, root filesystems, `.npk` files, or `out/` artifacts.
+- When a milestone changes, update `progress.json` and regenerate
+  `progress.svg` with `python3 tools/progress.py`.
