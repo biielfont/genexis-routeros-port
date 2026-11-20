@@ -1,0 +1,73 @@
+name: Bug / regresión
+description: Algo no compila, no arranca o se comporta distinto a la documentación.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        No adjuntes `.npk`, rootfs, volcados de NAND ni logs con IPs/MACs/números de serie.
+        Para fallos de hardware, usa la plantilla de hardware.
+  - type: input
+    id: version
+    attributes:
+      label: Versión / commit
+      description: Rama, commit o fecha del repo.
+      placeholder: main @ 2026-11-19
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options:
+        - build / kernel
+        - TFTP / U-Boot
+        - NAND / UBI
+        - RouterOS userland
+        - documentación / scripts
+        - otro
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      description: Comandos exactos y orden.
+      placeholder: |
+        1. sudo bash build-563.sh
+        2. python catch_final.py --horas 1
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Resultado real
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs redactados
+      description: Pega solo las líneas relevantes; elimina IPs, MACs y datos personales.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Comprobaciones
+      options:
+        - label: He leído docs/TROUBLESHOOTING.md.
+          required: true
+        - label: No incluyo software propietario, credenciales ni datos personales.
+          required: true
+        - label: Sé qué parte no he podido probar.
+          required: false

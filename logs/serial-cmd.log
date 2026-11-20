@@ -1,0 +1,60 @@
+printenv
+acs_password=QsKuRbDaV9RJYst6
+auth_key=J4X20QFE9Y4365HH
+baudrate=115200
+board_id=norrland
+boot_cnt_alt=0
+boot_cnt_primary=0
+boot_ram=run bootargs_ram;${dl_prog} ${loadaddr} lede-intel_mips-xrx500-NORRLAND-initramfs-kernel.bin;${dl_prog} ${fdtaddr}  dtb;bootm ${loadaddr} - ${fdtaddr}
+bootargs=console=ttyLTQ0,115200 root=ubi0:rootfs_1 ubi.mtd=ubi,0,30 rootfstype=ubifs mtdparts=17c00000.nand-parts:1m(uboot),-(ubi) init=/etc/preinit mem=224M@512M
+bootargs_ram=setenv bootargs ${extra} console=ttyLTQ0,${baudrate} root=/dev/ram0 rootfstype=ramfs ${mtdparts} mem=224M@512M
+bootargs_ubi=setenv bootargs ${extra} console=ttyLTQ0,${baudrate} root=ubi0:${root_vol} ubi.mtd=ubi,0,30 rootfstype=ubifs ${mtdparts} init=/etc/preinit mem=224M@512M
+bootcmd=rescue;iboot
+bootdelay=-2
+bootfile=uImage
+cal_wlan0=H4sIAAAAAAACA/sjzQAGBlICHAzo4D8CsDYIhLk6MjivmTXt426FrYk5hgYtTO0MnS+FGZMlffex 8nNzMPizCDEEcesybJNeJOGy/ykPDzvDOxZBhkAmbYYS6Ydy/udYeYGqzFj4GK6zaTK8lGZLkfTa BxbzAer8wKTDoCCzSMp9H1AnB8MqZiEGDaDQb+lHcv5AIaAqc6Bhm5j0GbiEOZMlPSCmebLwMqSw azPclV4o6QrReZdZkOElUOd96QcyPvvAzrAH6twGFBKX5k0Wd4WYpgu0cwOTEQOr0CIJp3NAIU6G mcx8DD5sugxfhB/IAu3kA+qUAOpM4tJkeCzduR7o1WhfiIPjgMKHmTUYmGUWRThBrD3HLMDwnUmF YZn0ozg/iBXdLAIMH5m1Gc4KsyVHgb3KyRAG1DmdWZ3BU2ZRlBtE53ugTlNmFYYgmYdx/uuA1nIw FLOIMDSwqzEskuFMjvSAmJYONO0rsx5DidCiaGggvQXq9GdWZTCXuR/rC9FpxyLM0MyuzPBAujuO DxKNXAwMC0AUK7MDCxCx/mKXUjNmYODm5uGQYqybOrmh0oWBgf0Pp5S6CVAVD0g0dUZpTYUrAwPH H05pkCg3Ny9QdPn86uoqZwaGhwx2trbIqWMUDFUAAJ+TQcMABAAA
+cal_wlan2=H4sIAAAAAAACA8WT3UtTcRjHH8+xds7vzJe5s9qruZcKu8ip82XTTadrzgwMCUqizO0QXUjeLIQW 5sXKC5GCmpmQup1uGtlN1IUyuygKQiWC8CIvcoPwohArusmoZ/stjP6BHn5w4Mvv+fy+z8vZNkAu 7PpSDv6NXzuxa6T0+EkvtD+cmthaqHjSP1BtjzI3YXRDbbPZjqUyHC9AmNXAK8YD4TLJ3IUSIdDD inCZaYZNg5yVCOEhzqhBQxqhUpvZ17mSIYIC5tliaBXqYMNgs4WOZmEEJMyMME0wqZL6u+Ywk8Bp VgtvdzdCxHC/z09hL5kyOEwcsK1Nnw0s5mBP2TJoUNSAwmizJQIU1omwEOOCbpU0c4RKPawaokwj 3FHJs3nYO4QNkQYY1mWm/RS2hDAD54C9JqxUslraaXIV8gYYNyaHKvy0UhdKCaYFhoyJiq7UcyLw cA15g7wPLGLGnOURDrbxVT3vhJE9kjWYh3Vg5mZBMyyUhvp8FOZHqY1xQrdR7uuksFmEKXkP9IqZ c74sTAFioRriXB2saiRrwptieZzBKZzBI8YBF0zBae+OMwk7ecgoT/sp7AbCJvg2CIqZGS+F/URn j7l6WNNgpTGryUkNL+Mbz0gzlOtClsBybsznWRUUKdyQVMvmrDns3DjyPmGlYZIu99KZvmdLQFS6 4IMpZumtpg3+jKNvwQZ/0YaCHRQWR1iVogleqOVgvtJ5RgVLfCtExfQZD4VtISyBC3LCFDNPORZZ AZ3F0FkhscNHcyjuS6WzMM8PDXhYN0RE+VblzoK4ST0sa9fvuVdyla7itiWFWkiKY+ESkF8X2ZNr +Y/EvlHiEb6Bbn8NgFJZzOkL5h6MXb3YBiB8Bd0BVAVByemYu5PjwwMBvPOd1R+s/aOO3o5eGaRq 7m6OwCQS1yOXUF13uZzOv/+q/x+/ARY8NdIABAAA
+des_key=O3LDCPPR51JN4C35
+dl_prog=tftpboot
+ethact=GRX500-Switch
+ethaddr=34:e3:80:c3:77:f0
+fdtaddr=0x84000000
+fdtfile=norrland.dtb
+filesize=20f72d6
+gatewayip=192.162.1.1
+hw_version=1.0
+i_antenna=0
+ipaddr=192.168.1.1
+loadaddr=0x80800000
+mtddevname=uboot
+mtddevnum=0
+mtdids=nand0=17c00000.nand-parts
+mtdparts=mtdparts=17c00000.nand-parts:1m(uboot),-(ubi)
+netmask=255.255.255.0
+num_mac_addr=16
+partition=nand0,0
+preboot=echo;echo Type "run flash_nfs" to mount root filesystem over NFS;echo
+prodid=.1.3.6.1.4.1.25167.4.10.3
+prodname=PURE-ED500
+production=0
+psn=0
+quirk_level=10
+root_vol=rootfs_0
+serial_number=W.3620220010
+serverip=192.168.1.100
+stderr=serial
+stdin=serial
+stdout=serial
+uboot_inteno_version=938f0820-2ffb-11e7-bbc9-2f21351ee6fb: {"Major":15,"Minor":2}
+uboot_version=U-Boot 2016.07-INTEL-v-3.1.109-01293-g819227e-dirty (Dec 02 2022 - 14:20:11 +0100)
+update_image=if ${dl_prog} ${loadaddr} last.y3; then yimage burn rootfs_0;setenv root_vol rootfs_0;fi;
+update_nandboot=tftp ${loadaddr} ${tftppath}u-boot-nand.bin;nand erase 0 100000;nand erase 2C0000 FA00000;nand write.partial ${loadaddr} 0 ${filesize}
+update_root0=if ${dl_prog} ${loadaddr} root.ubifs; then ubi write ${loadaddr} rootfs_0 $filesize;setenv root_vol rootfs_0;fi;
+update_uboot=if ${dl_prog} ${loadaddr} uboot.img; then nand erase.part uboot ;nand write.partial ${loadaddr} uboot $filesize;fi;
+user_passwd=HVF7R5TM
+variant=1
+verify_boot=1
+wpa_key=QBK5EA4JFXRBNH
+
+Environment size: 3991/126971 bytes
+IOPSYS 2 grx500 # 

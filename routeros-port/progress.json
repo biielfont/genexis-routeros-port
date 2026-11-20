@@ -1,0 +1,143 @@
+{
+  "project": "Genexis Pure ED500 · RouterOS 7.17 mipsbe",
+  "subtitle": "Port de investigación sobre GRX350 con arranque TFTP a RAM",
+  "updated": "2026-11-19",
+  "summary": "La plataforma y el arranque de RouterOS están verificados en hardware. La red dentro de RouterOS, la licencia y la instalación persistente siguen bloqueadas.",
+  "artifact": {
+    "name": "out/uImage-563",
+    "size": 19672756,
+    "md5": "1a780fdd76b9da701974b17af1102be6",
+    "last_hardware_test": "builds #29/#62 (shell ~ #); el artefacto final está pendiente de una nueva prueba en placa"
+  },
+  "areas": [
+    {
+      "title": "Arranque y plataforma",
+      "short": "Arranque",
+      "panel": "platform",
+      "weight": 20,
+      "percent": 100,
+      "state": "verified",
+      "detail": "U-Boot, TFTP, kernel 5.6.3, consola ttyLTQ0 y arranque en RAM.",
+      "evidence": "docs/BOOT-TFTP.md; logs de consola"
+    },
+    {
+      "title": "Ethernet / switch / PHY en Linux",
+      "short": "Ethernet",
+      "panel": "platform",
+      "weight": 10,
+      "percent": 100,
+      "state": "verified",
+      "detail": "DSA + GSWIP XRX500 + PHY XWAY; enlace a 1 Gbps.",
+      "evidence": "dmesg gswip; docs/BOOT-TFTP.md"
+    },
+    {
+      "title": "NAND / UBI / UBIFS en lectura",
+      "short": "NAND / UBI",
+      "panel": "platform",
+      "weight": 10,
+      "percent": 100,
+      "state": "verified",
+      "detail": "MX30LF1G18AC, BCH-4, BBT y volúmenes rootfs_0/rootfs_1 en ro.",
+      "evidence": "docs/NAND-UBI.md; BBT 65472/65408"
+    },
+    {
+      "title": "Rootfs / overlay / shell de RouterOS",
+      "short": "Rootfs",
+      "panel": "platform",
+      "weight": 10,
+      "percent": 100,
+      "state": "verified",
+      "detail": "Squashfs oficial, overlay tmpfs y shell de inspección ~ #.",
+      "evidence": "logs/try563_v2.log (no versionado)"
+    },
+    {
+      "title": "Módulos de RouterOS",
+      "short": "Módulos",
+      "panel": "routeros",
+      "weight": 10,
+      "percent": 30,
+      "state": "partial",
+      "detail": "flash.ko se integra; packet_hook/switch/bridge2/phy_helper fallan por símbolos del fastpath.",
+      "evidence": "Unknown symbol en logs de diagnóstico"
+    },
+    {
+      "title": "Red dentro de RouterOS",
+      "short": "Red ROS",
+      "panel": "routeros",
+      "weight": 20,
+      "percent": 5,
+      "state": "blocked",
+      "detail": "Falta el fastpath binario de MikroTik y un driver de switch para el GSWIP.",
+      "evidence": "packet_hook/switch/bridge2; docs/TROUBLESHOOTING.md"
+    },
+    {
+      "title": "Licencia RouterOS",
+      "short": "Licencia",
+      "panel": "routeros",
+      "weight": 10,
+      "percent": 0,
+      "state": "blocked",
+      "detail": "La NAND contiene el firmware Adamo, no un disco MikroTik; Demo license expired.",
+      "evidence": "getHardwareID / Demo license expired en consola"
+    },
+    {
+      "title": "Instalación persistente / .y3",
+      "short": "Instalación",
+      "panel": "routeros",
+      "weight": 5,
+      "percent": 20,
+      "state": "partial",
+      "detail": "El formato .y3 está entendido y hay herramienta, pero no se ha flasheado.",
+      "evidence": "docs/FLASH-Y3.md; 08-y3tool.py"
+    },
+    {
+      "title": "Herramientas remotas y documentación",
+      "short": "Herramientas",
+      "panel": "platform",
+      "weight": 5,
+      "percent": 100,
+      "state": "verified",
+      "detail": "Reset RCU, cazador U-Boot, build reproducible y documentación actual.",
+      "evidence": "uboot_cycle.py; docs/; CONTRIBUTING.md"
+    }
+  ],
+  "blocks": [
+    {
+      "title": "Red de RouterOS",
+      "text": "Los .ko de MikroTik piden símbolos del fastpath que no están en las fuentes GPL; switch.ko tampoco soporta el GSWIP del GRX350."
+    },
+    {
+      "title": "Licencia demo",
+      "text": "RouterOS deriva el software ID del disco y aquí no hay un disco MikroTik. No hay bypass en este repo."
+    },
+    {
+      "title": "Instalación persistente",
+      "text": "El .y3 está investigado, pero no se ha probado una escritura en NAND. El método actual es TFTP a RAM."
+    }
+  ],
+  "next": [
+    {
+      "title": "Red dentro de RouterOS",
+      "current": 5,
+      "target": 100,
+      "note": "Requiere fastpath/driver propietario o una alternativa propia; no es un cambio de config."
+    },
+    {
+      "title": "Licencia RouterOS",
+      "current": 0,
+      "target": 100,
+      "note": "Requiere una licencia válida para este hardware; fuera del alcance del repo."
+    },
+    {
+      "title": "Instalación persistente",
+      "current": 20,
+      "target": 100,
+      "note": "Backup, geometría UBI y prueba en el otro banco; no hacerlo sin recuperación."
+    }
+  ],
+  "notes": [
+    "El porcentaje mide hitos del port, no líneas de código ni que RouterOS sea usable.",
+    "Un área al 100% no implica que el sistema completo esté terminado.",
+    "La última prueba de hardware registrada es anterior al artefacto final; hay que repetirla."
+  ]
+}
