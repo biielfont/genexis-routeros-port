@@ -1,0 +1,105 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Genexis Pure ED500 (Adamo) - Intel/Lantiq GRX350 AnyWAN
+ *
+ * Datos tomados del equipo real: board_id "norrland", UART de consola en
+ * 0x16600000 (ttyLTQ0 en el firmware original), NAND en 0x17c00000,
+ * bootargs del U-Boot de Genexis: mem=224M@512M.
+ *
+ * Bring-up minimo: un solo VPE, GIC, UART y un reloj fijo. La frecuencia
+ * de CPU es un parametro: si el timer va mal, se ajusta aqui.
+ */
+/dts-v1/;
+
+#include <dt-bindings/interrupt-controller/mips-gic.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+
+/* Confirmado en el log del U-Boot de Genexis: "cps cpu/ddr run in 800/800 Mhz" */
+#define CPU_HZ		800000000
+#define UART_HZ		100000000
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	model = "Genexis Pure ED500 (GRX350)";
+	compatible = "genexis,pure-ed500", "intel,xrx500";
+
+	aliases {
+		serial0 = &asc0;
+	};
+
+	chosen {
+		/*
+		 * El asc de Lantiq registra ttyLTQ0: es el nombre que usa el
+		 * firmware original (console=ttyLTQ0,115200). earlycon sale por
+		 * stdout-path y hereda el divisor que dejo el bootloader.
+		 */
+		bootargs = "console=ttyLTQ0,115200 earlycon mem=224M@512M";
+		stdout-path = "serial0:115200n8";
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/*
+		 * Solo el VPE de arranque. El GRX350 es 2x2 interAptiv; los
+		 * demas se anaden cuando el SMP este probado en hardware.
+		 */
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "mti,interaptiv";
+			reg = <0>;
+			clocks = <&cpuclk>;
+		};
+	};
+
+	cpu_intc: interrupt-controller {
+		compatible = "mti,cpu-interrupt-controller";
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+	};
+
+	gic: gic@12320000 {
+		compatible = "mti,gic";
+		reg = <0x12320000 0x20000>;
+
+		interrupt-controller;
+		#interrupt-cells = <3>;
+		interrupt-parent = <&cpu_intc>;
+		mti,reserved-ipi-vectors = <56 8>;
+	};
+
+	cpuclk: cpu-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <CPU_HZ>;
+		clock-output-names = "cpu";
+	};
+
+	uartclk: uart-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <UART_HZ>;
+		clock-output-names = "asc";
+	};
+
+	memory@20000000 {
+		device_type = "memory";
+		reg = <0x20000000 0x0e000000>;	/* 224 MiB, como mem=224M@512M */
+	};
+
+	asc0: serial@16600000 {
+		compatible = "lantiq,asc";
+		reg = <0x16600000 0x100000>;
+		status = "okay";
+
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SHARED 103 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SHARED 105 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SHARED 106 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&uartclk>, <&uartclk>;
+		clock-names = "freq", "asc";
+	};
+};
