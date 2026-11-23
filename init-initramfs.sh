@@ -5,9 +5,22 @@ export PATH
 # 0 = arrancar /sbin/sysinit (el arranque real de RouterOS).
 # 1 = shell de inspeccion, para mirar interfaces/modulos sin reiniciar.
 # Se puede pedir el shell con ros.shell=1 en los bootargs.
-ROS_SHELL=1
+ROS_SHELL=0
+# sstore real de sysinit (sin stub) + user esperando el store.
+ROS_POST=0
+ROS_TTYSHELL=0
+ROS_LOGINWRAP=0
+# Let sysinit start the real sstore with its normal arguments. /dev/jiffies
+# is backed before switch_root, so its mmap has valid storage.
+ROS_STARTSTORE=0
+# user se crea a demanda por loader cuando llega la peticion de login.
+ROS_STARTUSER=0
+ROS_REALLOGIN=0
+ROS_PANICDUMP=0
 case " $(cat /proc/cmdline 2>/dev/null) " in
+	*" ros.shell=0 "*) ROS_SHELL=0 ;;
 	*" ros.shell=1 "*) ROS_SHELL=1 ;;
+	*" ros.post=0 "*) ROS_POST=0 ;;
 esac
 
 mount -t proc     proc     /proc
@@ -32,20 +45,97 @@ if [ -f /ros.squashfs ]; then
 		/newroot/merged 2>/dev/null; then
 		echo "  overlay listo, arrancando /sbin/sysinit"
 		R=/newroot/merged
+		# Contrasena inicial de admin. Se puede cambiar sin recompilar con
+		# ros.pass=... en los bootargs de U-Boot. El valor por defecto es
+		# el del laboratorio y queda documentado; no es un secreto.
+		ROSPASS=ed500
+		for a in $(cat /proc/cmdline 2>/dev/null); do
+			case "$a" in ros.pass=*) ROSPASS=${a#ros.pass=} ;; esac
+		done
 		mount -t proc   proc   $R/proc
 		mount -t sysfs  sysfs  $R/sys
 		mount -t devtmpfs devtmpfs $R/dev 2>/dev/null
 		mkdir -p $R/dev/pts $R/dev/shm $R/ram $R/rw $R/flash/rw $R/tmp
+		# ROSMode::save() abre /dev/jiffies en O_WRONLY y hace pwrite() de 88
+		# bytes; si el nodo no existe, save() falla y el loader lo registra
+		# como "ERROR: ROSMode::save failed". Un fichero normal en devtmpfs
+		# basta y es volatil: no toca NAND ni licencia.
+		: > $R/dev/jiffies 2>/dev/null || true
 		mount -t devpts devpts $R/dev/pts 2>/dev/null
 		mount -t tmpfs  tmpfs  $R/ram 2>/dev/null
-		mount -t tmpfs  tmpfs  $R/rw 2>/dev/null
 		mount -t tmpfs  tmpfs  $R/tmp 2>/dev/null
+
+		# Adjunta UBI antes de montar /flash/rw. En un arranque desde
+		# NAND el bootargs de U-Boot es ubi.mtd=ubi,0,30 y este kernel
+		# (BCH-4 por pasos de 512 B) espera el VID header en 512; la UBI
+		# stock lo tiene en 2048. Se adjunta a mano y, si el kernel ya
+		# creo ubi0 sin rootfs_0, se vuelve a adjuntar con -O 2048.
+		ubi_attach_ed500() {
+			MTDNUM=$(sed -n 's/^\(mtd[0-9][0-9]*\):.*"ubi"$/\1/p' /proc/mtd 2>/dev/null | head -1 | sed 's/mtd//')
+			[ -n "$MTDNUM" ] || MTDNUM=1
+			if [ -e /dev/ubi0 ]; then
+				HAVE_ROOTFS=0
+				for d in /sys/class/ubi/ubi0_*; do
+					[ -r "$d/name" ] || continue
+					case "$(cat "$d/name")" in rootfs_*) HAVE_ROOTFS=1 ;; esac
+				done
+				if [ "$HAVE_ROOTFS" = 0 ]; then
+					/bin/busybox ubidetach -d 0 2>/dev/null || true
+				fi
+			fi
+			if [ ! -e /dev/ubi0 ]; then
+				/bin/busybox ubiattach -m "$MTDNUM" -d 0 -O 2048 /dev/ubi_ctrl 2>&1 | sed 's/^/  /'
+				[ -e /dev/ubi0 ] || ubiattach -m "$MTDNUM" -d 0 -O 2048 2>&1 | sed 's/^/  /'
+			fi
+		}
+		ubi_attach_ed500
+
 		# /flash volatil: diskd intenta mount("none","/flash",NULL,...) y
 		# el kernel rechaza el fstype nulo; con este tmpfs /flash queda
-		# montado y writable antes de sysinit. No toca NAND ni licencia.
+		# montado y writable antes de sysinit.
 		mount -t tmpfs  tmpfs  $R/flash 2>/dev/null
 		mkdir -p $R/flash/rw
-		mount -t tmpfs  tmpfs  $R/flash/rw 2>/dev/null
+		# Persistencia: si rootfs_0 (el volumen que instala el .y3) esta
+		# en NAND, /flash/rw vive ahi y la config/logs de RouterOS
+		# sobreviven al reinicio. Si no, se queda en tmpfs como antes.
+		mkdir -p $R/nand
+		# Instalacion de un solo banco: run update_image escribe rootfs_0
+		# y fija root_vol=rootfs_0. No se sigue root= del cmdline para no
+		# acabar montando el banco stock si U-Boot hiciera un fallback.
+		ROOTVOL=rootfs_0
+		# La rootfs_0 actual de esta placa es la stock de Genexis, no la
+		# RouterOS del .y3. Montarla como /flash/rw mezcla su /rw con el
+		# userland de RouterOS y el login se queda colgado. Hasta flashear
+		# el .y3, /flash/rw va en tmpfs (volatil).
+		NAND_PERSIST=0
+		if [ "$NAND_PERSIST" = 1 ] && mount -t ubifs -o rw "ubi0:$ROOTVOL" $R/nand 2>/tmp/nand.err; then
+			echo "  NAND: $ROOTVOL montado rw en $R/nand"
+			mkdir -p $R/nand/rw/tmp $R/nand/rw/logs $R/nand/rw/store \
+				$R/nand/rw/cm $R/nand/rw/pckg $R/nand/rw/vstore
+			rm -f $R/nand/pad $R/nand/log.sock 2>/dev/null
+			rmdir $R/flash/rw 2>/dev/null
+			# Enlace relativo: el init accede a $R/flash/rw ANTES de
+			# switch_root. Un destino absoluto (/nand/rw) se resolveria
+			# contra el initramfs, no contra $R, y dejaria /flash/rw
+			# colgando hasta el switch_root.
+			ln -s ../nand/rw $R/flash/rw
+		else
+			echo "  NAND: persistencia desactivada (rootfs_0 stock); /flash/rw en tmpfs"
+			mount -t tmpfs  tmpfs  $R/flash/rw 2>/dev/null
+		fi
+		# /tmp y /rw son enlaces a /flash/rw/tmp y /flash/rw. El tmpfs de
+		# /flash/rw se monta despues de crear los enlaces, asi que hay que
+		# crear el destino ya con el tmpfs puesto o /tmp queda colgando y
+		# login/devlog no pueden abrir sus sockets.
+		# /var/run apunta a /rw/run; sin este destino sysinit registra
+		# "broken path" y los servicios no pueden publicar sus sockets.
+		mkdir -p $R/ram/run $R/ram/shm $R/ram/netns/main \
+			$R/flash/rw/tmp $R/flash/rw/logs $R/flash/rw/store \
+			$R/flash/rw/run $R/flash/rw/cm $R/flash/rw/pckg \
+			$R/flash/rw/vstore 2>/dev/null || true
+		# /dude es un enlace del rootfs a esta ruta; puede estar ausente en
+		# builds sin el paquete, pero no debe quedar como enlace colgante.
+		mkdir -p $R/flash/dude 2>/dev/null || true
 		# En un RouterBOARD real /flash es una copia writable del rootfs.
 		# sysinit espera /flash/nova, /flash/etc y /flash/home; sin ellos
 		# los servicios fallan con "broken path". La copia es volatil.
@@ -54,17 +144,92 @@ if [ -f /ros.squashfs ]; then
 				cp -a "$R/$d" "$R/flash/$d" 2>/dev/null && echo "  /flash/$d: copiado"
 			fi
 		done
+		# En el ED500 /dev/jiffies acaba siendo un fichero de tamano 0 y el
+		# mmap de libumsg revienta con SIGBUS al primer lw. Un fichero real
+		# de 8 KiB mantiene el mapping respaldado y evita el SIGBUS.
+		if [ -e $R/dev/jiffies ]; then
+			rm -f $R/dev/jiffies 2>/dev/null || true
+		fi
+		$R/bin/busybox dd if=/dev/zero of=$R/dev/jiffies bs=4096 count=2 2>/dev/null || true
+		# loader lee un MBR y el ID de /dev/mtdblock71 antes de arrancar
+		# los servicios. En este kernel no existe ese nodo; el loader
+		# parcheado no exige el ID, pero si el fichero para readMBR.
+		$R/bin/busybox dd if=/dev/zero of=$R/dev/mtdblock71 bs=512 count=1 2>/dev/null || true
+		# sys2/login esperan el fichero de secuencia de consola; si no
+		# existe, el prompt se queda esperando tras la contrasena.
+		: > $R/ram/userseq.console 2>/dev/null || true
 		# /rw es un enlace a /flash/rw en el rootfs. sysinit y /nova
 		# esperan logs/store; sin ellos el logger falla con broken path.
 		# /pckg es un enlace a /ram/pckg; /rw a /flash/rw. Hay que crear
 		# los destinos, no el enlace, o mkdir falla y set -e mata al init.
 		mkdir -p $R/ram/pckg/branding/rw $R/flash/pckg/branding/rw \
-			$R/flash/rw/logs $R/flash/rw/store 2>/dev/null || true
+			$R/flash/rw/tmp $R/flash/rw/logs $R/flash/rw/store 2>/dev/null || true
 		: > $R/ram/pckg/branding/rw/autorun.scr 2>/dev/null || true
 		: > $R/flash/pckg/branding/rw/autorun.scr 2>/dev/null || true
-		: > $R/flash/autorun.scr 2>/dev/null || true
-		: > $R/flash/rw/autorun.scr 2>/dev/null || true
-		: > $R/flash/rw/store/autorun.scr 2>/dev/null || true
+		# Autorun de RouterOS: se ejecuta en el arranque de sysinit. Deja la
+		# red usable sin consola (bridge, IP, DHCP) y fija la contrasena de
+		# admin. Si bridge2 no carga, las ordenes fallan pero el fallback de
+		# netup crea un bridge Linux; por eso el autorun no es la unica red.
+		if [ -e $R/flash/rw/autorun.scr ]; then
+			# Ya hay un autorun persistente en NAND: se respeta tal
+			# cual. La contrasena solo se fija en el primer arranque;
+			# el bootok borra esa linea despues para no pisar cambios.
+			cp $R/flash/rw/autorun.scr $R/flash/autorun.scr 2>/dev/null || true
+			echo "  autorun: usando el persistente de /flash/rw"
+		else
+			cat > $R/flash/autorun.scr <<'AUTORUN'
+# ED500: configuracion inicial (solo primer arranque).
+# La contrasena se sustituye desde los bootargs ros.pass=...
+# RouterOS lanza el autorun muy pronto; sin esta espera a veces solo
+# ejecuta la primera orden (comprobado en el foro de MikroTik).
+/delay 5
+/user set admin password="__ROSPASS__"
+# Crea/publica el registro de servicio que WebFig necesita. Sin esta orden,
+# www sirve los assets pero queda esperando la configuracion solicitada a
+# sermgr al abrir jsproxy.
+/ip service set [find name="www"] disabled=no port=80
+
+# Bridge con todos los puertos Ethernet que RouterOS vea.
+:if ([:len [/interface bridge find where name="bridge"]] = 0) do={
+  /interface bridge add name=bridge protocol-mode=none
+}
+# net puede renombrar los puertos DSA a ether1..4 (ros-name) o dejarlos
+# como lan1..4; se prueban ambos y solo se anade el que exista.
+:foreach p in={"ether1";"ether2";"ether3";"ether4";"lan1";"lan2";"lan3";"lan4"} do={
+  :if ([:len [/interface find where name=$p]] > 0) do={
+    :if ([:len [/interface bridge port find where interface=$p]] = 0) do={
+      /interface bridge port add bridge=bridge interface=$p
+    }
+  }
+}
+
+# Direccion de gestion y DHCP para la LAN.
+:if ([:len [/ip address find where interface=bridge]] = 0) do={
+  /ip address add address=192.168.88.1/24 interface=bridge
+}
+:if ([:len [/ip pool find where name="lan-pool"]] = 0) do={
+  /ip pool add name=lan-pool ranges=192.168.88.100-192.168.88.200
+}
+:if ([:len [/ip dhcp-server find where name="lan-dhcp"]] = 0) do={
+  /ip dhcp-server add name=lan-dhcp interface=bridge address-pool=lan-pool disabled=no
+  /ip dhcp-server network add address=192.168.88.0/24 gateway=192.168.88.1 dns-server=192.168.88.1
+}
+
+# VLAN de ejemplo (descomentar y ajustar si se necesita):
+# /interface vlan add name=vlan10 interface=bridge vlan-id=10
+# /ip address add address=192.168.10.1/24 interface=vlan10
+AUTORUN
+			sed -i "s/__ROSPASS__/$ROSPASS/" $R/flash/autorun.scr 2>/dev/null || true
+			cp $R/flash/autorun.scr $R/flash/rw/autorun.scr 2>/dev/null || true
+			cp $R/flash/autorun.scr $R/flash/rw/store/autorun.scr 2>/dev/null || true
+			echo "  autorun: generado (primer arranque)"
+		fi
+		# sysinit consulta varias rutas de autorun; se copia el mismo
+		# script a las copias volatiles para no depender del orden.
+		for f in $R/ram/pckg/branding/rw/autorun.scr \
+		         $R/flash/pckg/branding/rw/autorun.scr; do
+			cp $R/flash/autorun.scr "$f" 2>/dev/null || true
+		done
 		# postlog es el script de logging que sysinit busca en /flash;
 		# sin el, el motor de scripts da broken path.
 		: > $R/flash/postlog 2>/dev/null || true
@@ -78,9 +243,14 @@ if [ -f /ros.squashfs ]; then
 		: > $R/flash/DFSTEST 2>/dev/null || true
 		: > $R/flash/RESET 2>/dev/null || true
 		: > $R/flash/SHOW_LICENSE 2>/dev/null || true
-		: > $R/flash/rw/rnd_seed 2>/dev/null || true
-		: > $R/flash/rw/rosmode.msg 2>/dev/null || true
-		echo 0 > $R/flash/rw/startcount 2>/dev/null || true
+					# No truncar el estado persistente en NAND: si ya existe, se
+			# conserva entre reinicios. En tmpfs da igual, pero con rootfs_0
+			# en NAND estos ficheros son la configuracion de RouterOS.
+			echo "  /flash/rw -> $(readlink $R/flash/rw 2>/dev/null) (nand=$( [ -d $R/nand/rw ] && echo si || echo no))"
+			[ -e $R/flash/rw/rnd_seed ] || : > $R/flash/rw/rnd_seed 2>/dev/null || true
+			[ -e $R/flash/rw/rosmode.msg ] || : > $R/flash/rw/rosmode.msg 2>/dev/null || true
+			[ -e $R/flash/rw/startcount ] || echo 0 > $R/flash/rw/startcount 2>/dev/null || true
+			echo "  /flash/rw: estado persistente comprobado"
 		# Dirs de servicios que sysinit comprueba. No se crean los
 		# marcadores UPGRADED/PCKGS_CHANGED/BRANDING_INSTALLED ni bbup:
 		# vacíos hacen que sysinit reanude una instalación y falle con
@@ -122,38 +292,20 @@ if [ -f /ros.squashfs ]; then
 			fi
 		fi
 		echo "--- UBI ---"
-		# Si el bootargs no trajo ubi.mtd=ubi, se adjunta a mano. El indice
-		# se busca por nombre porque el MTD de RAM "RouterBoot" puede
-		# desplazar los indices de la NAND (mtd1 -> mtd2). El VID header va
-		# forzado a 2048 porque asi lo escribio la UBI stock de Genexis: con
-		# BCH-4 por pasos de 512 B el kernel habilita subpaginas y, sin este
-		# offset, UBI esperaria el VID header en 512 y daria -22.
-		MTDNUM=$(sed -n 's/^\(mtd[0-9][0-9]*\):.*"ubi"$/\1/p' /proc/mtd 2>/dev/null | head -1 | sed 's/mtd//')
-		[ -n "$MTDNUM" ] || MTDNUM=1
-		if [ ! -e /dev/ubi0 ]; then
-			if command -v ubiattach >/dev/null 2>&1; then
-				ubiattach -m "$MTDNUM" -d 0 -O 2048 2>&1 | sed 's/^/  /'
-			elif [ -x /bin/busybox ]; then
-				# En este initramfs no hay symlink del applet, pero el
-				# binario de BusyBox si lo trae; ademas exige el nodo
-				# /dev/ubi_ctrl como ultimo argumento.
-				/bin/busybox ubiattach -m "$MTDNUM" -d 0 -O 2048 /dev/ubi_ctrl 2>&1 | sed 's/^/  /'
-			fi
-		fi
+		ubi_attach_ed500
 		ls -l /dev/ubi* 2>&1 | sed 's/^/  /'
 		for d in /sys/class/ubi/ubi0_*; do
 			[ -r "$d/name" ] || continue
 			echo "  $(basename "$d"): $(cat "$d/name")"
 		done
-		for vol in rootfs_0 rootfs_1; do
-			mkdir -p "$R/mnt/$vol"
-			if mount -t ubifs -o ro "ubi0:$vol" "$R/mnt/$vol" 2>/tmp/ubi-$vol.err; then
-				echo "  UBI: $vol montado ro en $R/mnt/$vol"
-				ls "$R/mnt/$vol" 2>/dev/null | head -5 | sed 's/^/    /'
-			else
-				echo "  UBI: $vol no monta: $(cat /tmp/ubi-$vol.err 2>/dev/null)"
-			fi
-		done
+		# rootfs_0 es el unico volumen del sistema. rootfs_1 no se
+		# monta ni se usa: si existe, es la copia stock para recuperar
+		# manualmente desde U-Boot, no un segundo banco de arranque.
+		if mount | grep -q "on $R/nand type ubifs"; then
+			echo "  UBI: rootfs_0 montado rw en $R/nand (persistencia)"
+		else
+			echo "  UBI: rootfs_0 no esta montado rw"
+		fi
 		# RouterOS calcula la validez de su licencia demo con el reloj del
 		# sistema. El GRX350 arranca sin RTC util y el kernel cae en 2010,
 		# con lo que RouterOS dice "Demo license expired!" y se para. Se
@@ -161,32 +313,43 @@ if [ -f /ros.squashfs ]; then
 		date -s "2026-11-19 12:00:00" >/dev/null 2>&1
 		hwclock -w >/dev/null 2>&1
 		echo "  fecha: $(date)"
+		# El bootargs de NAND no trae panic=20; si el kernel hace panic,
+		# que reinicie solo. El flag de arranque del U-Boot se queda como
+		# este; no hay un segundo banco activo.
+		echo 20 > /proc/sys/kernel/panic 2>/dev/null || true
 		# RouterOS abre la consola por el nombre generico ttyS*; en este
 		# SoC el puerto es el ASC de Lantiq (ttyLTQ0).
 		for n in 0 1 2 3; do
 			[ -e $R/dev/ttyS$n ] || ln -sf ttyLTQ0 $R/dev/ttyS$n 2>/dev/null
 		done
-		# Diagnostico: por que no cargan los modulos de red de RouterOS.
-		# El insmod de su sysinit solo dice "failed: 2"; el del kernel
-		# imprime el simbolo que falta.
-		echo "--- diagnostico modulos de red de RouterOS ---"
+		# Los modulos de red los carga sysinit en su orden. No se hace
+		# insmod aqui: packet_hook.ko engancha el datapath y, si se carga
+		# antes de que RouterOS este listo, puede dejar sin red al propio
+		# initramfs. Solo se lista lo que hay.
+		echo "--- modulos de red de RouterOS (los carga sysinit) ---"
 		for m in drivers/net/packet_hook.ko drivers/net/phy_helper.ko \
 		         drivers/net/switch.ko net/bridge/bridge2.ko; do
-			echo "  == $m"
-			insmod $R/lib/modules/5.6.3/$m 2>&1 | head -8
+			f=$R/lib/modules/5.6.3/$m
+			if [ -f "$f" ]; then
+				echo "  $m: $(wc -c < "$f") bytes"
+			else
+				echo "  $m: no existe"
+			fi
 		done
-		echo "--- fin diagnostico ---"
 		# RouterOS usa /dev/log antes de que su propio log service cree el
 		# socket. En este devtmpfs un bind() no deja el nodo visible, asi
 		# que el socket real vive en /flash/rw (tmpfs) y /dev/log es un
 		# enlace. El logger minimo lo mantiene y vuelca a messages.
 		cp /bin/devlog $R/bin/devlog 2>/dev/null || true
 		chmod 755 $R/bin/devlog 2>/dev/null || true
-		rm -f $R/dev/log
-		ln -s /flash/rw/log.sock $R/dev/log 2>/dev/null || true
-		chroot $R /bin/devlog /flash/rw/log.sock 2>/dev/console &
+		# El socket vive en /tmp (tmpfs): UBIFS no tiene por que soportar
+		# sockets y un bind() sobre un socket viejo falla. Los mensajes
+		# siguen yendo a /flash/rw/logs/messages (NAND si esta montado).
+		rm -f $R/dev/log $R/flash/rw/log.sock $R/tmp/log.sock
+		ln -s /tmp/log.sock $R/dev/log 2>/dev/null || true
+		chroot $R /bin/devlog /tmp/log.sock 2>/dev/console &
 		sleep 1
-		ls -l $R/dev/log $R/flash/rw/log.sock 2>&1 | sed 's/^/  devlog: /'
+		ls -l $R/dev/log $R/tmp/log.sock 2>&1 | sed 's/^/  devlog: /'
 		# Modo inspeccion: arrancar un shell dentro del rootfs de
 		# RouterOS (trae bash) para ver estado, interfaces y licencia
 		# sin necesidad de reiniciar a ciegas.
@@ -215,7 +378,314 @@ if [ -f /ros.squashfs ]; then
 				echo "  no he podido copiar busybox, sigo con sysinit"
 			fi
 		fi
-		exec switch_root $R /sbin/sysinit start
+		# Red de gestion tras sysinit: sysinit deja cbm0/lan* abajo y sin
+		# IP. Un ayudante volatil (busybox copiado al overlay) las levanta
+		# cuando RouterOS ya ha arrancado, para poder validar web/API sin
+		# depender de un shell en la consola. No toca NAND.
+		cp /bin/busybox $R/bin/busybox 2>/dev/null || true
+		chmod 755 $R/bin/busybox 2>/dev/null || true
+		cat > $R/bin/netup <<'NETUP'
+#!/bin/sh
+# Red de gestion de ultimo recurso. No toca la NAND ni la config de RouterOS.
+# - si RouterOS ya creo un bridge con IP, no hace nada;
+# - si hay bridge sin IP, le pone 192.168.1.2;
+# - si no hay bridge, crea br0 con ether1..4 o lan1..4, IP y DHCP.
+# - mgmt.vlan=NN en los bootargs crea br0.NN y pone la IP ahi.
+B=/bin/busybox
+LOG=/flash/rw/netup.log
+IP=192.168.1.2
+MASK=255.255.255.0
+VLAN=""
+for a in $($B cat /proc/cmdline 2>/dev/null); do
+	case "$a" in mgmt.vlan=*) VLAN=${a#mgmt.vlan=} ;; esac
+done
+log() { echo "$($B date '+%H:%M:%S' 2>/dev/null) $*" >> "$LOG"; }
+$B sleep 60
+i=0
+while [ "$i" -lt 30 ]; do
+	$B ifconfig cbm0 up 2>/dev/null
+	for n in ether1 ether2 ether3 ether4 lan1 lan2 lan3 lan4; do
+		$B ifconfig "$n" up 2>/dev/null
+	done
+
+	# Bridge creado por RouterOS (bridge, bridge1, ...).
+	BR=""
+	for d in /sys/class/net/*; do
+		[ -d "$d/bridge" ] || continue
+		n=${d##*/}
+		# br0 es el bridge del fallback, no uno de RouterOS; si se cuela,
+		# el script se cree que RouterOS ya tiene red y no configura la VLAN.
+		[ "$n" = "br0" ] && continue
+		BR=$n
+	done
+	if [ -n "$BR" ]; then
+		if $B ifconfig "$BR" 2>/dev/null | $B grep -q 'inet addr'; then
+			log "RouterOS ya tiene $BR con IP; no toco la red"
+		else
+			$B ifconfig "$BR" "$IP" netmask "$MASK" up 2>/dev/null \
+				&& log "bridge de RouterOS $BR sin IP: puesta $IP"
+		fi
+		exit 0
+	fi
+
+	# Sin bridge de RouterOS: bridge Linux volatil.
+	if [ ! -d /sys/class/net/br0 ]; then
+		$B brctl addbr br0 2>/dev/null
+		for n in ether1 ether2 ether3 ether4 lan1 lan2 lan3 lan4; do
+			$B brctl addif br0 "$n" 2>/dev/null
+		done
+		$B ifconfig br0 up 2>/dev/null
+		log "br0 creado con ether1..4/lan1..4"
+	fi
+
+	IF=br0
+	if [ -n "$VLAN" ]; then
+		$B vconfig add br0 "$VLAN" 2>/dev/null
+		IF="br0.$VLAN"
+	fi
+	$B ifconfig "$IF" "$IP" netmask "$MASK" up 2>/dev/null
+
+	# DHCP solo en el fallback Linux; si RouterOS manda, no se arranca.
+	if [ ! -s /flash/rw/udhcpd.pid ]; then
+		cat > /flash/rw/udhcpd.conf <<DHCP
+start 192.168.1.100
+end 192.168.1.199
+interface $IF
+opt router $IP
+opt dns $IP
+option subnet $MASK
+lease_file /flash/rw/udhcpd.leases
+pidfile /flash/rw/udhcpd.pid
+DHCP
+		$B udhcpd -f /flash/rw/udhcpd.conf >/dev/null 2>&1 &
+		log "dhcp en $IF (192.168.1.100-199)"
+	fi
+
+	i=$((i + 1))
+	$B sleep 20
+done
+NETUP
+		chmod 755 $R/bin/netup 2>/dev/null || true
+		chroot $R /bin/busybox sh /bin/netup >/dev/null 2>&1 &
+		echo "  red de gestion: ayudante netup armado"
+		# Flag de arranque del U-Boot: el firmware stock lo resetea
+		# desde /etc/init.d/bootcount con fw_setenv. Sin ese reset,
+		# iboot acabaria intentando el banco de recuperacion.
+		# Las herramientas se compilan estaticas en el initramfs y se
+		# copian al overlay; el contador solo se toca si sysinit ha
+		# levantado la web/API.
+		if [ -x /usr/sbin/fw_printenv ]; then
+			cp /usr/sbin/fw_printenv $R/bin/fw_printenv 2>/dev/null || true
+			cp /usr/sbin/fw_setenv   $R/bin/fw_setenv   2>/dev/null || true
+			chmod 755 $R/bin/fw_printenv $R/bin/fw_setenv 2>/dev/null || true
+			cat > $R/flash/rw/fw_env.config <<'FWENV'
+/dev/ubi0:env1 0x0 0x1f000
+/dev/ubi0:env2 0x0 0x1f000
+FWENV
+			cat > $R/bin/bootok <<'BOOTOK'
+#!/bin/sh
+# Flag de arranque del U-Boot, equivalente a /etc/init.d/bootcount del
+# stock. Solo actua con rootfs_0 y si sysinit responde; si no, deja el
+# flag para que iboot pueda intentar la recuperacion.
+B=/bin/busybox
+LOG=/flash/rw/bootok.log
+CUR=""
+for a in $($B cat /proc/cmdline 2>/dev/null); do
+	case "$a" in root=*) CUR=${a#root=}; CUR=${CUR#ubi0:} ;; esac
+done
+case "$CUR" in
+	rootfs_0) ;;
+	*) echo "$($B date '+%Y-%m-%d %H:%M:%S') actual=$CUR no es rootfs_0; flag intacto" >> "$LOG"; exit 0 ;;
+esac
+svc_up() {
+	for f in /proc/net/tcp /proc/net/tcp6; do
+		[ -r "$f" ] || continue
+		$B grep -q ':0050 ' "$f" 2>/dev/null && return 0
+		$B grep -q ':0017 ' "$f" 2>/dev/null && return 0
+		$B grep -q ':200B ' "$f" 2>/dev/null && return 0
+	done
+	return 1
+}
+i=0
+while [ "$i" -lt 12 ]; do
+	$B sleep 10
+	if svc_up; then break; fi
+	i=$((i + 1))
+done
+if ! svc_up; then
+	echo "$($B date '+%Y-%m-%d %H:%M:%S') sysinit no responde; flag de arranque intacto" >> "$LOG"
+	exit 0
+fi
+# La contrasena de admin solo se fija en el primer arranque. Se borra
+# la linea del autorun persistente para que un cambio posterior en
+# RouterOS no se pierda en el siguiente reinicio.
+$B sed -i '/user set admin password/d' /flash/rw/autorun.scr \
+	/flash/rw/store/autorun.scr 2>/dev/null || true
+ROOTVOL=$(/bin/fw_printenv -c /flash/rw/fw_env.config -n root_vol 2>/dev/null)
+if [ -z "$ROOTVOL" ]; then
+	echo "$($B date '+%Y-%m-%d %H:%M:%S') fw_printenv no lee root_vol; flag intacto" >> "$LOG"
+	exit 0
+fi
+if [ "$ROOTVOL" != "rootfs_0" ]; then
+	echo "$($B date '+%Y-%m-%d %H:%M:%S') root_vol=$ROOTVOL no es rootfs_0; flag intacto" >> "$LOG"
+	exit 0
+fi
+if /bin/fw_setenv -c /flash/rw/fw_env.config boot_cnt_primary 0 2>>"$LOG"; then
+	echo "$($B date '+%Y-%m-%d %H:%M:%S') boot_cnt_primary=0 (rootfs_0)" >> "$LOG"
+else
+	echo "$($B date '+%Y-%m-%d %H:%M:%S') fallo al escribir boot_cnt_primary" >> "$LOG"
+fi
+BOOTOK
+			chmod 755 $R/bin/bootok 2>/dev/null || true
+			chroot $R /bin/busybox sh /bin/bootok >/dev/null 2>&1 &
+			echo "  flag de arranque U-Boot: ayudante bootok armado"
+		fi
+					echo "  sysinit: $(ls -l $R/sbin/sysinit 2>&1)"
+			if [ "$ROS_POST" = 1 ]; then
+				cat > $R/bin/postdiag <<'POST'
+#!/bin/sh
+cd /
+sleep 45
+exec >/dev/console 2>&1
+echo
+echo "=== POSTDIAG: procesos tras sysinit ==="
+/bin/busybox ps
+echo "=== POSTDIAG: sockets unix ==="
+/bin/busybox cat /proc/net/unix
+echo "=== POSTDIAG: montajes ==="
+/bin/busybox cat /proc/mounts
+echo "=== POSTDIAG: mensajes ==="
+if [ -f /flash/rw/logs/messages ]; then
+	/bin/busybox tail -n 120 /flash/rw/logs/messages
+else
+	echo "sin /flash/rw/logs/messages"
+fi
+echo "=== POSTDIAG: backtrace ==="
+if [ -f /flash/rw/logs/backtrace.log ]; then
+	/bin/busybox tail -n 80 /flash/rw/logs/backtrace.log
+else
+	echo "sin backtrace.log"
+fi
+echo "=== POSTDIAG: dmesg final ==="
+/bin/busybox dmesg | /bin/busybox tail -n 80
+echo "=== POSTDIAG: matando login colgado ==="
+for n in login parser; do
+	for p in $(/bin/busybox pidof $n 2>/dev/null); do
+		echo "  kill -9 $n $p"
+		/bin/busybox kill -9 $p 2>/dev/null
+	done
+done
+sleep 1
+echo "=== POSTDIAG: shell de inspeccion ==="
+exec /bin/busybox sh -i 0</dev/console 1>/dev/console 2>&1
+POST
+				chmod 755 $R/bin/postdiag 2>/dev/null || true
+				( cd $R && chroot $R /bin/busybox sh /bin/postdiag ) &
+				echo "  postdiag: armado (45 s)"
+			fi
+			if [ "$ROS_LOGINWRAP" = 1 ] && [ -x $R/nova/bin/login ]; then
+				cp -a $R/nova/bin/login $R/nova/bin/login.real 2>/dev/null || true
+				cat > $R/nova/bin/login <<'LOGINWRAP'
+#!/bin/sh
+echo "$(date) argv:$*" >> /flash/rw/login.log 2>/dev/null
+exec /nova/bin/login.real "$@"
+LOGINWRAP
+				chmod 755 $R/nova/bin/login 2>/dev/null || true
+				echo "  loginwrap: /nova/bin/login -> shell (real en login.real)"
+			fi
+			if [ "$ROS_STARTSTORE" = 1 ]; then
+				echo "  sstore real: lo inicia sysinit con sus argumentos normales"
+			fi
+			if [ "$ROS_PANICDUMP" = 1 ]; then
+				( sleep 55; echo "===PANIC0==="; /bin/busybox cat $R/flash/nova/logs/panic0.log 2>/dev/null; echo "===PANIC1==="; /bin/busybox cat $R/flash/nova/logs/panic1.log 2>/dev/null; echo "===PS==="; /bin/busybox chroot $R /bin/busybox ps; echo "===PANIC_END===" ) >/dev/console 2>&1 &
+				echo "  panic dump: 55 s"
+			fi
+			if [ "$ROS_STARTUSER" = 1 ]; then
+				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'sleep 20; while [ ! -S /ram/storereg ]; do /bin/busybox sleep 1; done; exec /nova/bin/user' >$R/flash/rw/user.log 2>&1 ) &
+				echo "  user: espera a /ram/storereg (desde 20 s)"
+			fi
+			if [ "$ROS_REALLOGIN" = 1 ]; then
+				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'sleep 55; exec /nova/bin/login console' </dev/console >/dev/console 2>&1 ) &
+				echo "  login modo console a 55 s"
+			fi
+			if [ "$ROS_TTYSHELL" = 1 ]; then
+				cat > $R/bin/ttyshell <<'TTY'
+#!/bin/sh
+sleep 95
+# sysinit/loader ya inicia sermgr y www; no duplicarlos fuera del loader.
+/bin/busybox ifconfig lan4 192.168.1.2 netmask 255.255.255.0 up 2>/dev/null || true
+(
+	while :; do
+		{
+			echo "=== WebFig diagnostics ==="
+			/bin/busybox cat /proc/uptime
+			echo "--- processes ---"
+			/bin/busybox ps
+					echo "--- process executable links ---"
+					for d in /proc/[0-9]*; do
+						[ -r "$d/cmdline" ] || continue
+						echo "PID ${d##*/}: $(/bin/busybox readlink "$d/exe" 2>/dev/null)"
+						/bin/busybox tr '\000' ' ' < "$d/cmdline" 2>/dev/null
+						echo
+					done
+			echo "--- store paths ---"
+			for p in /ram/storereg /ram/novasock /ram/run /rw/store /nova/store/sermgr /flash/rw/loader.trace; do
+				if [ -e "$p" ]; then /bin/busybox ls -ld "$p"; else echo "missing: $p"; fi
+			done
+			echo "--- store files (names/sizes only) ---"
+			/bin/busybox ls -ln /rw/store 2>&1
+					echo "--- cfg.0000 printable strings ---"
+					/bin/busybox strings /rw/store/cfg.0000 2>/dev/null | /bin/busybox head -n 160
+					for f in /flash/rw/sermgr.log /flash/rw/www.log /flash/rw/user.log /flash/rw/sstore.log /flash/nova/logs/messages /flash/nova/logs/log; do
+						if [ -r "$f" ]; then echo "--- $f ---"; /bin/busybox tail -n 100 "$f"; fi
+					done
+			echo "--- related unix sockets ---"
+			/bin/busybox grep -E 'storereg|sermgr|www|user' /proc/net/unix 2>/dev/null
+			echo "--- loader trace (service negotiation, filtered) ---"
+			/bin/busybox grep -aE 'no settings, asking sermgr|set www enabled=|connect failed' /flash/rw/loader.trace 2>/dev/null | /bin/busybox tail -n 60
+		} > /home/web/diag.txt.tmp 2>&1
+		/bin/busybox mv /home/web/diag.txt.tmp /home/web/diag.txt 2>/dev/null || true
+		/bin/busybox sleep 5
+	done
+) >/dev/null 2>&1 &
+exec /bin/busybox sh -i 0</dev/ttyS0 1>/dev/ttyS0 2>/dev/ttyS0
+TTY
+				chmod 755 $R/bin/ttyshell 2>/dev/null || true
+				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh /bin/ttyshell ) &
+				echo "  ttyshell: armado (90 s, ttyS0)"
+			fi
+			if [ "$ROS_TTYSHELL" = 0 ]; then
+				cat > $R/bin/webdiag <<'WEBDIAG'
+#!/bin/sh
+B=/bin/busybox
+$B sleep 95
+$B ifconfig lan4 192.168.1.2 netmask 255.255.255.0 up 2>/dev/null || true
+while :; do
+	{
+		echo "=== RouterOS diagnostic ==="
+		$B cat /proc/uptime
+		$B ps
+		$B ls -ln /rw/store 2>&1
+		$B strings /rw/store/cfg.0000 2>/dev/null | $B head -n 160
+		for f in /flash/rw/sstore.log /flash/rw/sermgr.log /flash/rw/www.log /flash/rw/user.log /flash/rw/netup.log /flash/rw/logs/messages; do
+			if [ -r "$f" ]; then echo "--- $f ---"; $B tail -n 120 "$f"; fi
+		done
+		$B cat /proc/net/unix
+	} > /home/web/diag.txt.tmp 2>&1
+	$B mv /home/web/diag.txt.tmp /home/web/diag.txt 2>/dev/null || true
+	$B sleep 5
+done
+WEBDIAG
+				chmod 755 $R/bin/webdiag 2>/dev/null || true
+				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh /bin/webdiag ) >/dev/null 2>&1 &
+				echo "  webdiag: IP 192.168.1.2 y diagnostico HTTP a 95 s, sin consola"
+			fi
+			echo "  lanzando /sbin/sysinit (switch_root)"
+			# sysinit y el login que cuelga de el tienen que recibir la
+			# consola como stdin/stdout/stderr. Si heredan un fd que no es
+			# un TTY, /nova/bin/login arranca en modo headLess y el prompt
+			# de la consola se queda sin proceso que lo atienda.
+			exec switch_root $R /sbin/sysinit start </dev/console >/dev/console 2>&1
 	fi
 	echo "  no se pudo montar el rootfs de RouterOS, sigo con el initramfs"
 fi

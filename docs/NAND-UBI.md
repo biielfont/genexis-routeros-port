@@ -87,7 +87,8 @@ sigue intacta y sin escrituras.
 
 Como el MTD de RAM puede desplazar los índices (`mtd0` deja de ser `uboot`),
 el init localiza la partición `ubi` por nombre en `/proc/mtd` antes de hacer
-`ubiattach`. La NAND sigue montándose en solo lectura.
+`ubiattach`. En el arranque TFTP la NAND se lee; cuando el `.y3` está
+instalado, `rootfs_0` se monta en rw para `/nand` (ver abajo).
 
 ## Particiones
 
@@ -97,9 +98,45 @@ el init localiza la partición `ubi` por nombre en `/proc/mtd` antes de hacer
 | `mtd1` | `uboot` | 1 MiB | U-Boot; solo lectura |
 | `mtd2` | `ubi` | 127 MiB | UBI con el firmware/rootfs |
 
-El init intenta montar `rootfs_0` y `rootfs_1` en **solo lectura** bajo
-`/newroot/merged/mnt/`. Si el bootargs no trajo `ubi.mtd=ubi,2048,30`, el
-fallback es:
+### Volúmenes UBI del ED500
+
+El firmware stock crea estos volúmenes (`format_system_2` del entorno de
+U-Boot). Los tamaños son los de fábrica; `ubiupdatevol --size` puede
+reducirlos al instalar una imagen más pequeña.
+
+| Volumen | Tamaño | Uso |
+|---|---:|---|
+| `env1` | `0x1f000` (126.976 B) | entorno de U-Boot, copia 1 |
+| `env2` | `0x1f000` (126.976 B) | entorno de U-Boot, copia 2 (redundante) |
+| `rootfs_0` | `0x3a20000` (60.948.480 B, 480 LEBs) | firmware/rootfs; aquí instala el `.y3` |
+| `rootfs_1` | `0x3a20000` (60.948.480 B, 480 LEBs) | copia stock de recuperación manual; **no se monta ni se arranca** |
+| `usr_data` | `0x22e000` (2.285.568 B) | datos de usuario del stock |
+
+El `.y3` se instala **solo en `rootfs_0`** con `run update_image`; no se usa
+la web stock ni el banco siguiente. `rootfs_1` no se monta ni se arranca: si
+existe, es una copia stock para recuperación manual desde U-Boot. `root_vol`
+es `rootfs_0` y `boot_cnt_primary` es el único flag de arranque que se toca;
+no hay lógica A/B.
+
+### Instalación y persistencia
+
+- U-Boot `boot_ubi` monta `ubi0:${root_vol}` y carga `/boot/uImage` y
+  `/boot/norrland.dtb`. No hay TFTP.
+- El init del port monta **`rootfs_0`** en **rw** en `/nand` y enlaza
+  `/flash/rw` → `/nand/rw`. La config y los logs de RouterOS persisten.
+- La imagen lleva un `pad` de 30 MB que se borra en el primer arranque; deja
+  espacio para `/flash/rw` sin tener que redimensionar el volumen.
+- `bootok` resetea **`boot_cnt_primary`** después de comprobar que la web/API
+  responde, igual que `/etc/init.d/bootcount` del stock. `boot_cnt_alt` no se
+toca y `rootfs_1` no se arranca.
+
+Detalle completo: **[FLASH-Y3.md](FLASH-Y3.md)**. Verificación offline, sin
+abrir `/dev/mtd` ni `/dev/ubi`: `bash tools/verify-offline.sh`.
+
+El init monta `rootfs_0` en **rw** en `/nand` (y lo enlaza como
+`/flash/rw`). **`rootfs_1` no se monta** en el arranque normal: si existe, es
+la copia stock para recuperación manual desde U-Boot. Si el bootargs no trajo
+`ubi.mtd=ubi,2048,30`, el fallback es:
 
 ```sh
 MTDNUM=$(sed -n 's/^\(mtd[0-9][0-9]*\):.*"ubi"$/\1/p' /proc/mtd | head -1 | sed 's/mtd//')
@@ -152,9 +189,15 @@ son iguales en otra unidad: mira siempre `/sys/class/ubi`.
   carga y registra `/dev/flash`. `mount none /flash` sigue en `EINVAL` porque
   `diskd` pasa `fstype=NULL` al `mount`; no es un fallo de `flash.ko`. No se
   toca la NAND ni la licencia.
-- **No probado como escritura:** no hay `ubi write`, `flash_erase` ni
-  actualización persistente en este repo. `out/` y el arranque TFTP no escriben
-  NAND.
+- **Construido, no flasheado (2026-11-21):** `out/ED500-routeros-7.17-nand.y3`
+  (53.613.270 B, MD5 `3e9b37d712ad6610bbaa2dc7d7ae2ccb`) lleva una UBIFS de
+  422 LEBs con `/boot/uImage`, `/boot/norrland.dtb`, `/rw` y el `pad`. La
+  escritura real en NAND, el arranque de `iboot` y la persistencia tras un
+  reinicio **no se han probado**. Ver [FLASH-Y3.md](FLASH-Y3.md).
+- **No probado como escritura:** el repo no ejecuta `ubi write` ni
+  `flash_erase` en el arranque TFTP. La instalación es un paso explícito por
+  `run update_image` desde U-Boot, que escribe `rootfs_0`; la web stock no se
+  usa y no hay fallback A/B.
 - **No es un disco MikroTik:** RouterOS usa `/dev/mtdblock0` para derivar su
   *software ID*. Aquí contiene el firmware Adamo, así que el chequeo de licencia
   demo falla. Eso no se arregla con ECC ni con particiones.
@@ -169,5 +212,7 @@ No lo hagas sin:
    LEB 124 KiB, página 2 KiB);
 4. un plan de recuperación por UART/ROM y el otro banco de arranque sano.
 
-El contenedor `.y3` está investigado en **[FLASH-Y3.md](FLASH-Y3.md)**, pero es
-experimental y **no** es el método actual. El método actual es TFTP a RAM.
+El `.y3` ya está construido y verificado a nivel de contenedor:
+`out/ED500-routeros-7.17-nand.y3` (422 LEBs, 53.613.270 B). La instalación
+en NAND es el paso siguiente; el arranque TFTP a RAM sigue siendo el método
+de prueba que no escribe flash. Procedimiento: **[FLASH-Y3.md](FLASH-Y3.md)**.

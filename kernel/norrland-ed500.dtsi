@@ -1,0 +1,149 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Genexis Pure ED500 board hardware that is not part of the SoC dtsi:
+ * SSO LEDs, the SK9822 front-panel RGB LED and the physical reset button.
+ *
+ * The stock device tree describes the same SSO pins as:
+ *   led0-4:green:gphy, led5:green:catv, led6:green:wireless,
+ *   led7:green:voice, led8-12:yellow:gphy, led13:green:internet,
+ *   led14:green:uplink.
+ * The Ethernet LEDs are driven by the GPHY through the SSO hardware-trigger
+ * bits; the front-panel LEDs are software-controlled.
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	sso_fpid: sso-fpid-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <100000000>;
+		clock-output-names = "sso-fpid";
+	};
+
+	sso_leds: sso-leds@16d00000 {
+		compatible = "intel,sso-led", "syscon";
+		reg = <0x16d00000 0x2cc>;
+
+		clocks = <&sso_fpid>, <&cgu GCLK_SSO>;
+		clock-names = "fpid", "sso";
+
+		intel,gptc-clkrate = <200000000>;
+		intel,sso-def-brightnes = <0x80>;
+		intel,sso-def-blinkrate = <4>;
+
+		/* Ethernet port LEDs: green = 1000M, yellow = 10/100M. */
+		led0 {
+			label = "led0:green:gphy";
+			intel,led-pin = <0>;
+			intel,sso-hw-trigger;
+		};
+
+		led1 {
+			label = "led1:green:gphy";
+			intel,led-pin = <1>;
+			intel,sso-hw-trigger;
+		};
+
+		led2 {
+			label = "led2:green:gphy";
+			intel,led-pin = <2>;
+			intel,sso-hw-trigger;
+		};
+
+		led3 {
+			label = "led3:green:gphy";
+			intel,led-pin = <3>;
+			intel,sso-hw-trigger;
+		};
+
+		led4 {
+			label = "led4:green:gphy";
+			intel,led-pin = <4>;
+			intel,sso-hw-trigger;
+		};
+
+		led5 {
+			label = "led5:green:catv";
+			intel,led-pin = <5>;
+			intel,sso-brightness = <0xff>;
+			default-state = "off";
+		};
+
+		led6 {
+			label = "led6:green:wireless";
+			intel,led-pin = <6>;
+			intel,sso-brightness = <0xff>;
+			default-state = "off";
+		};
+
+		led7 {
+			label = "led7:green:voice";
+			intel,led-pin = <7>;
+			intel,sso-brightness = <0xff>;
+			default-state = "off";
+		};
+
+		led8 {
+			label = "led8:yellow:gphy";
+			intel,led-pin = <8>;
+			intel,sso-hw-trigger;
+		};
+
+		led9 {
+			label = "led9:yellow:gphy";
+			intel,led-pin = <9>;
+			intel,sso-hw-trigger;
+		};
+
+		led10 {
+			label = "led10:yellow:gphy";
+			intel,led-pin = <10>;
+			intel,sso-hw-trigger;
+		};
+
+		led11 {
+			label = "led11:yellow:gphy";
+			intel,led-pin = <11>;
+			intel,sso-hw-trigger;
+		};
+
+		led12 {
+			label = "led12:yellow:gphy";
+			intel,led-pin = <12>;
+			intel,sso-hw-trigger;
+		};
+
+		led13 {
+			label = "led13:green:internet";
+			intel,led-pin = <13>;
+			intel,sso-brightness = <0xff>;
+			default-state = "off";
+		};
+
+		led14 {
+			label = "led14:green:uplink";
+			intel,led-pin = <14>;
+			intel,sso-brightness = <0xff>;
+			default-state = "off";
+		};
+	};
+
+	/* SK9822 status RGB LED: led-gpios = clock, data. */
+	canyon_led: canyon_led {
+		compatible = "canyon,led";
+		led-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>,
+			    <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		led-count = <1>;
+		status = "okay";
+	};
+
+	/* Stock board DB: reset = GPIO0 pin 0, active low, 5 s hold. */
+	ed500_buttons: ed500-buttons {
+		compatible = "genexis,ed500-buttons";
+		reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		wps-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+		reset-hold-ms = <5000>;
+		status = "okay";
+	};
+};

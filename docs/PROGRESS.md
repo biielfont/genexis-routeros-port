@@ -2,8 +2,8 @@
 
 ![Mapa de progreso](../progress.svg)
 
-**70% del port completado (70/100 puntos de peso).** Última actualización:
-**2026-11-20**. El gráfico se genera desde [`progress.json`](../progress.json)
+**71% del port completado (71/100 puntos de peso).** Última actualización:
+**2026-11-21**. El gráfico se genera desde [`progress.json`](../progress.json)
 con [`tools/progress.py`](../tools/progress.py) y es el único elemento visual
 del proyecto; todo el texto está en Markdown.
 
@@ -20,10 +20,10 @@ del proyecto; todo el texto está en Markdown.
 El SVG tiene dos paneles:
 
 - **Plataforma y arranque**: 55 puntos de peso; todo verificado en hardware.
-- **RouterOS**: 45 puntos de peso; 15 completados.
+- **RouterOS**: 45 puntos de peso; 16 completados.
 
 Cada celda vale **un punto de peso**. Los pesos suman 100 y los puntos hechos
-son `peso × porcentaje`; por eso `55 + 15 = 70`. Las celdas verdes son trabajo
+son `peso × porcentaje`; por eso `55 + 16 = 71`. Las celdas verdes son trabajo
 hecho y las grises, trabajo pendiente. El color no distingue entre “parcial” y
 “bloqueado”: eso se ve en la tabla y en el detalle de cada área.
 
@@ -49,9 +49,9 @@ el [README](../README.md), y GitHub lo renderiza como imagen.
 | 5 | Módulos de RouterOS | 10 | 3 | 30% | parcial | `Unknown symbol` en logs |
 | 6 | Red dentro de RouterOS | 20 | 1 | 5% | bloqueado | `packet_hook`, `switch`, `bridge2` |
 | 7 | Licencia RouterOS | 10 | 10 | 100% | verificado | `RouterOS is now licensed`; `backtrace.log` |
-| 8 | Instalación persistente / `.y3` | 5 | 1 | 20% | parcial | `docs/FLASH-Y3.md`, `08-y3tool.py` |
+| 8 | Instalación persistente / `.y3` | 5 | 2 | 40% | parcial | `docs/FLASH-Y3.md`, `tools/make-y3.sh`, `tools/verify-offline.sh`, `08-y3tool.py` |
 | 9 | Herramientas remotas y documentación | 5 | 5 | 100% | verificado | `catch_final.py`, `uboot_cycle.py` |
-| | **Total** | **100** | **70** | **70%** | | |
+| | **Total** | **100** | **71** | **71%** | | |
 
 ### Qué está verificado en hardware
 
@@ -60,24 +60,58 @@ el [README](../README.md), y GitHub lo renderiza como imagen.
 - Consola serie en `ttyLTQ0` a 115200 8N1.
 - **Ethernet a 1 Gbps**: DSA, switch GSWIP XRX500 y PHY XWAY.
 - **NAND de 128 MiB** (Macronix MX30LF1G18AC) con ECC BCH-4 y BBT.
-- **UBI/UBIFS en lectura**: `rootfs_0` y `rootfs_1` montados en solo lectura.
+- **UBI/UBIFS en lectura**: `rootfs_0` montado en solo lectura en las pruebas;
+  `rootfs_1` se leyó para inspección, no forma parte del arranque actual.
 - **Rootfs oficial de RouterOS**: Squashfs, overlay en tmpfs y shell `~ #`.
 - `flash.ko` de RouterOS se integra en el kernel; `/flash` es tmpfs y
   `/dev/flash` existe.
-- `/dev/log` con `devlog` y **licencia aceptada** (`RouterOS is now licensed`).
+- `/dev/log` con `devlog`, **licencia aceptada** (`RouterOS is now licensed`) y
+  **loader/sysinit**: con `/dev/jiffies` arrancan 30 servicios y la web
+  responde 200 en `192.168.1.2`.
+- Con el `.y3` instalado, `/flash/rw` pasa a ser NAND; **pendiente de probar en
+  placa**.
 
 ### Qué no está resuelto
 
-- La **red dentro de RouterOS** no funciona: faltan el *fastpath* binario de
-  MikroTik y un driver de switch para el GSWIP del GRX350.
-- El **loader** de RouterOS falla al crear los servicios
-  (`STRONG FAIL: this is not equal to that` y `read failed (EOF)`); sin
-  servicios no hay GUI, Winbox ni login.
-- La **instalación persistente** en NAND no se ha probado. El método actual es
-  TFTP a RAM; no se ha escrito la flash.
-- El build #93 está probado en placa (2026-11-20): `/flash` tmpfs, `flash.ko`,
-  `/dev/flash`, `/dev/log` con `devlog`, licencia aceptada y `sysinit` hasta el
-  `loader`; no hay GUI/Winbox/login porque el `loader` falla.
+- La **red dentro de RouterOS** sigue pendiente de probar en placa. El build
+  #96 exportó los símbolos del *fastpath*, el #99 quitó GPL-only y el #102
+  corrigió el ABI de `struct net_device` (`NET_CLS_ACT=n`) y dejó `br_init`
+  stub con 18 exports retirados. La auditoría da cero pendientes y en QEMU
+  malta 5.6.3 cargan `packet_hook`, `phy_helper`, `switch` y `bridge2`. Queda
+  ver en placa si `switch.ko` engancha el GSWIP por switchdev, si `net` crea
+  `ether1..4`, si `bridge2` registra `bridge` y si el datapath de `packet_hook`
+  no rompe el camino lento. Detalle en [`NETWORK.md`](NETWORK.md).
+- **Límite del objetivo:** la WAN del ED500 es xDSL (VRX518), no GPON: el
+  firmware stock trae `vrx518.ko` y `drv_dsl_cpe_api.ko`, y ningún módulo
+  PON/OMCI. RouterOS no tiene driver VRX518 y el de Genexis es binario para
+  4.9.109. Sin ese driver no se puede tener un router MikroTik 100% con la WAN
+  xDSL; el kernel Linux y `netup` dan Ethernet/gestión, no el router completo.
+  Escribir un driver VRX518 desde cero queda fuera del alcance y no se puede
+  verificar sin hardware.
+- El **loader** ya no bloquea: la causa era `ROSMode::save()`, que necesita
+  `/dev/jiffies`; con ese nodo creado, `sysinit` levanta 30 servicios y la web
+  responde en `192.168.1.2:80` (prueba del 2026-11-21). El `STRONG FAIL` se
+  sigue imprimiendo pero no impide el arranque. El build #95 crea el nodo y
+  arranca `sysinit` directamente, sin shell de inspección; el #96 añade
+  `autorun.scr` para fijar la contraseña de `admin` y la red. El #97 añade el
+  botón de reset, los LEDs SSO/SK9822 y el mapa LED del PHY XWAY. El #98 añade
+  el `.y3`, `/flash/rw` en NAND y el flag de arranque. Los cuatro están pendientes de
+  probar en placa; el primer login con contraseña también.
+- **Instalación y actualización:** Netinstall oficial no puede funcionar con
+  el U-Boot de Genexis (MikroTik exige RouterBOOT/Etherboot). La actualización
+  de RouterOS por `.npk` tampoco: el rootfs es el squashfs del initramfs y no
+  hay instalador de paquetes que escriba en NAND. Con el `.y3` instalado, la
+  configuración y los logs **sí** persisten en `/flash/rw` (NAND). Ver
+  [`HARDWARE.md`](HARDWARE.md#netinstall-y-actualización-web).
+- La **instalación persistente** en NAND está construida y verificada a nivel
+  de contenedor (`.y3` de 422 LEBs, kernel/DTB byte a byte), pero **no se ha
+  flasheado**. El arranque TFTP a RAM sigue siendo el método de prueba que no
+  escribe flash.
+- El build #93 es la última prueba en placa (2026-11-20): `/flash` tmpfs,
+  `flash.ko`, `/dev/flash`, `/dev/log` con `devlog`, licencia aceptada y
+  `sysinit` hasta el `loader`. El loader se desbloqueó después (#95) y la web
+  respondió 200 en la prueba manual; los builds #95–#98 siguen pendientes de
+  una prueba completa en placa.
 
 ---
 
@@ -98,20 +132,26 @@ versionan porque pueden contener IPs o MACs.
 **Límite actual.** El build #93 (`uImage` de 20.431.708 B, MD5
 `1e113d9985a1a9fc68fa39fa97cc63e3`) está probado en placa el 2026-11-20: TFTP,
 kernel 5.6.3, BBT, UBI, `rootfs_0`/`rootfs_1`, `/flash` tmpfs, `flash.ko`,
-`/dev/flash`, `/dev/log` con `devlog` y `sysinit` hasta el `loader`. La
-licencia se acepta (`RouterOS is now licensed`); el `loader` falla con
-`STRONG FAIL: this is not equal to that` y `read failed (EOF)`, así que no hay
-GUI, Winbox ni login. La NAND no se ha escrito.
+`/dev/flash`, `/dev/log` con `devlog` y `sysinit` hasta el `loader`. En la
+prueba del 2026-11-21, con `/dev/jiffies` creado a mano, los servicios
+arrancaron y la web respondió 200. El build #95 crea el nodo y arranca
+`sysinit` directamente; está pendiente de probar. El #97 añade reset y LEDs,
+también pendiente. La NAND no se ha escrito.
 
-**Siguiente paso.** Instrumentar `/nova/bin/loader` y corregir la comparación
-que imprime `STRONG FAIL`; la licencia ya está aceptada.
+**Siguiente paso.** Probar el build #98 en placa: debe crear `/dev/jiffies`,
+arrancar `sysinit` directo, dejar la red de gestión con `netup`, registrar el
+botón y los LEDs y, tras instalar el `.y3`, montar `/flash/rw` en NAND. Después,
+validar el primer login con la contraseña del autorun. Detalle en
+[`LOADER.md`](LOADER.md) y [`HARDWARE.md`](HARDWARE.md).
 
 ### 2. Ethernet / switch / PHY en Linux — 10/10 (100%, verificado)
 
 **Qué funciona.** El kernel ve el switch GSWIP XRX500 a través de DSA, usa el
 tag `gswip3`, inicializa los PHY XWAY y establece enlace a **1 Gbps**. La bridge
 del initramfs usa solo los puertos `lan*`, nunca el master DSA. `phyreg` y
-`swstats` sirven para diagnosticar MDIO y contadores.
+`swstats` sirven para diagnosticar MDIO y contadores. El build #97 programa
+los LEDs del PHY XWAY (LED0=1000M, LED1=10/100M) y enciende el *hardware
+trigger* de los pines SSO correspondientes; está pendiente de placa.
 
 **Evidencia.** `dmesg` muestra el switch, los PHY y el enlace; los detalles de
 arranque están en [`BOOT-TFTP.md`](BOOT-TFTP.md).
@@ -168,6 +208,9 @@ leer la UBI stock.
 
 **Límite actual.** Leer no es instalar. No hay backup probado, no se ha hecho
 una escritura controlada y no se ha validado la recuperación por el otro banco.
+La actualización web de RouterOS escribe en `/flash`; aquí `/flash` es tmpfs y
+la NAND es de solo lectura, así que no puede persistir. Netinstall oficial
+tampoco es posible con el U-Boot de Genexis; ver [`HARDWARE.md`](HARDWARE.md).
 
 **Siguiente paso.** Antes de cualquier escritura: backup completo, mapa de
 particiones, geometría UBI y plan de recuperación. Sin eso, el método sigue
@@ -187,54 +230,71 @@ porque es un registro de hardware; no se incluye el rootfs de MikroTik en el
 repo.
 
 **Límite actual.** Es un arranque en RAM. El overlay es temporal y no hay
-persistencia. La licencia ya se acepta; el bloqueo actual es el `loader`.
+persistencia. La licencia y el `loader` ya no bloquean; falta el primer login.
 
-**Siguiente paso.** Build #93 probado: `sysinit` arranca, `/flash` es tmpfs,
-`flash.ko` registra `/dev/flash`, `devlog` crea `/dev/log`, la licencia se
-acepta y `sysinit` llega al `loader`; el shell de inspección sigue disponible
-con `ros.shell=1`.
+**Siguiente paso.** El build #95 arranca `sysinit` directamente y crea
+`/dev/jiffies` antes de cederle el control; el shell de inspección queda solo
+con `ros.shell=1`. Hay que probarlo en placa y completar el primer login.
 
 ### 5. Módulos de RouterOS — 3/10 (30%, parcial)
 
-**Qué funciona.** `flash.ko` se integra correctamente.
+**Qué funciona.** `flash.ko` se integra correctamente. La auditoría del build
+#96 con `Module.symvers` muestra que `packet_hook.ko` sí define la mayor parte
+del *fastpath* (`fast_path_start_xmit`, `register_fast_path`, `skb_bin_*`,
+`custom_packet_hook_rx`, etc.). El único símbolo de esa API que faltaba en el
+kernel era `netif_receive_try_fp`; el build #96 lo exporta. También activa los
+símbolos de configuración que pedían estos módulos: VLAN 802.1Q, JUMP_LABEL,
+USER_NS, XFRM/IPComp, netfilter/NAT, qdiscs, MII, I2C, GPIO, HWMON y LEDS.
+Los seis módulos clave (`packet_hook`, `phy_helper`, `switch`, `bridge2`,
+`8021q` y `nf_nat`) quedan sin símbolos pendientes.
 
-**Qué falla.** `packet_hook.ko`, `switch.ko`, `bridge2.ko` y `phy_helper.ko`
-piden símbolos que no están en las fuentes GPL ni en ningún `.ko` del paquete:
-`netif_receive_try_fp`, `fast_path_start_xmit`, `register_fast_path`,
-`skb_bin_*`, `phy_setup`, `custom_packet_hook_rx`, entre otros. Son parte del
-*fastpath* binario de MikroTik. Además, `switch.ko` es el driver de *sus*
-switches, no del GSWIP del GRX350.
+**Qué falta probar.** `switch.ko` puede cargar con el #99, pero no está
+probado que su capa switchdev enganche el GSWIP del GRX350; si el userland
+pide un `switch_type` concreto, no lo tendrá. `bridge2.ko` registra el tipo
+`bridge` y puede chocar con el bridge estándar del kernel (built-in para el
+fallback de `netup`). El kernel ya llama a `rx_handler_hook`/`tx_handler_hook`
+del fastpath; falta ver que `packet_hook` registre los puertos. Nada de esto
+se ha probado en placa.
 
-**Evidencia.** Los errores `Unknown symbol` están resumidos en
-[`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) y en los logs de diagnóstico. No se
-incluyen binarios de MikroTik.
+**Evidencia.** [`tools/audit_symbols.sh`](../tools/audit_symbols.sh) contra
+`Module.symvers`, y [`NETWORK.md`](NETWORK.md). No se incluyen binarios de
+MikroTik.
 
-**Límite actual.** No es un problema de configuración de RouterOS ni algo que se
-arregle con un `insmod` adicional. Falta código propietario o una alternativa
-propia.
+**Límite actual.** Los símbolos ya no son el muro; el límite es de hardware y
+de registro de módulos. No se debe presentar como resuelto hasta verlo en placa.
 
-**Siguiente paso.** Documentar qué módulos cargan y cuáles no en cada build, y
-evaluar una vía propia para la pila de red. No se debe presentar como resuelto.
+**Siguiente paso.** Arrancar el #96 y revisar `dmesg`/`lsmod` tras `sysinit`,
+más `/flash/rw/netup.log`.
 
 ### 6. Red dentro de RouterOS — 1/20 (5%, bloqueado)
 
 **Qué funciona.** La red del kernel Linux (DSA/GSWIP/PHY) está verificada. Ese
-es el 5% del área.
+es el 5% del área. El build #96 añade la capa de gestión: `autorun.scr` crea
+bridge, IP y DHCP y fija `admin`; `netup` crea `br0`, asigna `192.168.1.2` y
+arranca DHCP si RouterOS no levanta bridge, con `mgmt.vlan=NN` opcional. Está
+implementado, no probado en placa.
 
-**Qué falta.** Que RouterOS use esa red. Sus módulos de bridge, packet hook y
-switch no enlazan contra el kernel porque esperan el *fastpath* binario. Sin
-ese componente, las interfaces de RouterOS no quedan operativas aunque el
-kernel tenga `lan*` y la bridge del initramfs.
+**Qué falta.** Que RouterOS use esa red. El #102 añade `ros-name` a los
+puertos DSA, que es lo que `net` lee para crear `ether1..4`, hace que el
+autorun/`netup` prueben `ether1..4` o `lan1..4` y corrige el ABI de
+`struct net_device` (`NET_CLS_ACT=n`: `pcpu_refcnt` en 672); en QEMU malta
+5.6.3 cargan `packet_hook`, `phy_helper`, `switch` y `bridge2`. Falta la
+placa: que `net` cree las interfaces, que `bridge2` registre `bridge` y que
+`switch.ko` enganche el GSWIP. El kernel ya llama a los hooks del fastpath;
+falta que `packet_hook` registre los puertos. El fallback de `netup` da
+management Linux.
 
-**Evidencia.** Errores de símbolos de `packet_hook`, `switch`, `bridge2` y
-`phy_helper`; [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md).
+**Evidencia.** [`NETWORK.md`](NETWORK.md); auditorías de símbolos del #96 y del
+#99; errores de los builds anteriores en
+[TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
-**Por qué está bloqueado.** No hay fuentes GPL del *fastpath* y no existe un
-driver RouterOS para el GSWIP del GRX350. Este repositorio no redistribuye
-software propietario ni intenta saltarse esa dependencia.
+**Por qué sigue bloqueado.** Hasta el #98 `switch.ko` no cargaba por los
+símbolos GPL-only; el #99 los elimina. Queda la prueba real en placa y el
+*fastpath* completo, que no está en las fuentes GPL. Este repositorio no
+redistribuye software propietario ni intenta saltarse esa dependencia.
 
-**Siguiente paso.** Solo se desbloquea con una implementación propia compatible
-o con una pieza binaria obtenida legalmente. No es un cambio de configuración.
+**Siguiente paso.** Probar #96 en placa y separar dos casos: bridge estándar
+(kernel) frente a `bridge2`, y `lan*` vistos por RouterOS frente a solo Linux.
 
 ### 7. Licencia RouterOS — 10/10 (100%, verificado)
 
@@ -246,22 +306,36 @@ espera en el bloque RouterBoot y es volátil.
 
 **Evidencia.** `backtrace.log` (no versionado); consola del shell #93.
 
-**Límite actual.** La licencia ya no bloquea. El `loader` aborta con
-`STRONG FAIL: this is not equal to that` y el `sysinit` recibe
-`read failed (EOF)`; sin servicios no hay GUI, Winbox ni login.
+**Límite actual.** La licencia ya no bloquea. El `loader` arranca los
+servicios si existe `/dev/jiffies`; la web responde 200. RouterOS rechaza la
+contraseña vacía por red y el cambio de contraseña exige la consola en
+exclusiva, así que el primer login sigue pendiente.
 
-**Siguiente paso.** Instrumentar `/nova/bin/loader` y corregir la comparación;
-la licencia no requiere más cambios.
+**Siguiente paso.** Fijar la contraseña de `admin` en la consola y validar
+web/API. La licencia no requiere más cambios.
 
-### 8. Instalación persistente / `.y3` — 1/5 (20%, parcial)
+### 8. Instalación persistente / `.y3` — 2/5 (40%, parcial)
 
-**Qué se sabe.** El formato `.y3` está estudiado y existe
-[`08-y3tool.py`](../08-y3tool.py) para inspeccionarlo. La documentación histórica
-está en [`FLASH-Y3.md`](FLASH-Y3.md).
+**Qué está hecho.** El formato `.y3` está estudiado, existe
+[`08-y3tool.py`](../08-y3tool.py) y [`tools/make-y3.sh`](../tools/make-y3.sh)
+construye el artefacto final:
+`out/ED500-routeros-7.17-nand.y3` (53.613.270 B, MD5
+`3e9b37d712ad6610bbaa2dc7d7ae2ccb`). Lleva una UBIFS de **422 LEBs** con
+`/boot/uImage`, `/boot/norrland.dtb`, `/rw` y un `pad` de 30 MB; el kernel
+dentro es byte a byte `out/uImage-563`. `run update_image` lo escribe en
+**`rootfs_0`**, el único banco activo; no se usa la web stock ni el banco
+siguiente. El init monta `rootfs_0` en rw en `/nand`, enlaza `/flash/rw` y
+resetea **`boot_cnt_primary`** con `fw_setenv`; no hay lógica A/B. Todo está
+verificado extrayendo la UBIFS y comparando los ficheros. Además,
+`tools/verify-offline.sh` comprueba el entorno U-Boot redundante, el `bootok`
+en `rootfs_0` (y que `rootfs_1` se ignora), el servicio caído, el entorno
+ilegible, las rutas de autorun de `sysinit` y la recuperación stock; todo sin
+abrir `/dev/mtd` ni `/dev/ubi`.
 
-**Qué falta.** No se ha flasheado nada. No hay una prueba de escritura en NAND
-ni una recuperación verificada. El método actual es TFTP a RAM y no toca la
-flash.
+**Qué falta.** No se ha flasheado nada: ni la escritura en NAND, ni el arranque
+de `iboot` con esta imagen, ni la persistencia tras reinicio, ni el flag de
+arranque en hardware. El método de prueba que no escribe flash sigue siendo
+TFTP a RAM.
 
 **Nota (2026-11-20).** El MTD `RouterBoot` del build #72 es RAM volátil: no es
 una instalación persistente ni escribe en la NAND. Solo evita que `flash.ko`
@@ -269,10 +343,14 @@ aborte antes de crear `/flash`.
 
 **Por qué es delicado.** Una escritura incorrecta puede dejar el router sin
 arranque. Antes hace falta backup, geometría UBI, plan de recuperación y una
-prueba en el otro banco.
+prueba en el otro banco. El procedimiento está en
+[`FLASH-Y3.md`](FLASH-Y3.md).
 
-**Siguiente paso.** No ejecutar el `.y3` sin esas condiciones. Documentar el
-backup y la recuperación antes de intentar la persistencia.
+**Siguiente paso.** Con backup y consola: instalar el `.y3`, arrancar sin TFTP,
+comprobar `/flash/rw` tras un reinicio y verificar que `bootok` baja
+`boot_cnt_primary`. Si falla, la vuelta es manual con
+`out/ED500-stock-original.y3` y `run update_image`; `rootfs_1` no se arranca
+solo.
 
 ### 9. Herramientas remotas y documentación — 5/5 (100%, verificado)
 
@@ -298,23 +376,34 @@ cambio de hito.
 
 ### A. Fastpath y switch de RouterOS
 
-RouterOS no usa la pila de red genérica de Linux para todo: sus módulos de
-paquete, bridge y switch esperan una API binaria de MikroTik. Los símbolos que
-faltan no están en las fuentes GPL ni en los `.ko` publicados. No es un
-`modprobe` que falte; es una dependencia propietaria.
+La auditoría del build #96 corrige una conclusión anterior: `packet_hook.ko`
+**sí** define la mayor parte de la API del *fastpath*; solo faltaba
+`netif_receive_try_fp`, que el kernel exporta desde el #96. Los demás símbolos
+que fallaban eran de configuración (VLAN, JUMP_LABEL, USER_NS, XFRM,
+netfilter, qdisc, MII, I2C...) y ya están activados.
 
-Además, el GSWIP del GRX350 no es uno de los switches que soporta `switch.ko`.
-Aunque se resolviera el *fastpath*, haría falta el driver correcto para este
-SoC.
+El bloqueo que queda no es de enlazado:
 
-**Consecuencia:** la red dentro de RouterOS queda bloqueada. El kernel Linux
-puede tener Ethernet, pero RouterOS no puede usarla como su red de gestión.
+- `switch.ko` ya puede cargar con el #99, pero no está probado que su capa
+  switchdev enganche el GSWIP del GRX350.
+- `bridge2.ko` ya carga en QEMU con el #102: `br_init` del kernel es un stub
+  y se retiraron 18 exports duplicados. Falta probar en placa que registre
+  `bridge` y que el fallback de `netup` siga disponible.
+- `netif_receive_try_fp` es el `net_device` virtual de `fp_init`, no una
+  función. El kernel ya llama a `rx_handler_hook`/`tx_handler_hook`; falta
+  probar que `packet_hook` registre los puertos y que el camino rápido no
+  rompa el tráfico.
+
+**Consecuencia:** la red Linux y el management están cubiertos; que RouterOS
+gestione bridge/VLAN como en un RouterBOARD sigue pendiente de prueba.
 
 ### B. Loader y servicios
 
-La licencia ya se acepta (`RouterOS is now licensed`), pero el `loader` de
-RouterOS aborta con `STRONG FAIL: this is not equal to that` y el `sysinit`
-recibe `read failed (EOF)`. Sin los servicios no hay GUI, Winbox ni login.
+La licencia ya se acepta (`RouterOS is now licensed`). El bloqueo real era
+`ROSMode::save()`, que abre `/dev/jiffies`; el nodo no existía en el port. Con
+un `/dev/jiffies` normal, `save()` completa y el `loader` levanta todos los
+servicios. El `STRONG FAIL` se imprime igual, pero es una comprobación de
+coherencia que no detiene el arranque.
 
 **Consecuencia:** la licencia no es el muro; el `loader` sí.
 
@@ -327,17 +416,27 @@ recuperación; no es un paso que deba hacerse “a ver si sale”.
 **Consecuencia:** cada arranque necesita el cazador TFTP; no hay instalación
 permanente.
 
+### D. Incidente del 2026-11-21
+
+Durante las pruebas de la consola la placa quedó **haltada**. El shell de
+inspección del initramfs y el `/bin/login` de RouterOS compartían `ttyLTQ0` y
+se repartían los caracteres. Al intentar recuperar el control se envió un
+BREAK y la placa dejó de responder por serie y por red, aunque el PHY mantiene
+el enlace a 1 Gbps. No se escribió la NAND. Para volver a probar hace falta un
+ciclo de corriente; el build #95 arranca `sysinit` directamente para que el
+shell y el login no vuelvan a competir por la consola.
+
 ---
 
 ## Siguientes hitos
 
 | Hito | Ahora | Meta | Qué lo desbloquea |
 |---|---:|---:|---|
-| Red dentro de RouterOS | 5% | 100% | *Fastpath* legal + driver GSWIP, o una implementación propia |
+| Red dentro de RouterOS | 5% | 100% | *Fastpath* legal + `switch.ko` sobre switchdev, o una implementación propia |
 | Licencia RouterOS | 100% | 100% | Aceptada con la identidad RouterBoot sintética; `RouterOS is now licensed` |
-| GUI / Winbox / login | 0% | 100% | `loader` (`STRONG FAIL`, `read failed`); sin servicios |
-| Instalación persistente | 20% | 100% | Backup, UBI, recuperación y prueba controlada en NAND |
-| Artefacto final probado | — | — | Arrancar `out/uImage-563` y registrar el resultado |
+| GUI / Winbox / login | 50% | 100% | Servicios y web arriba; falta el primer login con contraseña |
+| Instalación persistente | 40% | 100% | `.y3` construido; falta backup, escritura NAND, persistencia y recuperación en placa |
+| Artefacto final probado | — | — | Arrancar `out/uImage-563` y el `.y3` en placa, y registrar el resultado |
 
 No se debe subir el porcentaje de un área solo porque “parece que va a
 funcionar”. Cada cambio debe tener evidencia reproducible.
@@ -349,17 +448,109 @@ funcionar”. Cada cambio debe tener evidencia reproducible.
 | Campo | Valor |
 |---|---|
 | Archivo | `out/uImage-563` |
-| Tamaño | 20.431.708 bytes |
-| MD5 | `1e113d9985a1a9fc68fa39fa97cc63e3` |
-| `vmlinux` | 97.191.580 bytes |
+| Tamaño | 21.899.532 bytes |
+| MD5 | `e2e8698843a1278da58e5d9178c89f5a` |
+| `vmlinux` | 111.798.704 bytes |
 | Carga / entrada | `0x80500000` |
 | Kernel | Linux 5.6.3 |
-| Última prueba en placa | build #93 (2026-11-20): `/flash` tmpfs, `flash.ko`, `/dev/flash`, `/dev/log` con `devlog`, licencia aceptada y `sysinit` hasta el `loader` |
-| Estado | probado; NAND solo lectura, sin escritura; GUI/Winbox/login pendientes |
+| `.y3` | `out/ED500-routeros-7.17-nand.y3`, 53.613.270 B, MD5 `3e9b37d712ad6610bbaa2dc7d7ae2ccb` |
+| Última prueba en placa | build #93 (2026-11-20); los builds #95-#102 están construidos y pendientes de probar |
+| Estado | #102 listo para TFTP y para instalar el `.y3`; GPL-only eliminado, `ros-name` en los puertos DSA, autorun/`netup` con `ether1..4`/`lan1..4` y ABI de `struct net_device` corregido; en QEMU malta cargan `packet_hook`/`phy_helper`/`switch`/`bridge2`; pendiente de placa que `net` cree las interfaces y que `switch.ko` enganche el GSWIP; reset/LEDs, `/flash/rw` en NAND, primer login y red/usuarios/VLAN pendientes de placa |
 
 El MD5 identifica el artefacto que se está documentando, pero no demuestra que
 esa imagen concreta haya arrancado. Para cerrar el hito: TFTP, `bootm`, consola,
 montaje de UBI, `flash.ko` y shell; después anotar fecha y resultado.
+
+### Qué cambia el build #96
+
+- Kernel: VLAN 802.1Q, bridge VLAN filtering, JUMP_LABEL, USER_NS, XFRM +
+  IPComp, netfilter/NAT, qdiscs, MII, I2C, GPIO, HWMON, LEDS y export de
+  `netif_receive_try_fp`.
+- Init: `/flash/autorun.scr` con `/delay 5`, contraseña de `admin`, bridge,
+  `192.168.88.1` y DHCP; `netup` con `br0`, `192.168.1.2`, DHCP y
+  `mgmt.vlan=NN`; sin `insmod` de diagnóstico antes de `sysinit`.
+- Auditoría: 137 símbolos ausentes en total, pero **cero** en los seis módulos
+  clave. El resto son de CIFS, crypto AEAD, USB y hardware que esta placa no
+  usa.
+- Artefacto: 21.063.928 B, MD5 `c6013342ae679c0eae4d425f2cbce368`. Cazador
+  TFTP independiente con ventana de 72 h.
+
+### Qué cambia el build #97
+
+- Hardware: botón de reset físico (GPIO0 pin 0, 5 s), LEDs Ethernet y del panel
+  frontal por SSO, RGB SK9822 en `canyon_led` y mapa LED del PHY XWAY.
+- Pinctrl: compatible `intel,pinctrl-xrx500` y `request`/`free` por pinctrl;
+  sin eso los bancos GPIO no se registraban.
+- SSO: compuerta `GCLK_SSO`, reloj `fpid`, `SWU` para latchear las salidas
+  software y `SSO_CON3` para el *hardware trigger* de los PHY.
+- Artefacto: 21.123.448 B, MD5 `0f547b5f094d2467f272aadb5c4234d0`. Detalle y
+  comprobación en [`HARDWARE.md`](HARDWARE.md).
+
+### Qué cambia el build #98
+
+- NAND: `out/ED500-routeros-7.17-nand.y3` con UBIFS de 422 LEBs en `rootfs_0`,
+  `/boot/uImage`, `/boot/norrland.dtb`, `/rw` y `pad` de 30 MB. El `.y3` se
+  instala por `run update_image`, en un solo banco; la web stock no se usa.
+- Init: `/flash/rw` → `/nand/rw`, borrado del `pad`, `bootok` con
+  `fw_printenv`/`fw_setenv` estáticos, solo `boot_cnt_primary`, y comprobación
+  de la web/API por `tcp` y `tcp6`.
+- Boot: `clk_ignore_unused` por defecto (el bootargs de NAND no lo trae) y
+  `panic=20` para que un pánico devuelva el control a U-Boot.
+- Artefacto: `uImage` 21.974.352 B, MD5 `66497d471a28741cc3055e10443a04cb`;
+  `.y3` 53.740.246 B, MD5 `294043aac722ebc74dfbfbd7c3a33afa`. Detalle:
+  [`FLASH-Y3.md`](FLASH-Y3.md).
+
+### Qué cambia el build #99
+
+- Exportaciones: `EXPORT_SYMBOL_GPL` pasa a `EXPORT_SYMBOL` en
+  `include/linux/export.h` (switchdev, workqueue, GPIO, LED, hwmon, hrtimer,
+  platform, sysfs, RCU, netfilter...). Es lo que hace el kernel de MikroTik
+  para que sus módulos propietarios vean la API; no cambia la licencia del
+  kernel.
+- Auditoría: cero símbolos pendientes y cero GPL-only en `packet_hook`,
+  `phy_helper`, `switch`, `bridge2`, `flash`, `8021q` y `nf_nat`.
+- Artefacto: `uImage` 21.974.344 B, MD5
+  `67f222246e47cfa0cb180bd25bdb4f25`; `.y3` 53.740.246 B, MD5
+  `e3aee41c57dfa0f155e7734ecf6dcc71`. Pendiente de placa: si `switch.ko`
+  engancha el GSWIP por switchdev.
+
+### Qué cambia el build #100
+
+- DTS: `ros-name = "ether4".."ether1"` en los puertos DSA 2..5; `net` lee
+  `/sys/class/net/lanX/of_node/ros-name` y crea las interfaces RouterOS.
+- Artefacto: `uImage` 21.974.456 B, MD5
+  `978c6eceaefd55e00bb50bd9365336bb`; `.y3` 53.740.246 B, MD5
+  `b68aaba26f06021c3b78e4af0b0ded1c`. Pendiente de placa: que `net` cree
+  `ether1..4` y que `packet_hook`/`switch`/`bridge2` carguen.
+
+### Qué cambia el build #101
+
+- `init-initramfs.sh`: el autorun y `netup` prueban `ether1..4` y `lan1..4`,
+  así el bridge no queda vacío si `net` renombra los puertos DSA.
+- Artefacto: `uImage` 21.974.664 B, MD5
+  `bcbddf8447a4152f7a0a2f9a7f095e90`; `.y3` 53.740.246 B, MD5
+  `e865ee9f0518a9671e2935b903ddbbb3`. Pendiente de placa: que `net` cree
+  `ether1..4`, que el bridge reciba los puertos y que
+  `packet_hook`/`switch`/`bridge2` carguen.
+
+### Qué cambia el build #102
+
+- `CONFIG_NET_CLS_ACT=n`: sus dos `miniq_*` en `struct net_device` movían
+  `pcpu_refcnt` de 672 a 680. Los módulos de RouterOS usan 672 y `packet_hook`
+  hacía `dev_put()` sobre `todo_list.next` (NULL) al cargar. En QEMU se vio el
+  Oops; con 672 los cuatro módulos cargan.
+- `net/bridge`: `br_init` se corta antes de registrar pernet/link_ops/fdb y
+  se retiran 18 exportaciones que `bridge2.ko` vuelve a definir. Sin eso el
+  loader falla con `exports duplicate symbol br_forward` y luego EEXIST en
+  `rtnl_link_register`; `brioctl_set` se conserva.
+- Artefacto: `uImage` 21.899.532 B, MD5
+  `e2e8698843a1278da58e5d9178c89f5a`; `.y3` 53.613.270 B, 422 LEBs, MD5
+  `3e9b37d712ad6610bbaa2dc7d7ae2ccb`. QEMU malta 5.6.3: `packet_hook`,
+  `phy_helper`, `switch` y `bridge2` cargan. Pendiente de placa: `net`,
+  `switch`/GSWIP, bridge real y fastpath.
+
+Todo esto está pendiente de probar en placa; el porcentaje no sube hasta
+tener evidencia.
 
 ---
 
@@ -490,8 +681,10 @@ Ver [`NAND-UBI.md`](NAND-UBI.md). No escribir NAND sin backup y recuperación.
 
 - `mount none /flash` sigue en `EINVAL` (fallo de `diskd`, no de `flash.ko`); no se ha probado un montaje alternativo.
 - No se ha escrito NAND ni se ha probado el `.y3` en hardware.
-- No se ha probado la GUI, Winbox ni el login de RouterOS (el `loader` falla).
-- No se ha probado la red de RouterOS con el *fastpath* (no está disponible).
+- No se ha probado la GUI, Winbox ni el login de RouterOS con contraseña (la
+  web responde 200, pero falta el primer login).
+- No se ha probado la red de RouterOS del #96 (bridge, VLANs, `packet_hook`);
+  el fallback Linux `192.168.1.2` tampoco se ha probado en placa.
 - No se incluyen logs con IPs/MACs en el repositorio.
 
 ---
@@ -501,6 +694,7 @@ Ver [`NAND-UBI.md`](NAND-UBI.md). No escribir NAND sin backup y recuperación.
 - [README del repositorio](../README.md)
 - [Compilación](BUILD.md)
 - [Arranque por TFTP](BOOT-TFTP.md)
+- [Red, usuarios y VLANs](NETWORK.md)
 - [NAND y UBI](NAND-UBI.md)
 - [Troubleshooting](TROUBLESHOOTING.md)
 - [Y3 / flasheo experimental](FLASH-Y3.md)

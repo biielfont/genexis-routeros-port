@@ -40,6 +40,7 @@ Es idempotente: se puede llamar en cada build.
 """
 
 import os
+import re
 import sys
 
 RAIZ = "/opt/ros-port/linux-5.6.3"
@@ -47,6 +48,23 @@ NETFILTER = RAIZ + "/net/netfilter/core.c"
 SWITCH = RAIZ + "/drivers/net/dsa/xr/lantiq_gswip_xrx500.c"
 COMMON = RAIZ + "/drivers/net/dsa/xr/lantiq_gswip_common.c"
 RESET_KCONFIG = RAIZ + "/drivers/reset/Kconfig"
+EXPORT_H = RAIZ + "/include/linux/export.h"
+DTS_NORRLAND = RAIZ + "/arch/mips/boot/dts/intel-mips/norrland.dts"
+BR_C = RAIZ + "/net/bridge/br.c"
+
+# Simbolos que bridge2.ko define y que el bridge del kernel tambien exporta.
+# El loader rechaza el modulo con "exports duplicate symbol ..." si siguen
+# publicados. bridge2 trae su propia implementacion completa; solo necesita
+# brioctl_set del kernel, que no esta en esta lista.
+BRIDGE_EXPORTS = (
+    "br_dev_queue_push_xmit", "br_fdb_clear_offload", "br_fdb_find_port",
+    "br_forward", "br_forward_finish", "br_handle_frame_finish",
+    "br_multicast_enabled", "br_multicast_has_querier_adjacent",
+    "br_multicast_has_querier_anywhere", "br_multicast_list_adjacent",
+    "br_multicast_router", "br_port_flag_is_set", "br_vlan_enabled",
+    "br_vlan_get_info", "br_vlan_get_proto", "br_vlan_get_pvid",
+    "br_vlan_get_pvid_rcu", "nf_br_ops",
+)
 
 RESET_VIEJO = "config RESET_LANTIQ\n\tbool \"Lantiq XWAY Reset Driver\" if COMPILE_TEST\n\tdefault SOC_TYPE_XWAY\n"
 RESET_NUEVO = "config RESET_LANTIQ\n\tbool \"Lantiq XWAY Reset Driver\" if COMPILE_TEST\n\tdefault SOC_TYPE_XWAY || INTEL_MIPS\n"
@@ -882,6 +900,155 @@ def parche_mtd_simbolos():
     return True
 
 
+def parche_export_gpl():
+    """Quita la restriccion GPL-only de las exportaciones del kernel.
+
+    Los modulos de RouterOS son propietarios (switch.ko, phy_helper.ko,
+    flash.ko, music_switch.ko...) y usan APIs que el kernel mainline marca
+    EXPORT_SYMBOL_GPL: switchdev, workqueue, GPIO, LED, hwmon, hrtimer,
+    platform, sysfs, RCU, netfilter...  Con la restriccion puesta el loader
+    falla con "Unknown symbol ... (err -2)" aunque el simbolo exista (pasó
+    con switchdev_handle_port_obj_add, alloc_workqueue, gpiod_*...).
+
+    El kernel de MikroTik no aplica esa restriccion: sus modulos ven todas
+    las exportaciones. Se hace lo mismo en un solo sitio, en vez de parchear
+    fichero por fichero. No cambia el codigo del kernel ni la licencia; solo
+    la seccion __ksymtab donde se publica cada simbolo.
+    """
+    with open(EXPORT_H) as f:
+        src = f.read()
+
+    viejo = (
+        '#define EXPORT_SYMBOL_GPL(sym)\t\t_EXPORT_SYMBOL(sym, "_gpl")\n'
+        '#define EXPORT_SYMBOL_GPL_FUTURE(sym)\t_EXPORT_SYMBOL(sym, "_gpl_future")\n'
+        '#define EXPORT_SYMBOL_NS(sym, ns)\t__EXPORT_SYMBOL(sym, "", #ns)\n'
+        '#define EXPORT_SYMBOL_NS_GPL(sym, ns)\t__EXPORT_SYMBOL(sym, "_gpl", #ns)\n'
+    )
+    nuevo = (
+        '#define EXPORT_SYMBOL_GPL(sym)\t\t_EXPORT_SYMBOL(sym, "")\n'
+        '#define EXPORT_SYMBOL_GPL_FUTURE(sym)\t_EXPORT_SYMBOL(sym, "")\n'
+        '#define EXPORT_SYMBOL_NS(sym, ns)\t__EXPORT_SYMBOL(sym, "", #ns)\n'
+        '#define EXPORT_SYMBOL_NS_GPL(sym, ns)\t__EXPORT_SYMBOL(sym, "", #ns)\n'
+    )
+
+    if nuevo in src:
+        print("export: GPL-only ya desactivado para modulos propietarios")
+        return True
+    if viejo not in src:
+        print("export: no encuentro las definiciones EXPORT_SYMBOL_GPL en export.h")
+        return False
+
+    src = src.replace(viejo, nuevo, 1)
+    # EXPORT_UNUSED_SYMBOL_GPL solo existe con CONFIG_UNUSED_SYMBOLS; se
+    # deja tambien sin restriccion por coherencia.
+    src = src.replace(
+        '#define EXPORT_UNUSED_SYMBOL_GPL(sym)\t_EXPORT_SYMBOL(sym, "_unused_gpl")',
+        '#define EXPORT_UNUSED_SYMBOL_GPL(sym)\t_EXPORT_SYMBOL(sym, "_unused")',
+    )
+    with open(EXPORT_H, "w") as f:
+        f.write(src)
+    print("export: GPL-only desactivado (switchdev, workqueue, GPIO, LED...)")
+    return True
+
+
+ROS_NAME_BLOCK = """
+
+/*
+ * RouterOS names for the four front-panel ports. net(8) reads
+ * /sys/class/net/<if>/of_node/ros-name and parses ether%d/eth%d from it;
+ * the DSA port nodes otherwise keep their Linux labels (lan1..lan4) and
+ * RouterOS does not create ether interfaces for them. Port 5 is LAN1 on
+ * the front panel: the board wires the sockets in reverse port order.
+ */
+&gswl {
+\tports {
+\t\tport@2 { ros-name = "ether4"; };
+\t\tport@3 { ros-name = "ether3"; };
+\t\tport@4 { ros-name = "ether2"; };
+\t\tport@5 { ros-name = "ether1"; };
+\t};
+};
+"""
+
+
+def parche_ros_name():
+    """Da a los puertos DSA el nombre que busca el userland de RouterOS.
+
+    `net` lee /sys/class/net/<if>/of_node/ros-name y parsea ether%d/eth%d;
+    sin esa propiedad los puertos se quedan como lan1..lan4 y RouterOS no
+    crea interfaces ether para ellos. El DSA ya publica el of_node del
+    puerto en el netdev (net/dsa/slave.c: slave_dev->dev.of_node = port->dn).
+    """
+    with open(DTS_NORRLAND) as f:
+        src = f.read()
+
+    if "ros-name" in src:
+        print("dts: ros-name ya estaba en lan1..lan4")
+        return True
+    if "&gswl {" not in src:
+        print("dts: no encuentro el nodo &gswl en norrland.dts")
+        return False
+
+    with open(DTS_NORRLAND, "a") as f:
+        f.write(ROS_NAME_BLOCK)
+    print("dts: ros-name anadido a lan1..lan4 (ether1..ether4)")
+    return True
+
+
+def parche_bridge2_abi():
+    """Deja el bridge del kernel como stub para que cargue bridge2.ko.
+
+    bridge2.ko es la implementacion de bridge de RouterOS: define sus
+    propias br_* y registra el link kind "bridge". El bridge estandar del
+    kernel ya las exporta y ya registro "bridge", asi que el loader falla
+    con "exports duplicate symbol br_forward" o, tras retirar las
+    exportaciones, con EEXIST en rtnl_link_register. br_init se corta antes
+    de registrar pernet/link_ops/fdb; se conserva brioctl_set, que es lo
+    unico que bridge2 pide al kernel. Asi bridge2 puede registrar su
+    "bridge" y crear su propia cache FDB.
+    """
+    with open(BR_C) as f:
+        src = f.read()
+
+    marca = "bridge2.ko sustituye al bridge del kernel"
+    if marca not in src:
+        ancla = "static int __init br_init(void)\n{\n"
+        if ancla not in src:
+            print("bridge2: no encuentro br_init en net/bridge/br.c")
+            return False
+        src = src.replace(ancla, ancla + "\treturn 0; /* %s */\n" % marca, 1)
+        with open(BR_C, "w") as f:
+            f.write(src)
+        print("bridge2: br_init del kernel reducido a stub (brioctl_set sigue)")
+    else:
+        print("bridge2: br_init ya es un stub")
+
+    quitados = 0
+    for nombre in os.listdir(RAIZ + "/net/bridge"):
+        if not nombre.endswith(".c"):
+            continue
+        path = RAIZ + "/net/bridge/" + nombre
+        with open(path) as f:
+            lineas = f.readlines()
+        nuevas = []
+        for linea in lineas:
+            if "EXPORT_SYMBOL" in linea and any(
+                    re.search(r"\b%s\b" % re.escape(s), linea)
+                    for s in BRIDGE_EXPORTS):
+                quitados += 1
+                continue
+            nuevas.append(linea)
+        if len(nuevas) != len(lineas):
+            with open(path, "w") as f:
+                f.writelines(nuevas)
+
+    if quitados:
+        print("bridge2: %d exportaciones duplicadas retiradas del kernel" % quitados)
+    else:
+        print("bridge2: las exportaciones duplicadas ya estaban retiradas")
+    return True
+
+
 def parche_nand():
     """Porta el controlador EBU NAND del xrx500 desde 6.18.
 
@@ -1003,8 +1170,79 @@ def parche_phylink_ops():
     return True
 
 
+DEV = RAIZ + "/net/core/dev.c"
+
+FASTPATH_ANCLA = "EXPORT_SYMBOL(fp_xfrm_changed);\n"
+
+FASTPATH_NUEVO = FASTPATH_ANCLA + (
+    "\n"
+    "/*\n"
+    " * MikroTik's packet_hook.ko fills this pointer from its fp_init() and\n"
+    " * expects the kernel to export it. The GPL tree declares the surrounding\n"
+    " * fastpath hooks (fp_xfrm_changed, per_cpu_port, ...) but not this one,\n"
+    " * so loading packet_hook fails with \"Unknown symbol\". It is only a\n"
+    " * pointer-sized slot: we do not call it from the generic RX path, so the\n"
+    " * normal Linux datapath is unchanged.\n"
+    " */\n"
+    "void *netif_receive_try_fp;\n"
+    "EXPORT_SYMBOL(netif_receive_try_fp);\n"
+)
+
+
+def parche_fastpath():
+    """Exporta el puntero que packet_hook.ko espera del kernel."""
+    with open(DEV) as f:
+        src = f.read()
+
+    if "netif_receive_try_fp" in src:
+        print("fastpath: netif_receive_try_fp ya estaba exportado")
+        return True
+
+    if src.count(FASTPATH_ANCLA) != 1:
+        print("fastpath: no encuentro el ancla EXPORT_SYMBOL(fp_xfrm_changed) en dev.c")
+        return False
+
+    with open(DEV, "w") as f:
+        f.write(src.replace(FASTPATH_ANCLA, FASTPATH_NUEVO, 1))
+    print("fastpath: netif_receive_try_fp exportado para packet_hook.ko")
+    return True
+
+
+CLK = RAIZ + "/drivers/clk/clk.c"
+
+
+def parche_clk_ignore():
+    """El ED500 necesita clk_ignore_unused tambien al arrancar de NAND.
+
+    El arranque por TFTP lo lleva en bootargs, pero el bootargs de U-Boot
+    para NAND (ubi.mtd=ubi,0,30) no lo trae. Si el kernel desactiva un reloj
+    que ningun driver ha reclamado (SSO, PHY), los LEDs o el switch pueden
+    quedarse sin reloj. Se deja activado por defecto en este puerto.
+    """
+    with open(CLK) as f:
+        src = f.read()
+
+    viejo = "static bool clk_ignore_unused __initdata;"
+    nuevo = ("static bool clk_ignore_unused __initdata = true; "
+             "/* ED500: clock gates del SSO/PHY sin reclamar */")
+
+    if nuevo in src:
+        print("clk: clk_ignore_unused ya estaba activado")
+        return True
+    if viejo not in src:
+        print("clk: no encuentro la definicion de clk_ignore_unused")
+        return False
+
+    with open(CLK, "w") as f:
+        f.write(src.replace(viejo, nuevo, 1))
+    print("clk: clk_ignore_unused activado por defecto (arranque NAND)")
+    return True
+
+
 def main():
-    ok = parche_netfilter()
+    ok = parche_fastpath()
+    ok = parche_clk_ignore() and ok
+    ok = parche_netfilter() and ok
     ok = parche_switch() and ok
     ok = parche_version() and ok
     ok = parche_dma_uncached() and ok
@@ -1020,6 +1258,9 @@ def main():
     ok = parche_nand_dts() and ok
     ok = parche_mtdram() and ok
     ok = parche_mtd_simbolos() and ok
+    ok = parche_export_gpl() and ok
+    ok = parche_ros_name() and ok
+    ok = parche_bridge2_abi() and ok
     ok = parche_abi_routeros() and ok
     return 0 if ok else 1
 

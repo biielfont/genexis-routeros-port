@@ -1,3 +1,0 @@
-# Dependencias de los scripts de consola/TFTP.
-# El build del kernel usa las herramientas del sistema (ver docs/BUILD.md).
-pyserial>=3.5

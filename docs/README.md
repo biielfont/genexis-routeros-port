@@ -9,10 +9,12 @@ separa lo que está vigente de lo que es historia de la investigación.
 |---|---|
 | [BUILD.md](BUILD.md) | Preparar toolchain/fuentes, compilar y verificar `out/uImage-563` |
 | [BOOT-TFTP.md](BOOT-TFTP.md) | Arrancar por TFTP a RAM, cazar U-Boot y resetear en remoto |
-| [NAND-UBI.md](NAND-UBI.md) | Geometría NAND, BCH-4/BBT, attach UBI y montaje en lectura |
+| [NETWORK.md](NETWORK.md) | Red, usuarios, VLANs, `autorun.scr` y fallback de gestión |
+| [NAND-UBI.md](NAND-UBI.md) | Geometría NAND, BCH-4/BBT, volúmenes UBI, instalación y persistencia |
+| [HARDWARE.md](HARDWARE.md) | Reset, LEDs, instalación en NAND y límites de actualización |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Fallos típicos, logs y qué comprobar |
 | [PROGRESS.md](PROGRESS.md) | Cómo se calcula y se actualiza el mapa de progreso |
-| [FLASH-Y3.md](FLASH-Y3.md) | Investigación del contenedor `.y3` (experimental, no método actual) |
+| [FLASH-Y3.md](FLASH-Y3.md) | Contenedor `.y3`, build, instalación en NAND y recuperación |
 
 ## Mapa de progreso
 
@@ -30,6 +32,8 @@ describen el estado actual y pueden contener rutas o conclusiones antiguas:
   en marcha y auditoría previa.
 - [history/NOTES-5.6.3-port.md](history/NOTES-5.6.3-port.md) — notas del port
   del driver GSWIP y errores de compilación.
+- [`../tools/history/`](../tools/history/) — parches puntuales, comprobaciones y
+  arranque manual de las primeras fases; no forman parte del build actual.
 
 ## Reglas de documentación
 

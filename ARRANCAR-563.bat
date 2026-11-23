@@ -7,29 +7,30 @@ echo ============================================================
 echo  Arranque del kernel 5.6.3 en el Genexis Pure ED500
 echo ============================================================
 echo.
-echo  1. Este programa espera hasta 3 horas a que la placa arranque.
+echo  1. Este programa espera hasta 72 horas a que la placa arranque.
 echo  2. Sirve uImage-563 por TFTP (puerto 69 o, si esta ocupado, 6969).
 echo  3. Cuando enciendas la placa, caza U-Boot y arranca el kernel.
 echo  4. Todo queda en: logs\try563_v2.log
 echo.
 echo  Cable: COM4 a 115200. Red: LAN (mi IP se detecta sola)
 echo  Ojo: si otra ventana tiene COM4 abierto, cierrala antes.
+echo  Si ya hay un cazador en segundo plano, no lances otro: ya sirve la imagen.
 echo.
 pause
 
 where python >nul 2>&1
 if %errorlevel%==0 (
-    python catch_final.py
+    python catch_final.py --horas 72
     goto fin
 )
 where py >nul 2>&1
 if %errorlevel%==0 (
-    py -3 catch_final.py
+    py -3 catch_final.py --horas 72
     goto fin
 )
 echo.
 echo [!] No encuentro Python en el PATH. Instalalo o ejecuta a mano:
-echo     python catch_final.py
+echo     python catch_final.py --horas 72
 :fin
 echo.
 pause

@@ -235,7 +235,6 @@ def _veredicto(salida):
             (b"Bad block table found", "BBT"),
             (b"ubi0: attached", "ubi"),
             (b"UBI: rootfs_0 montado", "rootfs_0"),
-            (b"UBI: rootfs_1 montado", "rootfs_1"),
             (b"gswip", "switch"),
             (b"lan1", "lan1"),
             (b"red: ", "red"),

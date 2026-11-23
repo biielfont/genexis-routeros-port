@@ -1,13 +1,13 @@
 {
   "project": "Genexis Pure ED500 · RouterOS 7.17 mipsbe",
-  "subtitle": "Port de investigación sobre GRX350 con arranque TFTP a RAM",
-  "updated": "2026-11-20",
-  "summary": "La plataforma, el arranque de RouterOS y la licencia están verificados en hardware. El loader impide arrancar GUI, Winbox y login; la red interna y la persistencia siguen pendientes.",
+  "subtitle": "Port de investigación sobre GRX350 con arranque TFTP a RAM e instalación .y3 en NAND",
+  "updated": "2026-11-22",
+  "summary": "La plataforma, el arranque de RouterOS y la licencia están verificados en hardware. El build #102 añade reset/LEDs, el .y3 instalable en NAND, /flash/rw persistente y un solo banco activo, elimina la restricción GPL-only, da a los puertos DSA ros-name = ether1..4, hace que autorun/netup prueben ether1..4 y lan1..4 y corrige el ABI de struct net_device (NET_CLS_ACT=n: pcpu_refcnt en 672). Deja br_init como stub y retira 18 exportaciones duplicadas para que bridge2.ko registre su bridge. En QEMU malta 5.6.3 cargan packet_hook, phy_helper, switch y bridge2; falta probar en placa si net crea ether1..4 y si switch.ko engancha el GSWIP por switchdev. La WAN es xDSL/VRX518, no GPON: el firmware stock trae vrx518.ko y ningún módulo PON/OMCI, y RouterOS no tiene driver VRX518. Netinstall oficial no es posible con el U-Boot de Genexis; la actualización .npk tampoco, pero la config sí persiste con el .y3.",
   "artifact": {
-    "name": "out/uImage-563",
-    "size": 20431708,
-    "md5": "1e113d9985a1a9fc68fa39fa97cc63e3",
-    "last_hardware_test": "build #93 (2026-11-20): probado en placa; /flash tmpfs, flash.ko registra /dev/flash, devlog crea /dev/log, la licencia se acepta (RouterOS is now licensed) y sysinit llega al loader (STRONG FAIL: this is not equal to that); NAND sin escrituras"
+    "name": "out/ED500-routeros-7.17-nand.y3",
+    "size": 53613270,
+    "md5": "3e9b37d712ad6610bbaa2dc7d7ae2ccb",
+    "last_hardware_test": "build #93 (2026-11-20): probado en placa; /flash tmpfs, flash.ko registra /dev/flash, devlog crea /dev/log, la licencia se acepta y sysinit llega al loader. Los builds #95-#102 están pendientes de placa. #102: uImage 21.899.532 B, MD5 e2e8698843a1278da58e5d9178c89f5a; .y3 53.613.270 B, 422 LEBs, rootfs_0 único, kernel/DTB verificados byte a byte; GPL-only eliminado, ros-name en lan1..lan4, ABI de net_device corregido y QEMU carga packet_hook/phy_helper/switch/bridge2."
   },
   "areas": [
     {
@@ -17,8 +17,8 @@
       "weight": 20,
       "percent": 100,
       "state": "verified",
-      "detail": "U-Boot, TFTP, kernel 5.6.3, consola ttyLTQ0 y arranque en RAM.",
-      "evidence": "docs/BOOT-TFTP.md; logs de consola"
+      "detail": "U-Boot, TFTP, kernel 5.6.3, consola ttyLTQ0 y arranque en RAM. El build #98 añade reset/LEDs, .y3 y /flash/rw en NAND; pendiente de placa.",
+      "evidence": "docs/BOOT-TFTP.md; docs/HARDWARE.md; docs/FLASH-Y3.md; logs de consola"
     },
     {
       "title": "Ethernet / switch / PHY en Linux",
@@ -27,8 +27,8 @@
       "weight": 10,
       "percent": 100,
       "state": "verified",
-      "detail": "DSA + GSWIP XRX500 + PHY XWAY; enlace a 1 Gbps.",
-      "evidence": "dmesg gswip; docs/BOOT-TFTP.md"
+      "detail": "DSA + GSWIP XRX500 + PHY XWAY; enlace a 1 Gbps. El #97 programa los LEDs del PHY (1000M / 10-100M), pendiente de placa.",
+      "evidence": "dmesg gswip; docs/BOOT-TFTP.md; docs/HARDWARE.md"
     },
     {
       "title": "NAND / UBI / UBIFS en lectura",
@@ -37,7 +37,7 @@
       "weight": 10,
       "percent": 100,
       "state": "verified",
-      "detail": "MX30LF1G18AC, BCH-4, BBT y volúmenes rootfs_0/rootfs_1 en ro.",
+      "detail": "MX30LF1G18AC, BCH-4, BBT y rootfs_0 en ro. rootfs_1 se leyó para inspección; el arranque actual no lo monta.",
       "evidence": "docs/NAND-UBI.md; BBT 65472/65408"
     },
     {
@@ -57,8 +57,8 @@
       "weight": 10,
       "percent": 30,
       "state": "partial",
-      "detail": "flash.ko se integra; packet_hook/switch/bridge2/phy_helper fallan por símbolos del fastpath.",
-      "evidence": "Unknown symbol en logs de diagnóstico"
+      "detail": "flash.ko se integra; el build #96 exporta netif_receive_try_fp, el #99 quita GPL-only y el #102 anade ros-name a los puertos DSA, corrige el ABI de net_device (NET_CLS_ACT=n, pcpu_refcnt 672), deja br_init stub y retira 18 exports duplicados. En QEMU malta 5.6.3 cargan packet_hook, phy_helper, switch y bridge2; falta probarlos en placa; switch.ko puede enganchar el GSWIP por switchdev.",
+      "evidence": "tools/audit_symbols.sh; Module.symvers; docs/NETWORK.md"
     },
     {
       "title": "Red dentro de RouterOS",
@@ -67,8 +67,8 @@
       "weight": 20,
       "percent": 5,
       "state": "blocked",
-      "detail": "Falta el fastpath binario de MikroTik y un driver de switch para el GSWIP.",
-      "evidence": "packet_hook/switch/bridge2; docs/TROUBLESHOOTING.md"
+      "detail": "Build #96/#102: autorun.scr crea bridge/IP/DHCP y fija admin/ed500 en el primer arranque NAND; netup crea br0/IP/DHCP y soporta mgmt.vlan. El #99 deja cargable switch.ko, el #102 da ros-name a lan1..lan4, hace que autorun/netup prueben ether1..4 y lan1..4 y deja bridge2 cargable en QEMU; falta probar en placa si net crea ether1..4 y si switch.ko engancha el GSWIP. La WAN es xDSL/VRX518, no GPON.",
+      "evidence": "docs/NETWORK.md; auditoría de símbolos del build #96; docs/TROUBLESHOOTING.md"
     },
     {
       "title": "Licencia RouterOS",
@@ -85,10 +85,10 @@
       "short": "Instalación",
       "panel": "routeros",
       "weight": 5,
-      "percent": 20,
+      "percent": 40,
       "state": "partial",
-      "detail": "El formato .y3 está entendido y hay herramienta, pero no se ha flasheado.",
-      "evidence": "docs/FLASH-Y3.md; 08-y3tool.py"
+      "detail": ".y3 construido y verificado: 422 LEBs, rootfs_0 único, /boot/uImage + DTB byte a byte, /rw y pad de 30 MB. Init monta /flash/rw en NAND y resetea solo boot_cnt_primary con fw_setenv; no hay A/B. run update_image escribe rootfs_0; rootfs_1 no se monta ni se arranca. No se ha flasheado ni probado la persistencia en placa.",
+      "evidence": "docs/FLASH-Y3.md; tools/make-y3.sh; tools/verify-offline.sh; 08-y3tool.py; out/ED500-routeros-7.17-nand.y3"
     },
     {
       "title": "Herramientas remotas y documentación",
@@ -104,15 +104,15 @@
   "blocks": [
     {
       "title": "Red de RouterOS",
-      "text": "Los .ko de MikroTik piden símbolos del fastpath que no están en las fuentes GPL; switch.ko tampoco soporta el GSWIP del GRX350."
+      "text": "El build #96 resuelve los símbolos de packet_hook/phy_helper/switch/bridge2/8021q/nf_nat. Quedan el hardware GSWIP, el registro de bridge2 y probar que packet_hook registre los puertos (el kernel ya llama a los hooks del fastpath)."
     },
     {
-      "title": "Loader y servicios",
-      "text": "La licencia ya se acepta, pero /nova/bin/loader aborta con STRONG FAIL: this is not equal to that y sysinit recibe read failed (EOF); no hay GUI, Winbox ni login."
+      "title": "Primer login y red",
+      "text": "El loader ya no bloquea: con /dev/jiffies arrancan 30 servicios y la web responde 200. Falta validar el primer login con la contraseña del autorun (admin/ed500 en el primer arranque NAND) y la red de RouterOS sobre el GSWIP."
     },
     {
       "title": "Instalación persistente",
-      "text": "El .y3 está investigado, pero no se ha probado una escritura en NAND. El método actual es TFTP a RAM."
+      "text": "El .y3 está construido y verificado a nivel de contenedor, pero no se ha flasheado. Falta la escritura real en NAND, el arranque de iboot, la persistencia tras reinicio y el flag boot_cnt_primary en hardware. Es un solo banco activo: rootfs_0; la vuelta a Genexis es manual con el stock .y3 y run update_image."
     }
   ],
   "next": [
@@ -120,24 +120,27 @@
       "title": "Red dentro de RouterOS",
       "current": 5,
       "target": 100,
-      "note": "Requiere fastpath/driver propietario o una alternativa propia; no es un cambio de config."
+      "note": "Build #96 implementado y pendiente de placa: bridge estándar frente a bridge2, lan* vistos por RouterOS y datapath de packet_hook."
     },
     {
       "title": "Loader / GUI / Winbox / login",
-      "current": 0,
+      "current": 50,
       "target": 100,
-      "note": "Instrumentar /nova/bin/loader y corregir la comparación; la licencia ya está aceptada."
+      "note": "Servicios y web arriba (200); falta el primer login con contraseña y Winbox. La licencia ya está aceptada."
     },
     {
       "title": "Instalación persistente",
-      "current": 20,
+      "current": 40,
       "target": 100,
-      "note": "Backup, geometría UBI y prueba en el otro banco; no hacerlo sin recuperación."
+      "note": ".y3 construido; falta backup, escritura NAND, arranque sin TFTP, persistencia y recuperación en placa."
     }
   ],
   "notes": [
     "El porcentaje mide hitos del port, no líneas de código ni que RouterOS sea usable.",
     "Un área al 100% no implica que el sistema completo esté terminado.",
-    "El build #93 está probado en placa: /flash tmpfs, flash.ko, devlog en /dev/log, licencia aceptada y sysinit hasta el loader; el porcentaje mide hitos, no que RouterOS sea usable."
+    "El build #93 está probado en placa: /flash tmpfs, flash.ko, devlog en /dev/log, licencia aceptada y sysinit hasta el loader; el porcentaje mide hitos, no que RouterOS sea usable.",
+    "El build #102 (uImage 21.899.532 B, MD5 e2e8698843a1278da58e5d9178c89f5a; .y3 53.613.270 B, MD5 3e9b37d712ad6610bbaa2dc7d7ae2ccb) elimina GPL-only, deja cargables los módulos propietarios, anade ros-name a lan1..lan4, corrige el ABI de net_device y deja br_init stub con 18 exports retirados. En QEMU malta 5.6.3 cargan packet_hook/phy_helper/switch/bridge2; falta probar en placa que net cree ether1..4. El .y3 está verificado extrayendo la UBIFS y comparando kernel/DTB; no se ha flasheado.",
+    "La instalación persistente sube a 40% por el .y3 construido y verificado; no sube a 100% hasta la prueba real de escritura, arranque y persistencia en NAND.",
+    "tools/verify-offline.sh comprueba .y3/UBIFS/initramfs, las rutas de autorun de sysinit, el entorno U-Boot redundante, el bootok en rootfs_0 (rootfs_1 ignorado) y la recuperación stock; no abre /dev/mtd ni /dev/ubi."
   ]
 }

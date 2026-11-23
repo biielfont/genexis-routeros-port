@@ -1,17 +1,17 @@
-# Instalar por la web / U-Boot con un `.y3` propio
+# Instalar en NAND con un `.y3`
 
-> **Estado: experimental / histórico (nov 2026).** Este documento describe la
-> investigación del contenedor `.y3` y el camino de instalación persistente.
-> **No se ha flasheado en hardware** y no es el método actual. El método
-> soportado es **TFTP a RAM** ([BOOT-TFTP.md](BOOT-TFTP.md)); la NAND solo debe
-> tocarse con backup y plan de recuperación ([NAND-UBI.md](NAND-UBI.md)).
+> **Estado (2026-11-21).** El `.y3` está **construido y verificado** a nivel de
+> contenedor, UBIFS y contenido. **No se ha flasheado**: la placa quedó haltada
+> y la prueba en hardware es el lunes. El arranque TFTP a RAM sigue disponible
+> como recuperación y no escribe NAND. No ejecutes la instalación sin backup y
+> sin tener claro cómo volver al firmware stock.
 
-## 1. El formato ya está descifrado
+## El contenedor
 
-Un `.y3` del ED500 es **cabecera de texto de 1024 bytes + rootfs UBIFS + pkginfo + MD5**.
-Cabecera real del firmware oficial `GNX-4.3.6.170-R`:
+Un `.y3` del ED500 es **cabecera de texto de 1024 bytes + rootfs UBIFS +
+pkginfo + MD5**. La cabecera real del firmware oficial `GNX-4.3.6.170-R`:
 
-```
+```text
 IntenoIopY
 version 5
 integrity MD5SUM
@@ -29,7 +29,7 @@ pkginfo 28342
 scrofs 44978870
 scr 0
 sigofs 44978870
-sig 0          <-- NO hay firma criptografica
+sig 0          <-- no hay firma criptografica
 md5ofs 44978870
 md5 32
 size 44978902
@@ -37,165 +37,226 @@ size 44978902
 
 Dos hechos comprobados, no supuestos:
 
-- `sig 0`: **el update no verifica ninguna firma**, solo un MD5 en ASCII.
-- El MD5 cubre todo desde el byte 0 hasta `md5ofs`. Reconstruir el firmware
-  oficial con nuestra herramienta da un fichero **idéntico byte a byte** al de
-  Genexis, así que el contenedor está perfectamente entendido.
+- `sig 0`: el update **no verifica una firma**, solo el MD5 en ASCII.
+- Reconstruir el firmware oficial con `08-y3tool.py` da un fichero **idéntico
+  byte a byte** al de Genexis. El contenedor está entendido.
 
-Herramienta: `08-y3tool.py`
+Herramienta:
 
-```
+```bash
 python3 08-y3tool.py info   out/ED500-stock-original.y3
 python3 08-y3tool.py unpack out/ED500-stock-original.y3 /tmp/ext
 python3 08-y3tool.py build  nuevo.y3 --ubifs rootfs.ubifs --pkginfo pk.txt \
         --release GNX-4.3.6.999-R
 ```
 
-Geometría del rootfs (deducida del UBIFS oficial y respetada al construirlo):
-PEB 128 KiB, LEB 124 KiB (`126976`), página 2 KiB. Eso encaja con la NAND
-**Macronix MX30LF1G18AC** (1 Gbit SLC, 2 KiB de página, 64 B de OOB, 128 MiB)
-cuyo ID es justo el `0xc2 0xf1` que canta tu U-Boot.
+## El `.y3` de este port
 
-## 2. Qué hay en `out/`
-
-| Fichero | Qué es |
+| Campo | Valor |
 |---|---|
-| `ED500-stock-original.y3` | firmware oficial de referencia (44,9 MB) |
-| `ED500-stock-reconstruido.y3` | **idéntico byte a byte** al oficial, salido de nuestra herramienta |
-| `ED500-nuestro-kernel.y3` | rootfs UBIFS mínimo con nuestro kernel (`/boot/uImage`, `/uImage`, `/kernel`) |
+| Fichero | `out/ED500-routeros-7.17-nand.y3` |
+| Tamaño | 53.613.270 B |
+| MD5 | `3e9b37d712ad6610bbaa2dc7d7ae2ccb` |
+| UBIFS | 53.583.872 B, **422 LEBs** (máximo 480) |
+| Kernel | `out/uImage-563`, 21.899.532 B, MD5 `e2e8698843a1278da58e5d9178c89f5a` |
+| DTB | `norrland.dtb` de la placa (13.711 B) |
+| Firma | 0 (solo MD5, como el oficial) |
 
-El tercero es el interesante: 10 MB, `release GNX-4.3.6.999-R` (número alto para
-pasar cualquier comprobación de versión), mismo `board`/`chip`/`model` que el
-oficial, MD5 correcto y sin firma. Al arrancar, el kernel lleva su initramfs
-dentro: no necesita el resto del rootfs para dar shell.
+La UBIFS está pensada para **`rootfs_0`** (`0x3a20000` = 480 LEBs de 126.976 B);
+`run update_image` escribe ahí. La web stock no se usa: el sistema activo es
+solo `rootfs_0`. Lleva:
 
-## 3. Procedimiento seguro en dos pasos
-
-**Paso 1 — validar el contenedor sin riesgo.** Sube `ED500-stock-reconstruido.y3`
-por la web (JUCI → Firmware) o por U-Boot:
-
+```text
+/boot/uImage        kernel 5.6.3 con el initramfs de RouterOS
+/boot/norrland.dtb  DTB del ED500 (SSO/LEDs/boton reset)
+/boot/VERSION       identificacion
+/etc/os-release     identificacion
+/rw/                configuracion persistente de RouterOS
+/pad                30 MB aleatorios (se borran en el primer arranque)
 ```
-setenv serverip <IP de tu PC>
-# copia el fichero a tu carpeta TFTP con el nombre last.y3
+
+`/pad` parece un desperdicio, pero es deliberate: `yimage`/`ubiupdatevol`
+ajustan el volumen al tamaño de la imagen. Sin el pad, `rootfs_0` quedaría en
+~22 MB y no habría sitio para la config de RouterOS. Al borrarlo en el primer
+arranque quedan **~30 MB libres** para `/flash/rw`. La imagen sigue cabiendo en
+los 60.948.480 B del volumen.
+
+## Cómo se construye
+
+Requisitos: `mkfs.ubifs` (mtd-utils), Python 3 y, para reutilizar el `pkginfo`
+del firmware stock, `out/ED500-stock-original.y3`. El kernel y el DTB salen de
+`build-563.sh`.
+
+```bash
+sudo bash build-563.sh
+bash tools/make-y3.sh
+```
+
+`make-y3.sh` hace:
+
+1. copia `out/uImage-563` y el DTB de la placa a `out/y3-rootfs/boot/`;
+2. crea `/rw` y el `pad` aleatorio de 30 MB;
+3. genera la UBIFS con la geometría de la NAND:
+   `mkfs.ubifs -m 2048 -e 126976 -c 480 -x zlib`;
+4. comprueba que la imagen no pasa de 480 LEBs ni de `0x3a20000` bytes;
+5. reutiliza el `pkginfo` del `.y3` stock (o genera uno mínimo);
+6. empaqueta con `08-y3tool.py` y verifica tamaño, MD5, magia UBIFS y que
+   `/boot/uImage` y `/boot/norrland.dtb` coinciden byte a byte con los de
+   entrada.
+
+Salida esperada:
+
+```text
+make-y3: out/ED500-routeros-7.17-nand.y3
+  UBIFS 53583872 B, 422 LEBs (max 480), pad 30 MB
+  MD5 3e9b37d712ad6610bbaa2dc7d7ae2ccb
+```
+
+## Cómo se instala
+
+### A. Desde U-Boot (única vía; un solo banco)
+
+Copia el `.y3` a la raíz de tu servidor TFTP con el nombre **`last.y3`**. En el
+prompt `IOPSYS 2 grx500 #`:
+
+```text
+setenv ipaddr 192.168.1.1
+setenv serverip 192.168.1.161
 run update_image
+setenv root_vol rootfs_0
+setenv boot_cnt_primary 0
+setenv boot_cnt_alt 0
+saveenv
+reset
 ```
 
-Como su contenido es idéntico al firmware oficial, si el router reinicia normal
-sabemos que nuestro contenedor pasa el update. Si algo va mal aquí, no hemos
-perdido nada: es el mismo firmware que ya tenía.
+`update_image` está definido en el U-Boot de Genexis como:
 
-**Paso 2 — nuestro kernel.** Repite con `ED500-nuestro-kernel.y3`. Si el cargador
-lee el kernel de un fichero dentro del rootfs (que es lo que sugiere que el
-firmware oficial lleve un `uImage` dentro del UBIFS), arrancará nuestro 5.6.3 y
-verás el banner por `ttyLTQ0`.
-
-## 4. Lo que todavía no sé y necesito del router
-
-El U-Boot de Genexis es a medida (`primary system is 1`, `run update_image`,
-`Type run flash_nfs…`). En su entorno hay definido **cómo** carga el kernel
-(qué volumen, qué ruta y en qué dirección). Eso no está en ningún fichero
-público: hay que leerlo del equipo con:
-
-```
-printenv
+```text
+update_image=if ${dl_prog} ${loadaddr} last.y3; then yimage burn rootfs_0;setenv root_vol rootfs_0;fi;
 ```
 
-Lo que busco: la definición de `update_image` y de `bootcmd` (líneas con
-`ubifsload`, `ubi write`, `bootm`, `rootfs_0`/`rootfs_1`). Por eso el rootfs que
-he construido lleva el kernel en tres rutas plausibles (`/boot/uImage`,
-`/uImage`, `/kernel`); con el `printenv` lo dejo en la ruta exacta.
+Es decir: descarga `last.y3` a `0x80800000` y escribe la UBIFS en **`rootfs_0`**.
+Los `setenv`/`saveenv` posteriores dejan `rootfs_0` como único volumen activo
+y los contadores a cero. No se usa la web stock ni el banco siguiente.
 
-## 5. Si sale mal
+> **No uses `update_nandboot` ni `update_uboot`.** Solo se instala el rootfs;
+> el U-Boot de Genexis se queda como está. **No hay arranque A/B**: `rootfs_1`
+> no se monta ni se usa; si existe, es solo una copia stock para recuperación
+> manual.
 
-El equipo tiene dos bancos (`rootfs_0` / `rootfs_1`) y un contador de arranques:
-un rootfs roto no borra el otro. Y en el peor caso está el modo ROM por UART
-(puente en los dos contactos + cargar U-Boot en RAM), documentado en el repo
-`biielfont/Genexis-Pure-ED500/uboot/`.
+### B. Recuperación al firmware stock
 
-Antes de flashear: **desconecta el WAN**. Si el router arranca y ve TR-069, el
-ISP puede reescribir el firmware por su cuenta.
+Guarda `out/ED500-stock-original.y3` (44.978.902 B, MD5
+`45421c58132c78fa932fa23ef26e001a`) en el TFTP como `last.y3` y ejecuta el
+mismo `run update_image`: escribe el stock en `rootfs_0`, fija `root_vol` y al
+reiniciar vuelve Genexis. Es la vuelta limpia, con un solo sistema activo.
 
-## 6. Aviso honesto sobre "acabar en MikroTik"
+> **No uses `update_nandboot` ni `update_uboot`.** Solo se escribe el rootfs;
+> el U-Boot de Genexis se queda como está.
 
-El `.y3` resuelve el *cómo se instala*: un contenedor sin firma que el router
-acepta. Lo que no resuelve es *qué se instala*. RouterOS no tiene soporte para
-el GRX350: los `.npk` mipsbe son para placas MikroTik y su userland no trae
-drivers de este SoC (ni NAND, ni switch, ni PHY). Aunque arrancase el kernel con
-`board=norrland`, RouterOS se quedaría sin red y sin flash.
+## Qué pasa en el arranque desde NAND
 
-Lo que sí es realista, y es lo que estamos construyendo: **Linux/OpenWrt
-funcionando en el ED500**, instalable desde la web con este `.y3`. Si el
-objetivo final es "RouterOS o nada", el cuello de botella no es el arranque, es
-que MikroTik no escribió drivers para este chip.
+El entorno stock arranca con:
 
-## 7. Modo headless (sin cable serie)
-
-> **Actualización 2026-11:** el port actual sobre 5.6.3 ya trae Ethernet Linux
-> (DSA/GSWIP + PHY XWAY) y se usa por TFTP. El comentario de "no hay driver" de
-> este apartado se refiere al contenedor 6.18/headless antiguo, no al estado
-> actual del repo.
-
-La initramfs arranca red y servidores por sí sola:
-
-- pide IP por **DHCP**; si en 8 s no hay concesión, se pone **192.168.1.2/24**
-  con gateway 192.168.1.1,
-- levanta **httpd en el puerto 80** con una página de estado,
-- **telnetd en el 23** (root sin contraseña) y **SSH en el 22** si dropbear
-  compiló,
-- y deja la shell en `ttyLTQ0` como siempre.
-
-La página (`http://<ip>/`) se refresca sola cada 5 s y el CGI
-`/cgi-bin/status` devuelve texto plano con: host, kernel, uptime, una lista de
-comprobaciones (`[ok] kernel`, `[ok] proc`, `[ok] cpus`, `[ok] memoria`,
-`[ok] red eth0 …`), memoria, interfaces y las últimas 60 líneas de `dmesg`.
-
-Probado en QEMU con una NIC `e1000` real emulada:
-
-```
-red: 10.0.2.15 en eth0
-web: http://10.0.2.15/
-telnet: puerto 23 (root, sin password)
-
-=== ESTADO ===
-[ok] kernel en ejecucion
-[ok] proc montado
-[ok] cpus detectadas
-[ok] memoria: 246 MiB
-[ok] red eth0 10.0.2.15/24
+```text
+bootcmd=rescue;iboot
+boot_ubi=run bootargs_ubi;ubifsmount ubi0:${root_vol};
+         ubifsload ${loadaddr} /boot/uImage;
+         if ubifsload ${fdtaddr} /boot/${fdtfile}; then bootm ${loadaddr} - ${fdtaddr}; fi
 ```
 
-**Lo que falta en el ED500 real:** el kernel ya trae la pila de red
-(`CONFIG_NET`, `INET`, `PACKET`, DHCP), pero **no hay driver Ethernet para el
-GRX500**. El switch del SoC (`GRX500-Switch` en el U-Boot) necesita el driver
-CBM/DQM + switch, que es justo el bloque H2c. Sin él no aparece `eth0`, la
-initramfs lo dice por consola (`red: no hay interfaces`) y no hay página que
-visitar: en hardware, hoy, la única salida es el cable serie.
+Es decir: **no hay TFTP**. U-Boot monta el volumen UBI, carga `/boot/uImage` y
+`/boot/norrland.dtb` y ejecuta `bootm`. El kernel lleva su initramfs dentro; el
+`init` del port:
 
-Cuando ese driver entre, este `.y3` ya lleva la imagen headless dentro: se
-flashea y la página aparece sin tocar nada más.
+1. adjunta UBI con el offset correcto (`-O 2048`), aunque el bootargs de NAND
+   diga `ubi.mtd=ubi,0,30`;
+2. monta **`rootfs_0`** (el único volumen activo) en **rw** en `/nand`;
+3. hace `/flash/rw` → `/nand/rw`, así que la config, los logs y el estado de
+   RouterOS **sobreviven al reinicio**;
+4. borra `/pad` para liberar los ~30 MB;
+5. arranca `sysinit`; un ayudante `bootok` espera a que la web/API responda y
+   resetea **`boot_cnt_primary`** con `fw_setenv`, igual que
+   `/etc/init.d/bootcount` del firmware stock. Sin ese reset, `iboot` acabaría
+   intentando el banco de recuperación tras varios reinicios.
 
-## 8. Base 6.18 con Ethernet (en pruebas)
+El kernel lleva `clk_ignore_unused` activado por defecto (el bootargs de NAND
+no lo trae) y el init fija `panic=20` para que un pánico reinicie y U-Boot
+pueda volver al otro banco.
 
-`out/ED500-net618.y3` (34,5 MB) es el primer contenedor con un kernel que **sí
-trae driver Ethernet**: el árbol 6.18 de grische (`intel-mips-xrx500-v6.18`),
-que es el que funciona en el FRITZ!Box 7560 con este mismo GRX350.
+## Verificación realizada
 
-Qué lleva dentro, verificado sobre el binario:
+- `08-y3tool.py info`: `size` real = declarado; MD5 coincide; `sig 0`; magia
+  UBIFS `31181006`.
+- UBIFS: `leb_cnt 423`, `max_leb_cnt 480`, `min_io_size 2048`, `leb_size
+  126976`; 53.710.848 B < 60.948.480 B del volumen.
+- Extracción con `ubireader_extract_files`: `/boot/uImage`,
+  `/boot/norrland.dtb`, `/boot/VERSION`, `/etc/os-release`, `/rw` y `/pad`
+  presentes.
+- `/boot/uImage` dentro del `.y3` es **byte a byte** `out/uImage-563`
+  (MD5 `66497d47…`); el DTB coincide con el del árbol del kernel.
+- Initramfs: `fw_printenv` y `fw_setenv` estáticos presentes; init con
+  el volumen activo rw, `/flash/rw`, `bootok`, `clk_ignore_unused` y `tcp/tcp6`.
 
-- `CONFIG_INTEL_XRX500_NET=y`, `INTEL_XRX500_BM=y` → CBM/FSQM, TMU, HDMA y el
-  conduit del CPU compilados y enlazados (3 símbolos de probe presentes).
-- DTB `norrland` **embebido** en la sección `.dtb.init.rodata`
-  (`__dtb_start=0x81390960`, `__dtb_end=0x81392ca8`, 9032 bytes): el U-Boot de
-  Genexis no pasa DTB, así que `prom.c` usa `__dtb_start`.
-- Initramfs headless (DHCP/IP fija + web de estado + telnet).
-- `uImage` con `-a 0x80500000 -e 0x8107484c` (entry del ELF).
+### Verificación offline reproducible
 
-Lo que **no** puedo garantizar: nunca se ha arrancado. El DTS es mínimo (el del
-SoC + memoria y consola); las partes de placa que sus drivers esperan — reserva
-de memoria para el firmware del GPHY, numeración de puertos, PHY addresses,
-LEDs — están en `seale_avm.dtsi` para las FRITZ y aquí no existen. Si el switch
-no encuentra su firmware de GPHY, `eth0` no aparecerá aunque el driver esté
-compilado.
+```bash
+bash tools/verify-offline.sh   # WSL/Linux; no abre /dev/mtd ni /dev/ubi
+```
 
-Orden recomendado de pruebas: `ED500-stock-reconstruido.y3` (cero riesgo) →
-`ED500-net618.y3` → y si no vuelve, el otro banco arranca el stock solo.
+El script comprueba, sobre ficheros y artefactos:
+
+- tamaño, MD5, firma y geometría del `.y3`; `/boot/uImage`/DTB byte a byte;
+  `/rw` y `/pad`;
+- que el initramfs lleva `busybox`, `devlog`, `fw_printenv`/`fw_setenv` y que
+  el init copia los dos primeros al rootfs antes de los `chroot` (si no, el
+  `netup`/`bootok` fallarían en silencio) y monta el volumen activo;
+- que `sysinit` busca las cuatro rutas de autorun que escribe el init
+  (`/flash/autorun.scr`, `/rw/autorun.scr`, `/rw/store/autorun.scr` y
+  `/pckg/branding/rw/autorun.scr`);
+- un entorno U-Boot real en fichero, con las dos copias redundantes: lectura,
+  escritura, CRC y caída de la primera a la segunda;
+- el `bootok` con `rootfs_0`, con `rootfs_1` (que debe ignorar), con el
+  servicio caído y con el entorno ilegible, incluida la limpieza del autorun;
+- que `run update_image` escribe `rootfs_0` y fija `root_vol=rootfs_0`, y que
+  el stock `.y3` sirve para devolver el firmware Genexis.
+
+**No verificado:** la escritura real en NAND, el arranque de `iboot` con esta
+imagen, la persistencia tras un reinicio, el reset/LEDs y el primer login. Eso
+es la prueba del lunes.
+
+## Backup y recuperación
+
+Antes de escribir:
+
+1. **El stock se conserva en `rootfs_1`.** `rootfs_0` es el único volumen
+   activo; `rootfs_1` no se monta ni se arranca. Si el port no arranca, la
+   vuelta es manual desde U-Boot con `out/ED500-stock-original.y3` (o con
+   `run update_image`), no un fallback automático.
+2. **Backup completo (recomendado).** Desde U-Boot, leer la UBI y enviarla al
+   PC por TFTP:
+
+   ```text
+   nand read 0x81000000 0x100000 0x7f00000
+   tftpput 0x81000000 0x7f00000 backup-ubi.bin
+   ```
+
+   `0x100000` es el inicio de la partición `ubi`; `0x7f00000` son los 127 MiB.
+   Necesitas un servidor TFTP que acepte escrituras (`tftpput`), no el servidor
+   de solo lectura de `catch_final.py`.
+
+3. **Volver al stock.** Con `out/ED500-stock-original.y3` como `last.y3` y
+   `run update_image` se recupera el firmware Genexis en `rootfs_0`. Es la
+   vuelta recomendada; no depende de `rootfs_1` ni de un arranque A/B.
+
+No escribas NAND sin entender el mapa de volúmenes
+([NAND-UBI.md](NAND-UBI.md)) y sin tener el cable serie disponible.
+
+## Histórico
+
+El formato se descifró en noviembre de 2026 a partir del firmware oficial y de
+la herramienta `08-y3tool.py`. Los intentos anteriores (`ED500-nuestro-kernel.y3`,
+`ED500-net618.y3`) sirvieron para validar el contenedor, pero no llevaban el
+initramfs de RouterOS ni la persistencia de `/flash/rw`. El artefacto actual es
+`ED500-routeros-7.17-nand.y3`.

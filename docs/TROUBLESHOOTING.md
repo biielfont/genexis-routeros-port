@@ -59,8 +59,10 @@ El detalle de geometría y las comprobaciones están en
 
 | Síntoma | Causa probable | Qué hacer |
 |---|---|---|
-| `Unknown symbol` al cargar `packet_hook`/`switch`/`bridge2` | Faltan símbolos del *fastpath* binario de MikroTik | No es un fallo de build; no hay driver GPL para el GSWIP |
-| `phy_helper: Unknown symbol ...` | Módulo propietario con dependencias que el kernel no exporta | Igual: no se puede completar solo con fuentes GPL |
+| `Unknown symbol` al cargar `packet_hook`/`switch`/`bridge2` | Hasta el #98: símbolos del *fastpath* y APIs GPL-only que el kernel mainline no exporta a módulos propietarios | El #96 exporta el fastpath y el #99 quita GPL-only; si sigue, revisar `Module.symvers` y la licencia del módulo |
+| Oops en `dev_put`/`fp_init` al cargar `packet_hook` | `CONFIG_NET_CLS_ACT=y` mete dos `miniq_*` en `struct net_device` y mueve `pcpu_refcnt` de 672 a 680; el módulo usa 672 | El #102 deja `NET_CLS_ACT=n`; comprobar `li a1,672` en un módulo de prueba con `offsetof` |
+| `bridge2: exports duplicate symbol br_forward` o `FALLO bridge2.ko: File exists` | El bridge estándar exporta los mismos `br_*` y ya registra el link kind `bridge` | El #102 deja `br_init` stub y retira 18 exportaciones; `brioctl_set` se conserva. Comprobar `grep 'bridge2.ko sustituye' net/bridge/br.c` |
+| `phy_helper: Unknown symbol ...` | Módulo propietario con dependencias que el kernel no exporta | El #99 exporta también las APIs GPL-only; la auditoría da cero pendientes. Si sigue, falta un símbolo de otro `.ko` |
 | `getHardwareID: could not get disk /dev/mtdblock0` | RouterOS busca un disco MikroTik; con el mtdram, `mtdblock0` es el RouterBoot de RAM y la NAND real es `mtdblock2` | Esperado; el chequeo de licencia demo falla. No es un fallo del hard config |
 | `Demo license expired!` | Sin licencia MikroTik válida para este hardware | No hay método de bypass; se necesita licencia |
 | `applet not found` al usar el shell | BusyBox decide el applet por `argv[0]` | Copiarlo como `busybox`; el init ya lo hace |
@@ -68,9 +70,11 @@ El detalle de geometría y las comprobaciones están en
 | `sysinit` se para en `Demo license ...` | Chequeo de licencia de MikroTik; no depende de la NAND | Fuera del alcance del repo; no se modifica |
 | `Overlayfs: upper fs does not support xattr` | El upper es tmpfs sin xattr | Aviso; se pierde index/metacopy, no impide montar |
 
-La red de RouterOS no se arregla con `insmod`: sus módulos esperan el *fastpath*
-de MikroTik y un driver para *sus* switches. El kernel de este repo sí tiene
-Ethernet Linux (DSA/GSWIP), que es lo que se usa para TFTP y diagnóstico.
+La red de RouterOS no se arregla solo con `insmod`: sus módulos esperan el
+*fastpath* de MikroTik y, hasta el #98, no podían ver las APIs GPL-only. El #99
+elimina esa restricción y deja `switch.ko` cargable; falta probar en placa si
+su capa switchdev engancha el GSWIP. El kernel de este repo sí tiene Ethernet
+Linux (DSA/GSWIP), que es lo que se usa para TFTP y diagnóstico.
 
 ## Build
 

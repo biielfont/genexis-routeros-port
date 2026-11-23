@@ -2,7 +2,7 @@
 
 Esta guía describe el camino **actual** (`build-563.sh`). Los scripts `01…04`
 son el bootstrap que deja el árbol `/opt/ros-port/linux-5.6.3` y el initramfs
-listos; `05`/`06` y los `patch_*`/`check_*` son históricos.
+listos; `05`/`06` y `tools/history/` son históricos.
 
 ## Entorno soportado
 
@@ -20,10 +20,12 @@ En Debian/Ubuntu/Kali:
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
   make bc flex bison libssl-dev libelf-dev xz-utils patch wget \
-  ca-certificates u-boot-tools squashfs-tools cpio gzip bzip2 python3-pip
+  ca-certificates u-boot-tools squashfs-tools cpio gzip bzip2 python3-pip \
+  mtd-utils
 ```
 
-`u-boot-tools` aporta `mkimage`; `squashfs-tools` aporta `unsquashfs`/`mksquashfs`.
+`u-boot-tools` aporta `mkimage`; `squashfs-tools` aporta `unsquashfs`/`mksquashfs`;
+`mtd-utils` aporta `mkfs.ubifs` para el `.y3`.
 
 ## 1. Bootstrap del árbol 5.6.3
 
@@ -84,7 +86,8 @@ El script, en este orden:
 1. ejecuta `parche_arranque.py` sobre `/opt/ros-port/linux-5.6.3` (idempotente);
 2. copia `init-initramfs.sh` al initramfs y `ros/rootfs.squashfs` como
    `ros.squashfs`;
-3. compila `phyreg` y `swstats` estáticos;
+3. compila `phyreg`, `swstats` y `fw_printenv`/`fw_setenv` estáticos
+   (`tools/build-fwenv.sh`);
 4. activa las opciones de kernel necesarias (UBI/UBIFS, NAND xrx500, DSA/GSWIP,
    PHYLINK, netfilter, futex, squashfs, loop, etc.);
 5. compila `vmlinux`, comprueba el DTB y empaqueta `out/uImage-563` para
@@ -113,12 +116,30 @@ Invariantes que comprueba el propio script:
 - `entry` y `load` en `0x80500000`;
 - endianness **big-endian** (el userland de RouterOS es mipsbe).
 
-El `uImage-563` de referencia de esta investigación (build #76) mide
-**19.681.356 bytes** y tiene md5 **`eba17e8836b4ee2e3ec35829a56538d0`**. El
+El `uImage-563` de referencia de esta investigación (build #102) mide
+**21.899.532 bytes** y tiene md5 **`e2e8698843a1278da58e5d9178c89f5a`**. El
 tamaño cambia si tocas initramfs, rootfs o configuración; no es un valor fijo
 del build.
 
-## 4. Notas de reproducibilidad
+## 4. Empaquetar el `.y3` (NAND)
+
+El `.y3` mete el `uImage`, el DTB, `/rw` y un `pad` de 30 MB en una UBIFS para
+`rootfs_0`. Se construye aparte, después del kernel:
+
+```bash
+bash tools/make-y3.sh
+# out/ED500-routeros-7.17-nand.y3
+#   UBIFS 53583872 B, 422 LEBs (max 480), pad 30 MB
+#   MD5 3e9b37d712ad6610bbaa2dc7d7ae2ccb
+```
+
+El script necesita `mkfs.ubifs`, el DTB de la placa y, para reutilizar el
+`pkginfo`, `out/ED500-stock-original.y3`. Verifica tamaño, MD5, magia UBIFS,
+que no pase de 480 LEBs y que `/boot/uImage`/`/boot/norrland.dtb` coincidan
+byte a byte con los artefactos de entrada. Instalación:
+**[FLASH-Y3.md](FLASH-Y3.md)**.
+
+## 5. Notas de reproducibilidad
 
 - `build-563.sh` usa `AQUI=$(cd "$(dirname "$0")" && pwd)`, así que funciona
   desde cualquier directorio mientras se invoque con su ruta.
@@ -130,5 +151,14 @@ del build.
   del parche GPL y de la toolchain que uses.
 - El build #76 está probado en placa (2026-11-20); si cambias el kernel,
   vuelve a probar en placa antes de dar por bueno el `uImage`.
+
+Antes de instalar en NAND, ejecuta la verificación offline (WSL/Linux):
+
+```bash
+bash tools/verify-offline.sh
+```
+
+Necesita `cpio`, `gcc`, `mkenvimage` y `ubireader_extract_files`/
+`ubireader_display_info`; no abre `/dev/mtd` ni `/dev/ubi`.
 
 Siguiente paso: **[BOOT-TFTP.md](BOOT-TFTP.md)**.
