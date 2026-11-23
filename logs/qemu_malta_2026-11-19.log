@@ -1,0 +1,421 @@
+[?25l[2J[H┏━(Message from Kali developers)
+┃
+┃ This is a minimal installation of Kali Linux, you likely
+┃ want to install supplementary tools. Learn how:
+┃ ⇒ https://www.kali.org/docs/troubleshooting/common-minimum-setup/
+┃
+┗━(Run: “touch ~/.hushlogin” to hide this message)
+]0;C:\Users\BFR\AppData\Local\Programs\@codebufffreebuff-desktop\resources\git\bin\bash.exe[?25hLinux version 5.6.3 (root@DESKTOP-MCHN2VK) (gcc version 13.3.0 (Buildroot 2021.11-12449-g1bef613319)) #3 SMP Thu Nov 19 20:07:11 CET 2026
+earlycon: uart8250 at I/O port 0x3f8 (options '38400n8')
+printk: bootconsole [uart8250] enabled
+CPU0 revision is: 00019500 (MIPS 34Kc)
+FPU revision is: 00739500
+OF: fdt: No chosen node found, continuing without
+MIPS: machine is mti,malta
+Software DMA cache coherency enabled
+Initrd not found or empty - disabling initrd
+Detected 0 available secondary CPU(s)
+Primary instruction cache 2kB, VIPT, 2-way, linesize 16 bytes.
+Primary data cache 2kB, 2-way, VIPT, no aliases, linesize 16 bytes
+Zone ranges:
+  DMA      [mem 0x0000000000000000-0x0000000000ffffff]
+  Normal   [mem 0x0000000001000000-0x000000000fffbfff]
+Movable zone start for each node
+Early memory node ranges
+  node   0: [mem 0x0000000000000000-0x000000000fffbfff]
+Initmem setup node 0 [mem 0x0000000000000000-0x000000000fffbfff]
+percpu: Embedded 6 pages/cpu s29840 r32768 d35696 u98304
+Built 1 zonelists, mobility grouping on.  Total pages: 16351
+Kernel command line: console=ttyS0,115200
+Dentry cache hash table entries: 32768 (order: 3, 131072 bytes, linear)
+Inode-cache hash table entries: 16384 (order: 2, 65536 bytes, linear)
+Writing ErrCtl register=00000000
+Readback ErrCtl register=00000000
+mem auto-init: stack:off, heap alloc:off, heap free:off
+Memory: 239024K/262128K available (6401K kernel code, 299K rwdata, 796K rodata, 13488K init, 215K bs
+[27;100Hss, 23104K reserved, 0K cma-reserved)
+rcu: Hierarchical RCU implementation.
+rcu:    RCU event tracing is enabled.
+rcu:    RCU restricting CPUs from NR_CPUS=8 to nr_cpu_ids=1.
+rcu: RCU calculated value of scheduler-enlistment delay is 10 jiffies.
+rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=1
+NR_IRQS: 256
+random: get_random_bytes called from _sinittext+0xa7c/0x2c47c with crng_init=0
+CPU frequency 320.00 MHz
+clocksource: MIPS: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 11945358753 ns
+sched_clock: 32 bits at 160MHz, resolution 6ns, wraps every 13421751292ns
+Console: colour dummy device 80x25
+Calibrating delay loop... 1019.08 BogoMIPS (lpj=5095424)
+pid_max: default: 32768 minimum: 301
+Mount-cache hash table entries: 4096 (order: 0, 16384 bytes, linear)
+Mountpoint-cache hash table entries: 4096 (order: 0, 16384 bytes, linear)
+rcu: Hierarchical SRCU implementation.
+smp: Bringing up secondary CPUs ...
+smp: Brought up 1 node, 1 CPU
+devtmpfs: initialized
+clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604462750000 ns    
+futex hash table entries: 256 (order: 0, 16384 bytes, linear)
+NET: Registered protocol family 16
+vgaarb: loaded
+SCSI subsystem initialized
+PCI host bridge to bus 0000:00
+pci_bus 0000:00: root bus resource [mem 0x10000000-0x17ffffff]
+pci_bus 0000:00: root bus resource [io  0x1000-0x1fffff]
+pci_bus 0000:00: root bus resource [??? 0x00000000 flags 0x0]
+pci_bus 0000:00: No busn resource found for root bus, will use [bus 00-ff]
+pci 0000:00:00.0: [11ab:4620] type 00 class 0x060000
+pci 0000:00:00.0: reg 0x10: [mem 0x00000000-0x00000fff pref]
+pci 0000:00:00.0: reg 0x14: [mem 0x01000000-0x01000fff pref]
+pci 0000:00:00.0: reg 0x18: [mem 0x1c000000-0x1c000fff]
+pci 0000:00:00.0: reg 0x1c: [mem 0x1f000000-0x1f000fff]
+pci 0000:00:00.0: reg 0x20: [mem 0x1be00000-0x1be00fff]
+pci 0000:00:00.0: reg 0x24: [io  0x14000000-0x14000fff]
+pci 0000:00:0a.0: [8086:7110] type 00 class 0x060100
+pci 0000:00:0a.1: [8086:7111] type 00 class 0x010180
+pci 0000:00:0a.1: reg 0x20: [io  0x0000-0x000f]
+pci 0000:00:0a.1: legacy IDE quirk: reg 0x10: [io  0x01f0-0x01f7]
+pci 0000:00:0a.1: legacy IDE quirk: reg 0x14: [io  0x03f6]
+pci 0000:00:0a.1: legacy IDE quirk: reg 0x18: [io  0x0170-0x0177]
+pci 0000:00:0a.1: legacy IDE quirk: reg 0x1c: [io  0x0376]
+pci 0000:00:0a.2: [8086:7112] type 00 class 0x0c0300
+pci 0000:00:0a.2: reg 0x20: [io  0x0000-0x001f]
+pci 0000:00:0a.3: [8086:7113] type 00 class 0x068000
+pci 0000:00:0a.3: quirk: [io  0x1000-0x103f] claimed by PIIX4 ACPI
+pci 0000:00:0a.3: quirk: [io  0x1100-0x110f] claimed by PIIX4 SMB
+pci 0000:00:0b.0: [1022:2000] type 00 class 0x020000
+pci 0000:00:0b.0: reg 0x10: [io  0x0000-0x001f]
+pci 0000:00:0b.0: reg 0x14: [mem 0x00000000-0x0000001f]
+pci 0000:00:0b.0: reg 0x30: [mem 0x00000000-0x0003ffff pref]
+pci 0000:00:12.0: [1013:00b8] type 00 class 0x030000
+pci 0000:00:12.0: reg 0x10: [mem 0x00000000-0x01ffffff pref]
+pci 0000:00:12.0: reg 0x14: [mem 0x00000000-0x00000fff]
+pci 0000:00:12.0: reg 0x30: [mem 0x00000000-0x0000ffff pref]
+pci 0000:00:12.0: vgaarb: VGA device added: decodes=io+mem,owns=none,locks=none
+pci_bus 0000:00: busn_res: [bus 00-ff] end is updated to 00
+pci 0000:00:12.0: BAR 0: assigned [mem 0x10000000-0x11ffffff pref]
+pci 0000:00:0b.0: BAR 6: assigned [mem 0x12000000-0x1203ffff pref]
+pci 0000:00:12.0: BAR 6: assigned [mem 0x12040000-0x1204ffff pref]
+pci 0000:00:12.0: BAR 1: assigned [mem 0x12050000-0x12050fff]
+pci 0000:00:0a.2: BAR 4: assigned [io  0x1040-0x105f]
+pci 0000:00:0b.0: BAR 0: assigned [io  0x1060-0x107f]
+pci 0000:00:0b.0: BAR 1: assigned [mem 0x12051000-0x1205101f]
+pci 0000:00:0a.1: BAR 4: assigned [io  0x1080-0x108f]
+clocksource: Switched to clocksource MIPS
+VFS: Disk quotas dquot_6.6.0
+VFS: Dquot-cache hash table entries: 4096 (order 0, 16384 bytes)
+NET: Registered protocol family 2
+tcp_listen_portaddr_hash hash table entries: 2048 (order: 0, 24576 bytes, linear)
+TCP established hash table entries: 4096 (order: 0, 16384 bytes, linear)
+TCP bind hash table entries: 4096 (order: 1, 32768 bytes, linear)
+TCP: Hash tables configured (established 4096 bind 4096)
+UDP hash table entries: 512 (order: 0, 16384 bytes, linear)
+UDP-Lite hash table entries: 512 (order: 0, 16384 bytes, linear)
+NET: Registered protocol family 1
+RPC: Registered named UNIX socket transport module.
+RPC: Registered udp transport module.
+RPC: Registered tcp transport module.
+RPC: Registered tcp NFSv4.1 backchannel transport module.
+pci 0000:00:0a.2: enabling device (0000 -> 0001)
+PCI: CLS 0 bytes, default 16
+workingset: timestamp_bits=30 max_order=14 bucket_order=0
+squashfs: version 4.0 (2009/01/31) Phillip Lougher
+Installing knfsd (copyright (C) 1996 okir@monad.swb.de).
+Block layer SCSI generic (bsg) driver version 0.4 loaded (major 253)
+io scheduler mq-deadline registered
+io scheduler kyber registered
+cirrusfb 0000:00:12.0: enabling device (0000 -> 0002)
+cirrusfb 0000:00:12.0: Cirrus Logic chipset on PCI bus, RAM (4096 kB) at 0x10000000
+Console: switching to colour frame buffer device 80x30
+Serial: 8250/16550 driver, 4 ports, IRQ sharing disabled
+printk: console [ttyS0] disabled
+serial8250.0: ttyS0 at I/O 0x3f8 (irq = 4, base_baud = 115200) is a 16550A
+printk: console [ttyS0] enabled
+printk: console [ttyS0] enabled
+printk: bootconsole [uart8250] disabled
+printk: bootconsole [uart8250] disabled
+serial8250.0: ttyS1 at I/O 0x2f8 (irq = 3, base_baud = 115200) is a 16550A
+brd: module loaded
+loop: module loaded
+ata_piix 0000:00:0a.1: enabling device (0000 -> 0001)
+scsi host0: ata_piix
+scsi host1: ata_piix
+ata1: PATA max UDMA/33 cmd 0x1f0 ctl 0x3f6 bmdma 0x1080 irq 14
+ata2: PATA max UDMA/33 cmd 0x170 ctl 0x376 bmdma 0x1088 irq 15
+pcnet32: pcnet32.c:v1.35 21.Apr.2008 tsbogend@alpha.franken.de
+pcnet32 0000:00:0b.0: enabling device (0000 -> 0003)
+pcnet32: PCnet/PCI II 79C970A at 0x1060, 52:54:00:12:34:56 assigned IRQ 10
+pcnet32: eth0: registered as PCnet/PCI II 79C970A
+pcnet32: 1 cards_found
+mousedev: PS/2 mouse device common for all mice
+rtc_cmos 70.rtc: registered as rtc0
+rtc_cmos 70.rtc: alarms up to one day, 242 bytes nvram
+NET: Registered protocol family 10
+Segment Routing with IPv6
+sit: IPv6, IPv4 and MPLS over IPv4 tunneling driver
+NET: Registered protocol family 17
+NET: Registered protocol family 15
+rtc_cmos 70.rtc: setting system clock to 2026-11-19T19:08:07 UTC (1795115287)
+ata2.00: ATAPI: QEMU DVD-ROM, 2.5+, max UDMA/100
+scsi 1:0:0:0: CD-ROM            QEMU     QEMU DVD-ROM     2.5+ PQ: 0 ANSI: 5
+kworker/u2:1: page allocation failure: order:0, mode:0x40cc1(GFP_KERNEL|GFP_DMA|__GFP_COMP), nodemas
+[27;100Hsk=(null)
+CPU: 0 PID: 36 Comm: kworker/u2:1 Not tainted 5.6.3 #3
+Workqueue: events_unbound _save_fp_context
+Stack : 00000000 8017f47c 00000000 00000000 00000000 00000000 8078a600 8e627914
+        80820000 80820000 8e621800 80820000 8081ea34 00000001 8e6278c0 19771c69
+        00000000 00000000 00000000 00000000 00000001 8e62779c 00000000 76656e74
+        735f756e 00000000 8e627674 626f756e 80820000 00000000 00000000 80820000
+        8081ea34 00000000 80820000 80849cd0 00000000 80494308 00000000 81590000
+        ...
+Call Trace:
+{8e627890} _stext+0xce30/0x12e70
+{8e627970} _save_fp_context+0x6071d0/0x627018
+{8e627998} _save_fp_context+0x108d5c/0x627018
+{8e6279e0} _save_fp_context+0x109828/0x627018
+{8e627aa0} _save_fp_context+0x116b00/0x627018
+{8e627af0} _save_fp_context+0x116e5c/0x627018
+{8e627b18} _save_fp_context+0x3c7eb4/0x627018
+{8e627b90} _save_fp_context+0x394f04/0x627018
+{8e627bc8} _save_fp_context+0x392bbc/0x627018
+{8e627c00} _save_fp_context+0x394b4c/0x627018
+{8e627c38} _save_fp_context+0x393f7c/0x627018
+{8e627c58} _save_fp_context+0x38fbbc/0x627018
+{8e627cb0} _save_fp_context+0x3bcd18/0x627018
+{8e627ce8} _save_fp_context+0x3b9660/0x627018
+{8e627db0} _save_fp_context+0x3b9fc0/0x627018
+{8e627df8} _save_fp_context+0x3d9ef0/0x627018
+{8e627e40} _save_fp_context+0x3f494/0x627018
+{8e627e68} _save_fp_context+0x3411c/0x627018
+{8e627ea0} _save_fp_context+0x35204/0x627018
+{8e627ee8} _save_fp_context+0x3b258/0x627018
+{8e627f28} _stext+0x6468/0x12e70
+
+Mem-Info:
+active_anon:491 inactive_anon:495 isolated_anon:0
+ active_file:0 inactive_file:0 isolated_file:0
+ unevictable:0 dirty:0 writeback:0 unstable:0
+ slab_reclaimable:18 slab_unreclaimable:247
+ mapped:0 shmem:986 pagetables:0 bounce:0
+ free:13523 free_pcp:5 free_cma:0
+Node 0 active_anon:7856kB inactive_anon:7920kB active_file:0kB inactive_file:0kB unevictable:0kB iso
+[27;100Holated(anon):0kB isolated(file):0kB mapped:0kB dirty:0kB writeback:0kB shmem:15776kB writeback_tmp:0k
+[27;100HkB unstable:0kB all_unreclaimable? no
+DMA free:0kB min:0kB low:0kB high:0kB reserved_highatomic:0KB active_anon:0kB inactive_anon:0kB acti
+[27;100Hive_file:0kB inactive_file:0kB unevictable:0kB writepending:0kB present:16384kB managed:0kB mlocked:0
+[27;100H0kB kernel_stack:0kB pagetables:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+lowmem_reserve[]: 0 58 58
+Normal free:216368kB min:2752kB low:3440kB high:4128kB reserved_highatomic:0KB active_anon:7856kB in
+[27;100Hnactive_anon:7920kB active_file:0kB inactive_file:0kB unevictable:0kB writepending:0kB present:245744
+[27;100H4kB managed:239024kB mlocked:0kB kernel_stack:512kB pagetables:0kB bounce:0kB free_pcp:80kB local_pcp
+[27;100Hp:80kB free_cma:0kB
+lowmem_reserve[]: 0 0 0
+DMA: 0*16kB 0*32kB 0*64kB 0*128kB 0*256kB 0*512kB 0*1024kB 0*2048kB 0*4096kB 0*8192kB 0*16384kB = 0k
+[27;100HkB
+Normal: 3*16kB (UME) 0*32kB 2*64kB (UE) 1*128kB (E) 0*256kB 2*512kB (UE) 2*1024kB (UE) 2*2048kB (ME)
+[27;100H) 1*4096kB (E) 3*8192kB (UME) 11*16384kB (M) = 216368kB
+986 total pagecache pages
+0 pages in swap cache
+Swap cache stats: add 0, delete 0, find 0/0
+Free swap  = 0kB
+Total swap = 0kB
+16383 pages RAM
+0 pages HighMem/MovableOnly
+1444 pages reserved
+sr 1:0:0:0: [sr0] out of memory.
+cdrom: Uniform CD-ROM driver Revision: 3.20
+Freeing unused kernel memory: 13488K
+This architecture does not have kernel memory protection.
+Run /init as init process
+process '/bin/busybox' started with executable stack
+--- RouterOS: montando rootfs ---
+overlayfs: upper fs does not support xattr, falling back to index=off and metacopy=off.
+  overlay listo, arrancando /sbin/sysinit
+mkdir: can't create directory '/newroot/merged/rw': No such file or directory
+mkdir: can't create directory '/newroot/merged/tmp': No such file or directory
+--- MTD del kernel ---
+  dev:    size   erasesize  name
+  ls: /dev/mtd*: No such file or directory
+  ls: /dev/mtdblock*: No such file or directory
+  ls: /dev/flash: No such file or directory
+--- UBI ---
+  BusyBox v1.36.1 (2026-11-17 12:58:57 CET) multi-call binary.
+
+  Usage: ubiattach -m MTD_NUM [-d UBI_NUM] [-O VID_HDR_OFF] UBI_CTRL_DEV
+
+  Attach MTD device to UBI
+
+        -m MTD_NUMrandom: fast init done
+        MTD device number to attach
+        -d UBI_NUM      UBI device number to assign
+        -O VID_HDR_OFF[2CVID header offset
+  ls: /dev/ubi*: No such file or directory
+  UBI: rootfs_0 no monta: mount: mounting ubi0:rootfs_0 on /newroot/merged/mnt/rootfs_0 failed: No s
+[27;100Hsuch device
+  UBI: rootfs_1 no monta: mount: mounting ubi0:rootfs_1 on /newroot/merged/mnt/rootfs_1 failed: No s
+[27;100Hsuch device
+  fecha: Thu Nov 19 12:00:00 UTC 2026
+--- diagnostico modulos de red de RouterOS ---
+  == drivers/net/packet_hook.ko
+insmod: can't insert '/newroot/merged/lib/modules/5.6.3/drivers/net/packet_hook.ko': invalid module 
+[27;100H format
+  == drivers/net/phy_helper.ko
+insmod: can't insert '/newroot/merged/lib/modules/5.6.3/drivers/net/phy_helper.ko': invalid module f
+[27;100Hformat
+  == drivers/net/switch.ko
+insmod: can't insert '/newroot/merged/lib/modules/5.6.3/drivers/net/switch.ko': invalid module forma
+[27;100Hat
+  == net/bridge/bridge2.ko
+insmod: can't insert '/newroot/merged/lib/modules/5.6.3/net/bridge/bridge2.ko': invalid module forma
+[27;100Hat
+--- fin diagnostico ---
+Error loading shared library libumsg.so: Invalid argument (needed by /sbin/sysinit)
+Error loading shared library libuc++.so: Invalid argument (needed by /sbin/sysinit)
+Error loading shared library libuc++.so: Invalid argument (needed by /lib/libucrypto.so)
+Error relocating /lib/libucrypto.so: __cxa_guard_acquire: symbol not found
+Error relocating /lib/libucrypto.so: _ZNK7IPAddr66isIPv4Ev: symbol not found
+Error relocating /lib/libucrypto.so: _ZN2nv12base64EncodeE11string_view: symbol not found
+Error relocating /lib/libucrypto.so: _ZN11vector_baseD2Ev: symbol not found
+Error relocating /lib/libucrypto.so: _ZN3ios5widthEj: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6vectorIhE6insertEPhPKhS3_: symbol not found
+Error relocating /lib/libucrypto.so: _ZNK6string6substrEjj: symbol not found
+Error relocating /lib/libucrypto.so: _Z4endlR7ostream: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6string6assignEPKcS1_: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6string9push_backEc: symbol not found
+Error relocating /lib/libucrypto.so: _ZNK7IPAddr65emptyEv: symbol not found
+Error relocating /lib/libucrypto.so: _ZlsR7ostream11string_view: symbol not found
+Error relocating /lib/libucrypto.so: _ZN3ios4setfEjj: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6string6insertEPcjc: symbol not found
+Error relocating /lib/libucrypto.so: _ZN11vector_base11reserve_rawEjj: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6stringC1ERKS_: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6string6appendERKS_: symbol not found
+Error relocating /lib/libucrypto.so: _ZlsR7ostreamb: symbol not found
+Error relocating /lib/libucrypto.so: _ZN13ostringstreamC1ERK6stringj: symbol not found
+Error relocating /lib/libucrypto.so: _ZN3ios4fillEc: symbol not found
+Error relocating /lib/libucrypto.so: _ZN11vector_base9erase_rawEPcS0_: symbol not found
+Error relocating /lib/libucrypto.so: _ZlsR7ostreamj: symbol not found
+Error relocating /lib/libucrypto.so: _ZlsR7ostreami: symbol not found
+Error relocating /lib/libucrypto.so: _Z7hex2bin11string_viewR6string: symbol not found
+Error relocating /lib/libucrypto.so: _ZlsR7ostreamc: symbol not found
+Error relocating /lib/libucrypto.so: _ZN11vector_base8swap_rawERS_: symbol not found
+Error relocating /lib/libucrypto.so: __cxa_guard_release: symbol not found
+Error relocating /lib/libucrypto.so: _ZlsR7ostreamPKc: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6stringC1Ev: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6stringC1EPKc: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6stringC1Ejc: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6string6assignERKS_: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6stringaSEOS_: symbol not found
+Error relocating /lib/libucrypto.so: _ZN7IPAddr67setIPv4Ej: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6string7freeptrEv: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6string6assignEPKcj: symbol not found
+Error relocating /lib/libucrypto.so: _Z6insmodPKcS0_: symbol not found
+Error relocating /lib/libucrypto.so: _Z10__str_findPKcjS0_jj: symbol not found
+Error relocating /lib/libucrypto.so: _ZNKR9stringbuf3strEv: symbol not found
+Error relocating /lib/libucrypto.so: _ZN11vector_base10insert_rawEPcjj: symbol not found
+Error relocating /lib/libucrypto.so: _ZN13ostringstreamD1Ev: symbol not found
+Error relocating /lib/libucrypto.so: _ZNK6string7compareE11string_view: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6string7reserveEj: symbol not found
+Error relocating /lib/libucrypto.so: _Z10__str_findPKcjcj: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6string6resizeEjc: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6string6appendEjc: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6string6appendEPKcS1_: symbol not found
+Error relocating /lib/libucrypto.so: _ZNK7IPAddr63strEb: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6stringC1EOS_: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6stringC1EPKcS1_: symbol not found
+Error relocating /lib/libucrypto.so: _Z9str2lowerRK6string: symbol not found
+Error relocating /lib/libucrypto.so: _ZN2nv8readFileERK6stringjj: symbol not found
+Error relocating /lib/libucrypto.so: _ZNK6string7compareEPKc: symbol not found
+Error relocating /lib/libucrypto.so: _ZN2nv12base64DecodeEPKcjPhj: symbol not found
+Error relocating /lib/libucrypto.so: _ZN6string6appendEPKc: symbol not found
+Error relocating /sbin/sysinit: _ZN6string6assignEPKc: symbol not found
+Error relocating /sbin/sysinit: _ZN6string6appendEPKc: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv7message13insert_vectorENS_12u32_array_idEj: symbol not found[28;1H
+Error relocating /sbin/sysinit: _ZN2nv7messageixINS_15string_array_idEEENS_8IdTraitsIT_E8ref_typeES4
+[27;100H4_: symbol not found
+Error relocating /sbin/sysinit: _ZN8ofstream5closeEv: symbol not found
+Error relocating /sbin/sysinit: _ZNK6string7compareEPKc: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv8readFileERK6stringjj: symbol not found
+Error relocating /sbin/sysinit: _ZN6stringC1EPKcS1_: symbol not found
+Error relocating /sbin/sysinit: _ZN6stringC1EOS_: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv6LooperC1Ejjjjjjjjjjjjj: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv8findFileERK6stringb: symbol not found
+Error relocating /sbin/sysinit: _ZN8ifstreamC1EPKcj: symbol not found
+Error relocating /sbin/sysinit: _ZlsR7ostreamP9streambuf: symbol not found
+Error relocating /sbin/sysinit: _Z10__str_findPKcjcj: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv9dirExistsERK6string: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv7message6insertINS_6u32_idEEERS0_T_NS_8IdTraitsIS4_E8set_typeE
+[27;100HE: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv7messageD1Ev: symbol not found
+Error relocating /sbin/sysinit: _Z12getOSVersionP6stringS0_: symbol not found
+Error relocating /sbin/sysinit: _Z5rmmodPKc: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv7message6appendINS_15string_array_idEEEvT_NS_8IdTraitsIS3_E13e
+[27;100Helem_set_typeE: symbol not f
+Error relocating /sbin/sysinit: _Z1sPKcz: symbol not found
+Error relocating /sbin/sysinit: _ZNK6string7compareE11string_view: symbol not found
+Error relocating /sbin/sysinit: _ZN13ostringstreamD1Ev: symbol not found
+Error relocating /sbin/sysinit: _Z8copyFileRK6stringS1_: symbol not found
+Error relocating /sbin/sysinit: _ZN11vector_base10insert_rawEPcjj: symbol not found
+Error relocating /sbin/sysinit: _ZNKR9stringbuf3strEv: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv7lstreamC1Ejz: symbol not found
+Error relocating /sbin/sysinit: _Z9to_stringj: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv10getJiffiesEv: symbol not found
+Error relocating /sbin/sysinit: _ZN8ofstreamD1Ev: symbol not found
+Error relocating /sbin/sysinit: _Z6insmodPKcS0_: symbol not found
+Error relocating /sbin/sysinit: _ZN6string7freeptrEv: symbol not found
+Error relocating /sbin/sysinit: _ZN8ifstreamD1Ev: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv10deleteNodeERK6string: symbol not found
+Error relocating /sbin/sysinit: _ZN6stringaSEOS_: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv12handler_info4eachE12function_refIF8LoopCtrlPKNS0_5PRinfEEE: 
+[27;100H symbol not found
+Error relocating /sbin/sysinit: _ZNK2nv12handler_info5PRinf12isSuppressedEv: symbol not found       
+Error relocating /sbin/sysinit: _ZN2nv9writeFileERK6string11string_viewPi: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv9getLooperEv: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv10hasPackageE11string_view: symbol not found
+Error relocating /sbin/sysinit: _ZN6stringC1EPKc: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv13getFreeMemoryEPj: symbol not found
+Error relocating /sbin/sysinit: _ZN6stringC1Ev: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv11resetConfigEb: symbol not found
+Error relocating /sbin/sysinit: _ZlsR7ostreamPKc: symbol not found
+Error relocating /sbin/sysinit: __cxa_guard_release: symbol not found
+Error relocating /sbin/sysinit: _ZlsR7ostreamc: symbol not found
+Error relocating /sbin/sysinit: _ZN11vector_base9erase_rawEPcS0_: symbol not found
+Error relocating /sbin/sysinit: _ZN13ostringstreamC1ERK6stringj: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv7message6insertINS_15string_array_idEEERS0_T_NS_8IdTraitsIS4_E
+[27;100HE8set_typeE: symbol not foun
+Error relocating /sbin/sysinit: _ZN8ofstreamC1EPKcj: symbol not found
+Error relocating /sbin/sysinit: _Z5lsdirPKcbb: symbol not found
+Error relocating /sbin/sysinit: _ZN6string6appendERKS_: symbol not found
+Error relocating /sbin/sysinit: _ZN6stringC1ERKS_: symbol not found
+Error relocating /sbin/sysinit: _ZN11vector_base11reserve_rawEjj: symbol not found
+Error relocating /sbin/sysinit: _ZNK2nv7message3getINS_9string_idEEENS_8IdTraitsIT_E4typeES4_: symbo
+[27;100Hol not found
+Error relocating /sbin/sysinit: _ZN2nv7isErrorERKNS_7messageEPjP6string: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv16hasOptionPackageEv: symbol not found
+Error relocating /sbin/sysinit: _Z15getDefconfParamRK6string: symbol not found
+Error relocating /sbin/sysinit: _ZNK2nv7message3getINS_6u32_idEEENS_8IdTraitsIT_E4typeES4_NS5_8set_t
+[27;100HtypeE: symbol not found
+Error relocating /sbin/sysinit: _ZlsR7ostream11string_view: symbol not found
+Error relocating /sbin/sysinit: _ZN7istream7getlineER6stringc: symbol not found
+Error relocating /sbin/sysinit: _ZNK2nv7message3getINS_7bool_idEEENS_8IdTraitsIT_E4typeES4_NS5_8set_
+[27;100H_typeE: symbol not found
+Error relocating /sbin/sysinit: _ZN13istringstreamD1Ev: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv12createBackupERK6stringbS2_: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv7lstreamD1Ev: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv7message6insertINS_9string_idEEERS0_T_NS_8IdTraitsIS4_E8set_ty
+[27;100HypeE: symbol not found
+Error relocating /sbin/sysinit: _Z4endlR7ostream: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv8getErrorERKNS_7messageE: symbol not found
+Error relocating /sbin/sysinit: _ZN6string5eraseEjj: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv10fileExistsERK6stringj: symbol not found
+Error relocating /sbin/sysinit: _ZN6stringC1EPKcj: symbol not found
+Error relocating /sbin/sysinit: _ZNK6string6substrEjj: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv7messageC1Ev: symbol not found
+Error relocating /sbin/sysinit: _ZN2nv10getAllDirsERK6stringb: symbol not found
+Error relocating /sbin/sysinit: _ZN13istringstreamC1ERK6stringj: symbol not found
+Error relocating /sbin/sysinit: _ZN11vector_baseD2Ev: symbol not found
+Error relocating /sbin/sysinit: __cxa_guard_acquire: symbol not found
+Error relocating /sbin/sysinit: cerr: symbol not found
+Error relocating /sbin/sysinit: sizeOfMemRelated: symbol not found
+Error relocating /sbin/sysinit: assertRelated: symbol not found
+Error relocating /sbin/sysinit: cout: symbol not found
+Kernel panic - not syncing: Attempted to kill init! exitcode=0x00007f00
+---[ end Kernel panic - not syncing: Attempted to kill init! exitcode=0x00007f00 ]---

@@ -1,0 +1,4 @@
+U-Boot 192.168.1.1  ->  TFTP en 192.168.1.161
+TFTP escuchando en 0.0.0.0:69, sirviendo C:\Users\BFR\Documents\Genexis - copia\routeros-port\out
+imagen: uImage-563 (19672756 bytes)
+esperando U-Boot hasta 6.0 h (Ctrl+C para parar)...

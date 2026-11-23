@@ -1,0 +1,12 @@
+[tftp] sirviendo C:\Users\BFR\Documents\Genexis - copia\routeros-port\out a 192.168.1.161
+[tftp] TFTP escuchando en 0.0.0.0:69, sirviendo C:\Users\BFR\Documents\Genexis - copia\routeros-port\out
+[estado] linux
+[reset] reset por RCU desde Linux
+[reset] RCU_RST_REQ=0x16000010 -> 0x56000010
+[ok] prompt de U-Boot cazado
+[tftp] tftpboot 0x80500000 uImage-563 (puerto 69)
+[tftp] 192.168.1.1:2018 pide uImage-563 {'octet': 'timeout', '5': 'blksize', '1468': ''}
+[tftp]   -> 18433568 bytes enviados
+[ok] transferidos 18433568 bytes (coincide)
+[boot] bootm
+[veredicto] arranco + switch + lan1 + shell

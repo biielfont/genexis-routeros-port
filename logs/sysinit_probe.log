@@ -1,0 +1,78 @@
+
+
+### 2026-11-21 01:05:48 --segundos 100 ###
+
+~ # echo ===PRE===; /bin/busybox ps | /bin/busybox head -n 20; /bin/busybox cp -
+f /nova/bin/loader /flash/rw/loader.bak; echo BACKUP=$?; /sbin/sysinit start </d
+ev/null >/flash/rw/sysinit_probe.out 2>&1 & echo STARTED=$!; /bin/busybox sleep 
+25; echo ===TAIL===; /bin/busybox tail -n 50 /flash/rw/sysinit_probe.out; echo =
+==BT===; /bin/busybox tail -n 80 /flash/rw/logs/backtrace.log 2>&1; echo ===PS==
+=; /bin/busybox ps | /bin/busybox head -n 30; echo ===RW===; /bin/busybox ls -l 
+/flash/rw; echo ===END===
+===PRE===
+PID   USER     TIME  COMMAND
+    1 0         0:04 {init} /bin/sh /init
+    2 0         0:00 [kthreadd]
+    4 0         0:00 [kworker/0:0H-kb]
+    5 0         0:00 [kworker/u2:0-fl]
+    6 0         0:00 [mm_percpu_wq]
+    7 0         0:00 [ksoftirqd/0]
+    8 0         0:00 [kdevtmpfs]
+    9 0         0:00 [oom_reaper]
+   10 0         0:00 [writeback]
+   11 0         0:00 [kblockd]
+   12 0         0:00 [kworker/0:1-eve]
+   13 0         0:00 [kswapd0]
+   14 0         0:00 [ipv6_addrconf]
+   15 0         0:00 [dsa_ordered]
+   16 0         0:00 [kworker/0:2-eve]
+   17 0         0:00 [ubi_bgt0d]
+   26 0         0:00 [loop0]
+   28 0         0:00 [kworker/0:1H-kb]
+  111 0         0:00 /bin/devlog /flash/rw/log.sock
+BACKUP=0
+STARTED=137
+===TAIL===
+===BT===
+tail: can't open '/flash/rw/logs/backtrace.log': No such file or directory
+tail: no files
+===PS===
+PID   USER     TIME  COMMAND
+    1 0         0:04 {init} /bin/sh /init
+    2 0         0:00 [kthreadd]
+    4 0         0:00 [kworker/0:0H-kb]
+    5 0         0:00 [kworker/u2:0-fl]
+    6 0         0:00 [mm_percpu_wq]
+    7 0         0:00 [ksoftirqd/0]
+    8 0         0:00 [kdevtmpfs]
+    9 0         0:00 [oom_reaper]
+   10 0         0:00 [writeback]
+   11 0         0:00 [kblockd]
+   12 0         0:00 [kworker/0:1-eve]
+   13 0         0:00 [kswapd0]
+   14 0         0:00 [ipv6_addrconf]
+   15 0         0:00 [dsa_ordered]
+   16 0         0:00 [kworker/0:2-eve]
+   17 0         0:00 [ubi_bgt0d]
+   26 0         0:00 [loop0]
+   28 0         0:00 [kworker/0:1H-kb]
+  111 0         0:00 /bin/devlog /flash/rw/log.sock
+  118 0         0:00 /bin/busybox sh -i
+  119 0         0:00 [kworker/u2:1-ev]
+  137 0         0:00 /bin/busybox sh -i
+  141 0         0:00 /bin/busybox ps
+  142 0         0:00 /bin/busybox head -n 30
+===RW===
+total 88
+-rw-r--r--    1 0        0                0 Jan  1  1970 [0;0mautorun.scr[m
+-rwxr-xr-x    1 0        0            84684 Nov 19 12:55 [1;32mloader.bak[m
+srw-rw-rw-    1 0        0                0 Nov 19 12:00 [1;35mlog.sock[m
+drwxr-xr-x    2 0        0               40 Jan  1  1970 [1;34mlogs[m
+-rw-r--r--    1 0        0                0 Jan  1  1970 [0;0mrnd_seed[m
+-rw-r--r--    1 0        0                0 Jan  1  1970 [0;0mrosmode.msg[m
+-rw-r--r--    1 0        0                2 Jan  1  1970 [0;0mstartcount[m
+drwxr-xr-x    2 0        0               60 Jan  1  1970 [1;34mstore[m
+-rw-r--r--    1 0        0                0 Nov 19 12:55 [0;0msysinit_probe.out[m
+drwxr-xr-x    3 0        0               60 Jan  1  1970 [1;34mtmp[m
+===END===
+~ # 

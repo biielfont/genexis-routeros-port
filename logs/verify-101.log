@@ -1,0 +1,59 @@
+== Artefactos ==
+-rwxrwxrwx 1 bfr bfr 53740246 Nov 22 13:43 out/ED500-routeros-7.17-nand.y3
+-rwxrwxrwx 1 bfr bfr 21974664 Nov 22 13:42 out/uImage-563
+e865ee9f0518a9671e2935b903ddbbb3  out/ED500-routeros-7.17-nand.y3
+bcbddf8447a4152f7a0a2f9a7f095e90  out/uImage-563
+== Contenedor .y3 ==
+fichero: out/ED500-routeros-7.17-nand.y3  (53740246 bytes)
+--- cabecera ---
+IntenoIopY
+version 5
+integrity MD5SUM
+git 71b8d1b
+board NORRLAND
+chip grx550
+arch all mips_24kc_nomips16
+model NORRLAND
+release GNX-4.3.6.999-R
+customer GNX
+ubifsofs 1024
+ubifs 53710848
+pkginfoofs 53711872
+pkginfo 28342
+scrofs 53740214
+scr 0
+sigofs 53740214
+sig 0
+md5ofs 53740214
+md5 32
+size 53740246
+--- comprobaciones ---
+size declarado      53740246   real 53740246   OK
+md5 guardado        ff6015a986a361598ada0c79358ebdc5
+  md5 todo hasta md5ofs  ff6015a986a361598ada0c79358ebdc5 <-- COINCIDE
+  md5 solo el ubifs      05239e608d07ca21eaf8030dd11fc3bd 
+firma               0 bytes (sin firma, solo MD5)
+ubifs               ofs 1024 tamano 53710848 magia 31181006 (UBIFS little-endian, 0x06101831)
+  OK   tamano, MD5 y firma
+== Contenido de la UBIFS ==
+  OK   /boot/uImage y DTB byte a byte; /rw y /pad presentes
+== Nombres RouterOS (ros-name) ==
+  OK   DTB con ros-name ether1..4
+== Initramfs ==
+  OK   rootfs_0 unico, flag primary y tcp6
+== Rutas de autorun de sysinit ==
+  OK   sysinit busca las cuatro rutas que escribe el init
+== Entorno U-Boot (host, ficheros; sin UBI real) ==
+  OK   lectura, escritura, copia redundante y CRC
+== Logica de bootok (host, ficheros) ==
+Warning: Bad CRC, using default environment
+  OK   rootfs_0: primary=0, autorun limpio
+  OK   rootfs_1 se ignora: no toca el flag
+  OK   servicio caido: contadores intactos
+  OK   entorno ilegible: no escribe contadores
+== Recuperacion stock ==
+  OK   stock intacto; run update_image lo devuelve a rootfs_0
+
+Verificacion offline completa.
+NAND intacta: no se ha abierto /dev/mtd ni /dev/ubi.
+El arranque real, la persistencia, el reset/LEDs y el primer login siguen pendientes de placa.

@@ -1,0 +1,44 @@
+escrito /mnt/c/Users/BFR/Documents/GenexisLicenseWorking/routeros-port/out/ED500-routeros-7.17-nand.y3: 53613270 bytes
+  rootfs 53583872 B, pkginfo 28342 B, md5 db58638863273ba68e93e960525b2f16
+--- verificacion ---
+fichero: /mnt/c/Users/BFR/Documents/GenexisLicenseWorking/routeros-port/out/ED500-routeros-7.17-nand.y3  (53613270 bytes)
+--- cabecera ---
+IntenoIopY
+version 5
+integrity MD5SUM
+git 71b8d1b
+board NORRLAND
+chip grx550
+arch all mips_24kc_nomips16
+model NORRLAND
+release GNX-4.3.6.999-R
+customer GNX
+ubifsofs 1024
+ubifs 53583872
+pkginfoofs 53584896
+pkginfo 28342
+scrofs 53613238
+scr 0
+sigofs 53613238
+sig 0
+md5ofs 53613238
+md5 32
+size 53613270
+--- comprobaciones ---
+size declarado      53613270   real 53613270   OK
+md5 guardado        db58638863273ba68e93e960525b2f16
+  md5 todo hasta md5ofs  db58638863273ba68e93e960525b2f16 <-- COINCIDE
+  md5 solo el ubifs      b09ad84ff1989a7ab8e835ed7795a705 
+firma               0 bytes (sin firma, solo MD5)
+ubifs               ofs 1024 tamano 53583872 magia 31181006 (UBIFS little-endian, 0x06101831)
+  		leb_cnt: 422
+  		leb_size: 126976
+  		max_leb_cnt: 480
+  		min_io_size: 2048
+  		leb_cnt: 422
+  		leb_cnt: 422
+  /boot/uImage y /boot/norrland.dtb coinciden byte a byte
+make-y3: /mnt/c/Users/BFR/Documents/GenexisLicenseWorking/routeros-port/out/ED500-routeros-7.17-nand.y3
+  UBIFS 53583872 B, 422 LEBs (max 480), pad 30 MB
+  MD5 3e9b37d712ad6610bbaa2dc7d7ae2ccb
+  instalacion U-Boot: tftpboot 0x80800000 last.y3; run update_image; reset
