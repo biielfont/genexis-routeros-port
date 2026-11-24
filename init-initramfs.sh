@@ -330,7 +330,28 @@ AUTORUN
 		# este; no hay un segundo banco activo.
 		echo 20 > /proc/sys/kernel/panic 2>/dev/null || true
 		# RouterOS abre la consola por el nombre generico ttyS*; en este
-		# SoC el puerto es el ASC de Lantiq (ttyLTQ0).
+		# SoC el puerto es el ASC de Lantiq (ttyLTQ0). El devtmpfs del
+		# chroot puede no tener el nodo; sin el, ttyS0 -> ttyLTQ0 queda
+		# roto y sermgr no puede abrir la consola.
+		# El numero de dispositivo se toma del kernel (/sys/class/tty): el ASC
+		# de Lantiq no tiene por que usar el 4:64 fijo de ttyS0, y un nodo
+		# con major/minor equivocado falla con ENODEV al abrirlo (peor que
+		# no tener nodo, porque el enlace ttyS0 queda apuntando a el).
+		TTYDEV=$(cat /sys/class/tty/ttyLTQ0/dev 2>/dev/null)
+		case "$TTYDEV" in
+			[0-9]*:[0-9]*) ;;
+			*) TTYDEV=4:64 ;;
+		esac
+		TTYMAJ=${TTYDEV%:*}
+		TTYMIN=${TTYDEV#*:}
+		echo "  consola: ttyLTQ0 dev=$TTYDEV"
+		if [ ! -e $R/dev/ttyLTQ0 ]; then
+			mknod $R/dev/ttyLTQ0 c "$TTYMAJ" "$TTYMIN" 2>/dev/null \
+				&& echo "  consola: nodo ttyLTQ0 creado ($TTYDEV)" \
+				|| echo "  consola: AVISO, no he podido crear ttyLTQ0"
+		else
+			echo "  consola: nodo ttyLTQ0 ya presente ($(readlink -f $R/dev/ttyLTQ0 2>/dev/null))"
+		fi
 		for n in 0 1 2 3; do
 			[ -e $R/dev/ttyS$n ] || ln -sf ttyLTQ0 $R/dev/ttyS$n 2>/dev/null
 		done
@@ -753,6 +774,11 @@ while :; do
 	{
 		echo "=== RouterOS diagnostic ==="
 		$B cat /proc/uptime
+		echo "--- tty ---"
+		$B ls -l /dev/tty* /dev/console 2>&1
+		echo "--- sermgr / messages ---"
+		$B tail -n 40 /flash/rw/sermgr.log 2>&1
+		$B grep -i -E 'console|login|tty' /flash/rw/logs/messages 2>/dev/null | $B tail -n 40
 		echo "--- procesos (pid ppid cmd) ---"
 		ps_tree
 		echo "--- objetivos ---"
