@@ -13,9 +13,8 @@ ROS_LOGINWRAP=0
 # Let sysinit start the real sstore with its normal arguments. /dev/jiffies
 # is backed before switch_root, so its mmap has valid storage.
 ROS_STARTSTORE=0
-# loader administra el servicio user; el arranque manual solo se usa para
-# diagnostico con ros.startuser=1.
-ROS_STARTUSER=0
+# user auxiliar para el camino de login, configurable para pruebas A/B.
+ROS_STARTUSER=1
 # Diagnosticos por bootarg. Los valores por defecto son los de HEAD.
 ROS_NONETMODS=0
 ROS_TICKWATCH=0
@@ -28,7 +27,7 @@ case " $(cat /proc/cmdline 2>/dev/null) " in
 	*" ros.post=0 "*) ROS_POST=0 ;;
 	*" ros.nonetmods=1 "*) ROS_NONETMODS=1 ;;
 	*" ros.tickwatch=1 "*) ROS_TICKWATCH=1 ;;
-	*" ros.startuser=1 "*) ROS_STARTUSER=1 ;;
+	*" ros.startuser=0 "*) ROS_STARTUSER=0 ;;
 	*" ros.autorun=min "*) ROS_AUTORUN=min ;;
 esac
 
@@ -673,7 +672,7 @@ LOGINWRAP
 			fi
 			if [ "$ROS_STARTUSER" = 1 ]; then
 				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'while :; do while [ ! -S /ram/novasock ] || [ ! -S /ram/storereg ] || [ ! -S /ram/logsocket ]; do /bin/busybox sleep 1; done; /bin/busybox sleep 2; /nova/bin/user; echo "user exit=$?" >> /flash/rw/user.log; /bin/busybox sleep 10; done' >$R/flash/rw/user.log 2>&1 ) &
-				echo "  user: ayudante de diagnostico activo (ros.startuser=1)"
+				echo "  user: espera a /ram/storereg (desde 20 s)"
 			fi
 			if [ "$ROS_REALLOGIN" = 1 ]; then
 				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'sleep 55; exec /nova/bin/login console' </dev/console >/dev/console 2>&1 ) &
