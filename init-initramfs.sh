@@ -14,13 +14,23 @@ ROS_LOGINWRAP=0
 # is backed before switch_root, so its mmap has valid storage.
 ROS_STARTSTORE=0
 # user se crea a demanda por loader cuando llega la peticion de login.
+# ros.startuser=0 lo desactiva: deja que el loader arranque su propio user
+# y sirve para probar si el duplicado es el que rompe la sesion.
 ROS_STARTUSER=1
+# Diagnosticos por bootarg. Los valores por defecto son los de HEAD.
+ROS_NONETMODS=0
+ROS_TICKWATCH=0
+ROS_AUTORUN=full
 ROS_REALLOGIN=0
 ROS_PANICDUMP=0
 case " $(cat /proc/cmdline 2>/dev/null) " in
 	*" ros.shell=0 "*) ROS_SHELL=0 ;;
 	*" ros.shell=1 "*) ROS_SHELL=1 ;;
 	*" ros.post=0 "*) ROS_POST=0 ;;
+	*" ros.nonetmods=1 "*) ROS_NONETMODS=1 ;;
+	*" ros.tickwatch=1 "*) ROS_TICKWATCH=1 ;;
+	*" ros.startuser=0 "*) ROS_STARTUSER=0 ;;
+	*" ros.autorun=min "*) ROS_AUTORUN=min ;;
 esac
 
 mount -t proc     proc     /proc
@@ -157,8 +167,14 @@ if [ -f /ros.squashfs ]; then
 		cp /bin/tickfile $R/bin/tickfile 2>/dev/null || true
 		chmod 755 $R/bin/tickfile 2>/dev/null || true
 		if [ -x $R/bin/tickfile ]; then
-			chroot $R /bin/tickfile >/dev/null 2>&1 &
-			echo "  jiffies: tickfile 250 Hz sobre /ram/jiffies (8 KiB)"
+			if [ "$ROS_TICKWATCH" = 1 ]; then
+				# Vigilante opcional: si tickfile muere, relanzarlo y dejar el rc.
+				( cd $R && chroot $R /bin/busybox sh -c 'while :; do /bin/tickfile; echo "tickfile rc=$? at $(/bin/busybox cat /proc/uptime)" >>/flash/rw/tick.log; /bin/busybox sleep 1; done' >/dev/null 2>&1 ) &
+				echo "  jiffies: tickfile 250 Hz + vigilante (ros.tickwatch=1)"
+			else
+				chroot $R /bin/tickfile >/dev/null 2>&1 &
+				echo "  jiffies: tickfile 250 Hz sobre /ram/jiffies (8 KiB)"
+			fi
 		else
 			echo "  jiffies: AVISO, falta /bin/tickfile"
 		fi
@@ -192,7 +208,13 @@ if [ -f /ros.squashfs ]; then
 			cp $R/flash/rw/autorun.scr $R/flash/autorun.scr 2>/dev/null || true
 			echo "  autorun: usando el persistente de /flash/rw"
 		else
-			cat > $R/flash/autorun.scr <<'AUTORUN'
+			if [ "$ROS_AUTORUN" = "min" ]; then
+				cat > $R/flash/autorun.scr <<'AUTORUN'
+# ED500: autorun minimo para diagnostico (ros.autorun=min).
+/user set admin password="__ROSPASS__"
+AUTORUN
+			else
+				cat > $R/flash/autorun.scr <<'AUTORUN'
 # ED500: configuracion inicial minima (solo primer arranque).
 # RouterOS compila el script entero; una sola linea invalida impide que
 # se ejecute cualquier orden. Solo se fija la contrasena; www ya viene
@@ -201,6 +223,7 @@ if [ -f /ros.squashfs ]; then
 /system license import file-name="license.key"
 
 AUTORUN
+			fi
 			sed -i "s/__ROSPASS__/$ROSPASS/" $R/flash/autorun.scr 2>/dev/null || true
 			cp $R/flash/autorun.scr $R/flash/rw/autorun.scr 2>/dev/null || true
 			cp $R/flash/autorun.scr $R/flash/rw/store/autorun.scr 2>/dev/null || true
@@ -320,7 +343,12 @@ AUTORUN
 		         drivers/net/switch.ko net/bridge/bridge2.ko; do
 			f=$R/lib/modules/5.6.3/$m
 			if [ -f "$f" ]; then
-				echo "  $m: $(wc -c < "$f") bytes"
+				if [ "$ROS_NONETMODS" = 1 ]; then
+					mv "$f" "$f.off" 2>/dev/null || true
+					echo "  $m: DESACTIVADO (prueba de datapath)"
+				else
+					echo "  $m: $(wc -c < "$f") bytes"
+				fi
 			else
 				echo "  $m: no existe"
 			fi
@@ -635,6 +663,17 @@ LOGINWRAP
 				cat > $R/bin/ttyshell <<'TTY'
 #!/bin/sh
 sleep 95
+ps_tree() {
+	for d in /proc/[0-9]*; do
+		[ -r "$d/stat" ] || continue
+		p=${d##*/}
+		set -- $(/bin/busybox cat "$d/stat" 2>/dev/null)
+		c=$(/bin/busybox cat "$d/comm" 2>/dev/null)
+		a=$(/bin/busybox tr '\000' ' ' < "$d/cmdline" 2>/dev/null)
+		[ -n "$a" ] || a="[$c]"
+		echo "$p $4 $a"
+	done
+}
 # sysinit/loader ya inicia sermgr y www; no duplicarlos fuera del loader.
 /bin/busybox ifconfig lan4 192.168.1.2 netmask 255.255.255.0 up 2>/dev/null || true
 (
@@ -642,8 +681,21 @@ sleep 95
 		{
 			echo "=== WebFig diagnostics ==="
 			/bin/busybox cat /proc/uptime
-			echo "--- processes ---"
-			/bin/busybox ps
+			echo "--- processes (pid ppid cmd) ---"
+			ps_tree
+			echo "--- objetivos ---"
+			ps_tree | /bin/busybox grep -E '/nova/bin/(loader|user|tickfile|sermgr|www|parser)|/bin/tickfile|^[0-9]+ [0-9]+ \[login\]'
+			echo "--- sockets de user/parser ---"
+			ps_tree | /bin/busybox grep -E '/nova/bin/(user|parser)( |$)' | while read p ppid cmd; do
+				echo "pid $p ppid $ppid $cmd"
+				/bin/busybox ls -l /proc/$p/fd 2>/dev/null | /bin/busybox grep socket
+			done
+			echo "--- memoria ---"
+			/bin/busybox cat /proc/meminfo
+			echo "--- dmesg (tail) ---"
+			/bin/busybox dmesg | /bin/busybox tail -n 80
+			echo "--- oom / killed ---"
+			/bin/busybox dmesg | /bin/busybox grep -E 'Killed process|Out of memory|oom-kill' | /bin/busybox tail -n 20
 					echo "--- process executable links ---"
 					for d in /proc/[0-9]*; do
 						[ -r "$d/cmdline" ] || continue
@@ -651,6 +703,9 @@ sleep 95
 						/bin/busybox tr '\000' ' ' < "$d/cmdline" 2>/dev/null
 						echo
 					done
+			echo "--- jiffies / tick ---"
+			/bin/busybox od -An -tx4 -N8 /ram/jiffies 2>&1
+			/bin/busybox tail -n 20 /flash/rw/tick.log 2>/dev/null
 			echo "--- store paths ---"
 			for p in /ram/storereg /ram/novasock /ram/run /rw/store /nova/store/sermgr /flash/rw/loader.trace; do
 				if [ -e "$p" ]; then /bin/busybox ls -ld "$p"; else echo "missing: $p"; fi
@@ -681,13 +736,41 @@ TTY
 				cat > $R/bin/webdiag <<'WEBDIAG'
 #!/bin/sh
 B=/bin/busybox
+ps_tree() {
+	for d in /proc/[0-9]*; do
+		[ -r "$d/stat" ] || continue
+		p=${d##*/}
+		set -- $($B cat "$d/stat" 2>/dev/null)
+		c=$($B cat "$d/comm" 2>/dev/null)
+		a=$($B tr '\000' ' ' < "$d/cmdline" 2>/dev/null)
+		[ -n "$a" ] || a="[$c]"
+		echo "$p $4 $a"
+	done
+}
 $B sleep 95
 $B ifconfig lan4 192.168.1.2 netmask 255.255.255.0 up 2>/dev/null || true
 while :; do
 	{
 		echo "=== RouterOS diagnostic ==="
 		$B cat /proc/uptime
-		$B ps
+		echo "--- procesos (pid ppid cmd) ---"
+		ps_tree
+		echo "--- objetivos ---"
+		ps_tree | $B grep -E '/nova/bin/(loader|user|tickfile|sermgr|www|parser)|/bin/tickfile|^[0-9]+ [0-9]+ \[login\]'
+		echo "--- sockets de user/parser ---"
+		ps_tree | $B grep -E '/nova/bin/(user|parser)( |$)' | while read p ppid cmd; do
+			echo "pid $p ppid $ppid $cmd"
+			$B ls -l /proc/$p/fd 2>/dev/null | $B grep socket
+		done
+		echo "--- memoria ---"
+		$B cat /proc/meminfo
+		echo "--- dmesg (tail) ---"
+		$B dmesg | $B tail -n 80
+		echo "--- oom / killed ---"
+		$B dmesg | $B grep -E 'Killed process|Out of memory|oom-kill' | $B tail -n 20
+		echo "--- jiffies / tick ---"
+		$B od -An -tx4 -N8 /ram/jiffies 2>&1
+		$B tail -n 20 /flash/rw/tick.log 2>/dev/null
 		$B ls -ln /rw/store 2>&1
 		$B strings /rw/store/cfg.0000 2>/dev/null | $B head -n 160
 		for f in /flash/rw/sstore.log /flash/rw/sermgr.log /flash/rw/www.log /flash/rw/user.log /flash/rw/netup.log /flash/rw/logs/messages; do
