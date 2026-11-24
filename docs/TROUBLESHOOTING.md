@@ -59,6 +59,7 @@ El detalle de geometría y las comprobaciones están en
 
 | Síntoma | Causa probable | Qué hacer |
 |---|---|---|
+| WebFig/API se queda en `Connecting...` o el sistema deja de responder al autenticar | Puede haber más de un `/nova/bin/user`: `loader` arranca el suyo y un ayudante del initramfs puede duplicarlo sobre los mismos sockets/store | Comprueba `ps` y deja que `loader` gestione un único `user`. El ayudante de diagnóstico solo se activa con `ros.startuser=1` |
 | `Unknown symbol` al cargar `packet_hook`/`switch`/`bridge2` | Hasta el #98: símbolos del *fastpath* y APIs GPL-only que el kernel mainline no exporta a módulos propietarios | El #96 exporta el fastpath y el #99 quita GPL-only; si sigue, revisar `Module.symvers` y la licencia del módulo |
 | Oops en `dev_put`/`fp_init` al cargar `packet_hook` | `CONFIG_NET_CLS_ACT=y` mete dos `miniq_*` en `struct net_device` y mueve `pcpu_refcnt` de 672 a 680; el módulo usa 672 | El #102 deja `NET_CLS_ACT=n`; comprobar `li a1,672` en un módulo de prueba con `offsetof` |
 | `bridge2: exports duplicate symbol br_forward` o `FALLO bridge2.ko: File exists` | El bridge estándar exporta los mismos `br_*` y ya registra el link kind `bridge` | El #102 deja `br_init` stub y retira 18 exportaciones; `brioctl_set` se conserva. Comprobar `grep 'bridge2.ko sustituye' net/bridge/br.c` |
