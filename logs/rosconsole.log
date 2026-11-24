@@ -20,3 +20,16 @@ died with signal 11 on Thu Nov 19 12:43:42 2026
 
 [1;1H[H[JcMikroTik  ()
 MikroTik Login: 
+
+### 2026-11-24 14:09:34 --cmd C:/Users/BFR/AppData/Local/Programs/@codebufffreebuff-desktop/resources/git/system license print --cmd C:/Users/BFR/AppData/Local/Programs/@codebufffreebuff-desktop/resources/git/system resource print --cmd C:/Users/BFR/AppData/Local/Programs/@codebufffreebuff-desktop/resources/git/interface print ###
+
+[1;1H[H[JcMikroTik  ()
+MikroTik Login: admin
+Password: 
+
+### 2026-11-24 14:34:28 --cmd C:/Users/BFR/AppData/Local/Programs/@codebufffreebuff-desktop/resources/git/system resource print ###
+
+
+
+### 2026-11-24 14:54:45 --cmd C:/Users/BFR/AppData/Local/Programs/@codebufffreebuff-desktop/resources/git/system license print ###
+

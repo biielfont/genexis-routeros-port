@@ -1,0 +1,9 @@
+U-Boot 192.168.1.1  ->  TFTP en 192.168.1.161
+TFTP escuchando en 0.0.0.0:69, sirviendo C:\Users\BFR\Documents\GenexisLicenseWorkingNew\routeros-port\out
+imagen: uImage-563 (23581216 bytes)
+esperando U-Boot hasta 1.0 h (Ctrl+C para parar)...
+prompt cazado (intento 1): cargando por TFTP
+192.168.1.1:2780 pide uImage-563 {'octet': 'timeout', '5': 'blksize', '1468': ''}
+  -> 23581216 bytes enviados
+transferidos 23581216 bytes (coincide)
+bootm...

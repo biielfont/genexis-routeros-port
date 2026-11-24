@@ -1,0 +1,237 @@
+=== RouterOS diagnostic ===
+58.42 9.20
+--- procesos (pid ppid cmd) ---
+1 0 /sbin/sysinit start 
+10 2 [oom_reaper]
+11 2 [writeback]
+12 2 [kblockd]
+13 2 [kworker/0:1-ipv6_addrconf]
+137 1 /bin/devlog /tmp/log.sock 
+14 2 [kswapd0]
+147 1 [busybox]
+15 2 [ipv6_addrconf]
+158 1 [busybox]
+16 2 [dsa_ordered]
+162 1 /bin/busybox sh -c while :; do while [ ! -S /ram/novasock ] || [ ! -S /ram/storereg ] || [ ! -S /ram/logsocket ]; do /bin/busybox sleep 1; done; /bin/busybox sleep 2; /nova/bin/user; echo "user exit=$?" >> /flash/rw/user.log; /bin/busybox sleep 10; done 
+163 1 [login]
+169 1 /bin/busybox sh /bin/webdiag 
+17 2 [kworker/0:2-events]
+18 2 [ubi_bgt0d]
+2 0 [kthreadd]
+229 1 /bin/busybox httpd -p 8080 -h /flash/rw 
+27 2 [loop0]
+29 2 [kworker/0:1H-kblockd]
+3 2 [kworker/0:0-events]
+4 2 [kworker/0:0H-kblockd]
+5 2 [kworker/u2:0-flush-31:0]
+584 2 [kworker/0:3-events]
+6 2 [mm_percpu_wq]
+62 1 /bin/tickfile 
+625 1 [sysinit]
+626 1 [catlog]
+627 1 /bin/catlog -fs -n 10 backtrace 
+657 1 /nova/bin/sstore 
+7 2 [ksoftirqd/0]
+767 1 /nova/bin/mode 
+8 2 [kdevtmpfs]
+885 2 [kworker/u2:1-events_unbound]
+9 2 [netns]
+--- objetivos ---
+162 1 /bin/busybox sh -c while :; do while [ ! -S /ram/novasock ] || [ ! -S /ram/storereg ] || [ ! -S /ram/logsocket ]; do /bin/busybox sleep 1; done; /bin/busybox sleep 2; /nova/bin/user; echo "user exit=$?" >> /flash/rw/user.log; /bin/busybox sleep 10; done 
+163 1 [login]
+3915 169 /bin/busybox grep -E /nova/bin/(loader|user|tickfile|sermgr|www|parser)|/bin/tickfile|^[0-9]+ [0-9]+ \[login\] 
+62 1 /bin/tickfile 
+--- sockets de user/parser ---
+--- memoria ---
+MemTotal:         189508 kB
+MemFree:          102184 kB
+MemAvailable:     118960 kB
+Buffers:            5708 kB
+Cached:            51284 kB
+SwapCached:            0 kB
+Active:            14808 kB
+Inactive:          42724 kB
+Active(anon):       8100 kB
+Inactive(anon):    26116 kB
+Active(file):       6708 kB
+Inactive(file):    16608 kB
+Unevictable:           0 kB
+Mlocked:               0 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+Dirty:                 0 kB
+Writeback:             0 kB
+AnonPages:           572 kB
+Mapped:             4060 kB
+Shmem:             33676 kB
+KReclaimable:       1160 kB
+Slab:               6864 kB
+SReclaimable:       1160 kB
+SUnreclaim:         5704 kB
+KernelStack:         296 kB
+PageTables:          148 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:       94752 kB
+Committed_AS:      36760 kB
+VmallocTotal:     261940 kB
+VmallocUsed:       20808 kB
+VmallocChunk:          0 kB
+Percpu:               32 kB
+--- dmesg (tail) ---
+intel-sso-led 16d00000.sso-leds: led12:yellow:gphy: pin 12, hardware, brightness 128
+intel-sso-led 16d00000.sso-leds: led13:green:internet: pin 13, software, brightness 0
+intel-sso-led 16d00000.sso-leds: led14:green:uplink: pin 14, software, brightness 0
+eqbr-pinctrl 16c80000.pinctrl: PIN: 47 is not valid, pinbase: 32, bitmap: 1006570527
+eqbr-pinctrl 16c80000.pinctrl: request() failed for pin 47
+eqbr-pinctrl 16c80000.pinctrl: pin-47 (gpiochip1:463) status -19
+canyon-led canyon_led: cannot get SK9822 clock GPIO: -19
+nf_conntrack: table size 143360 (4 * 35840)
+Initializing XFRM netlink socket
+NET: Registered protocol family 10
+Segment Routing with IPv6
+sit: IPv6, IPv4 and MPLS over IPv4 tunneling driver
+NET: Registered protocol family 17
+Bridge firewalling registered
+8021q: 802.1Q VLAN Support v1.8
+gswip-xrx500 1c000000.switch: registro de version GSWIP: 0x00000030
+libphy: lantiq,xrx200-mdio: probed
+gswip-xrx500 1c000000.switch: configuring for fixed/internal link mode
+gswip-xrx500 1c000000.switch: Link is Up - 1Gbps/Full - flow control off
+gswip-xrx500 1c000000.switch lan4 (uninitialized): PHY [1c000000.switch-mii:02] driver [Intel XWAY PHY11G (xRX v1.2 integrated)] (irq=POLL)
+gswip-xrx500 1c000000.switch lan3 (uninitialized): PHY [1c000000.switch-mii:03] driver [Intel XWAY PHY11G (xRX v1.2 integrated)] (irq=POLL)
+gswip-xrx500 1c000000.switch lan2 (uninitialized): PHY [1c000000.switch-mii:04] driver [Intel XWAY PHY11G (xRX v1.2 integrated)] (irq=POLL)
+gswip-xrx500 1c000000.switch lan1 (uninitialized): PHY [1c000000.switch-mii:05] driver [Intel XWAY PHY11G (xRX v1.2 integrated)] (irq=POLL)
+DSA: tree 0 setup
+gswip-xrx500 1c000000.switch: probed GSWIP version 30 mod 0
+ubi0: attaching mtd2
+ubi0: scanning is finished
+ubi0: attached mtd2 (name "ubi", size 127 MiB)
+ubi0: PEB size: 131072 bytes (128 KiB), LEB size: 126976 bytes
+ubi0: min./max. I/O unit sizes: 2048/2048, sub-page size 512
+ubi0: VID header offset: 2048 (aligned 2048), data offset: 4096
+ubi0: good PEBs: 1011, bad PEBs: 5, corrupted PEBs: 0
+ubi0: user volume: 5, internal volumes: 1, max. volumes count: 128
+ubi0: max/mean erase counter: 1074/255, WL threshold: 4096, image sequence number: 607886982
+ubi0: available PEBs: 2, total reserved PEBs: 1009, PEBs reserved for bad PEB handling: 25
+clk: Not disabling unused clocks
+ubi0: background thread "ubi_bgt0d" started, PID 18
+Freeing unused kernel: 16560k freed
+This architecture does not have kernel memory protection.
+Run /init as init process
+  with arguments:
+    /init
+  with environment:
+    HOME=/
+    TERM=linux
+process '/bin/busybox' started with executable stack
+overlayfs: upper fs does not support xattr, falling back to index=off and metacopy=off.
+xrx500-cbm 1e700000.ethernet:ethernet@0 cbm0: receive ring at 0x29816000: 256 descriptors of 1544 bytes, offset 0
+xrx500-cbm 1e700000.ethernet:ethernet@0 cbm0: receive channel taken, engine at 0x29816000
+IPv6: ADDRCONF(NETDEV_CHANGE): cbm0: link becomes ready
+gswip-xrx500 1c000000.switch lan1: configuring for phy/internal link mode
+8021q: adding VLAN 0 to HW filter on device lan1
+gswip-xrx500 1c000000.switch lan2: configuring for phy/internal link mode
+8021q: adding VLAN 0 to HW filter on device lan2
+gswip-xrx500 1c000000.switch lan4: configuring for phy/internal link mode
+8021q: adding VLAN 0 to HW filter on device lan4
+gswip-xrx500 1c000000.switch lan3: configuring for phy/internal link mode
+8021q: adding VLAN 0 to HW filter on device lan3
+gswip-xrx500 1c000000.switch lan4: Link is Up - 1Gbps/Full - flow control rx/tx
+IPv6: ADDRCONF(NETDEV_CHANGE): lan4: link becomes ready
+flash: module license 'unspecified' taints kernel.
+Disabling lock debugging due to kernel taint
+new-flash: starting...
+using MTD device
+flash: ptr = (ptrval), base = 1fc00000
+board name = PureED500
+market name = ED5
+HW_OPT[00000000]
+alloc spi_page_buf size = 1
+poe_v4: Unknown symbol spi_bus_unlock (err -2)
+poe_v4: Unknown symbol spi_bus_lock (err -2)
+poe_v4: Unknown symbol spi_sync (err -2)
+poe_v4: Unknown symbol led_trigger_unregister (err -2)
+poe_v4: Unknown symbol spi_sync_locked (err -2)
+poe_v4: Unknown symbol __spi_register_driver (err -2)
+poe_v4: Unknown symbol led_trigger_register (err -2)
+poe_v4: Unknown symbol led_trigger_event (err -2)
+logring: buf size:8192, syslog buf size:32768, console_loglevel:7
+printk: console [logring0] enabled
+random: crng init done
+--- oom / killed ---
+--- jiffies / tick ---
+ 0000308c 00000000
+total 8
+-rw-r--r--    1 0        0              361 Jan  1  1970 autorun.scr
+-rw-------    1 0        0              142 Nov 19 12:00 cfg.0000
+net/vrf
+r5/bfd/cfgH
+r5/version
+--- /flash/rw/user.log ---
+--- /flash/rw/netup.log ---
+12:00:01 br0 creado con ether1..4/lan1..4
+12:00:01 httpd diag en 8080 (/flash/rw)
+12:00:01 dhcp en br0 (192.168.1.100-199)
+12:00:01 br0 creado con ether1..4/lan1..4
+12:00:01 dhcp en br0 (192.168.1.100-199)
+12:00:01 br0 creado con ether1..4/lan1..4
+12:00:01 dhcp en br0 (192.168.1.100-199)
+12:00:02 br0 creado con ether1..4/lan1..4
+12:00:02 dhcp en br0 (192.168.1.100-199)
+12:00:02 br0 creado con ether1..4/lan1..4
+12:00:02 dhcp en br0 (192.168.1.100-199)
+12:00:02 br0 creado con ether1..4/lan1..4
+12:00:02 dhcp en br0 (192.168.1.100-199)
+12:00:03 br0 creado con ether1..4/lan1..4
+12:00:03 dhcp en br0 (192.168.1.100-199)
+12:00:03 br0 creado con ether1..4/lan1..4
+12:00:03 dhcp en br0 (192.168.1.100-199)
+12:00:03 br0 creado con ether1..4/lan1..4
+12:00:03 dhcp en br0 (192.168.1.100-199)
+12:00:04 br0 creado con ether1..4/lan1..4
+12:00:04 dhcp en br0 (192.168.1.100-199)
+12:00:04 br0 creado con ether1..4/lan1..4
+12:00:04 dhcp en br0 (192.168.1.100-199)
+12:00:05 br0 creado con ether1..4/lan1..4
+12:00:05 dhcp en br0 (192.168.1.100-199)
+12:00:05 br0 creado con ether1..4/lan1..4
+12:00:05 dhcp en br0 (192.168.1.100-199)
+12:00:05 br0 creado con ether1..4/lan1..4
+12:00:05 dhcp en br0 (192.168.1.100-199)
+12:00:05 br0 creado con ether1..4/lan1..4
+12:00:05 dhcp en br0 (192.168.1.100-199)
+12:00:06 br0 creado con ether1..4/lan1..4
+12:00:06 dhcp en br0 (192.168.1.100-199)
+12:00:06 br0 creado con ether1..4/lan1..4
+12:00:06 dhcp en br0 (192.168.1.100-199)
+12:00:06 br0 creado con ether1..4/lan1..4
+12:00:06 dhcp en br0 (192.168.1.100-199)
+12:00:07 br0 creado con ether1..4/lan1..4
+12:00:07 dhcp en br0 (192.168.1.100-199)
+12:00:07 br0 creado con ether1..4/lan1..4
+12:00:07 dhcp en br0 (192.168.1.100-199)
+12:00:07 br0 creado con ether1..4/lan1..4
+12:00:07 dhcp en br0 (192.168.1.100-199)
+12:00:08 br0 creado con ether1..4/lan1..4
+12:00:08 dhcp en br0 (192.168.1.100-199)
+12:00:08 br0 creado con ether1..4/lan1..4
+12:00:08 dhcp en br0 (192.168.1.100-199)
+12:00:08 br0 creado con ether1..4/lan1..4
+12:00:08 dhcp en br0 (192.168.1.100-199)
+12:00:09 br0 creado con ether1..4/lan1..4
+12:00:09 dhcp en br0 (192.168.1.100-199)
+12:00:09 br0 creado con ether1..4/lan1..4
+12:00:09 dhcp en br0 (192.168.1.100-199)
+12:00:09 br0 creado con ether1..4/lan1..4
+12:00:09 dhcp en br0 (192.168.1.100-199)
+12:00:09 br0 creado con ether1..4/lan1..4
+12:00:10 dhcp en br0 (192.168.1.100-199)
+12:00:10 br0 creado con ether1..4/lan1..4
+12:00:10 dhcp en br0 (192.168.1.100-199)
+12:00:10 br0 creado con ether1..4/lan1..4
+12:00:10 dhcp en br0 (192.168.1.100-199)
+Num       RefCount Protocol Flags    Type St Inode Path
+53dc6e1e: 00000002 00000000 00000000 0001 01  1849 /tmp/log.sock
+a1a3e2e7: 00000002 00000000 00010000 0005 01  3648 /ram/storereg

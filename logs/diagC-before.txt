@@ -1,0 +1,439 @@
+=== RouterOS diagnostic ===
+116.45 9.20
+--- procesos (pid ppid cmd) ---
+1 0 /sbin/sysinit start 
+10 2 [oom_reaper]
+11 2 [writeback]
+12 2 [kblockd]
+13 2 [kworker/0:1-events_power_efficient]
+137 1 /bin/devlog /tmp/log.sock 
+14 2 [kswapd0]
+147 1 [busybox]
+15 2 [ipv6_addrconf]
+158 1 [busybox]
+16 2 [dsa_ordered]
+162 1 /bin/busybox sh -c while :; do while [ ! -S /ram/novasock ] || [ ! -S /ram/storereg ] || [ ! -S /ram/logsocket ]; do /bin/busybox sleep 1; done; /bin/busybox sleep 2; /nova/bin/user; echo "user exit=$?" >> /flash/rw/user.log; /bin/busybox sleep 10; done 
+166 1 /bin/busybox sh /bin/webdiag 
+17 2 [kworker/0:2-events_power_efficient]
+18 2 [ubi_bgt0d]
+187 2 [kworker/0:3-events]
+2 0 [kthreadd]
+227 1 /bin/busybox httpd -p 8080 -h /flash/rw 
+27 2 [loop0]
+29 2 [kworker/0:1H-kblockd]
+3 2 [kworker/0:0-events]
+3536 1 /nova/bin/loader 
+3566 3536 /nova/bin/mproxy 
+3568 3536 /nova/bin/log 
+3570 3536 /nova/bin/moduler 
+3571 3536 /nova/bin/discover 
+3574 3536 /nova/bin/net 
+3576 3536 /nova/bin/sys2 
+3578 3536 /nova/bin/upnp 
+3582 3536 /nova/bin/route 
+3584 3536 /nova/bin/modprobed 
+3587 3536 /nova/bin/sermgr 
+3588 3536 /nova/bin/diskd 
+3595 3536 /nova/bin/quickset 
+3598 3536 /nova/bin/watchdog 
+3602 3536 /nova/bin/bth 
+3605 3536 /nova/bin/mactel 
+3612 3536 /nova/bin/macping 
+3613 3536 /nova/bin/btest 
+3616 3536 /nova/bin/cloud 
+3648 3536 /nova/bin/www 
+3652 3536 /nova/bin/keyman 
+3655 3582 route_NETLINK 
+3657 3582 route_POLICY 
+3658 3582 route_STATIC 
+3659 3536 /nova/bin/parser 
+3662 162 /nova/bin/user 
+3664 3582 route_BFD 
+3666 3582 route_OSPF 
+3667 3582 route_ISIS 
+3669 3582 route_PIMSM 
+3670 3582 route_LDP 
+3673 3582 route_RIP 
+3675 3536 /nova/bin/portman 
+3676 3582 route_BGP 
+3677 3536 /nova/bin/resolver 
+3679 3582 route_FANTASY 
+4 2 [kworker/0:0H-kblockd]
+5 2 [kworker/u2:0]
+6 2 [mm_percpu_wq]
+62 1 /bin/tickfile 
+7 2 [ksoftirqd/0]
+8 2 [kdevtmpfs]
+814 1 [sysinit]
+815 1 [catlog]
+816 1 [catlog]
+843 1 /nova/bin/sstore 
+9 2 [netns]
+941 2 [kworker/u2:1-events_unbound]
+--- objetivos ---
+1055 166 /bin/busybox grep -E /nova/bin/(loader|user|tickfile|sermgr|www|parser)|/bin/tickfile|^[0-9]+ [0-9]+ \[login\] 
+162 1 /bin/busybox sh -c while :; do while [ ! -S /ram/novasock ] || [ ! -S /ram/storereg ] || [ ! -S /ram/logsocket ]; do /bin/busybox sleep 1; done; /bin/busybox sleep 2; /nova/bin/user; echo "user exit=$?" >> /flash/rw/user.log; /bin/busybox sleep 10; done 
+3536 1 /nova/bin/loader 
+3587 3536 /nova/bin/sermgr 
+3648 3536 /nova/bin/www 
+3659 3536 /nova/bin/parser 
+3662 162 /nova/bin/user 
+62 1 /bin/tickfile 
+--- sockets de user/parser ---
+pid 3659 ppid 3536 /nova/bin/parser
+lrwx------    1 0        0               64 Nov 19 12:01 3 -> socket:[37856]
+lrwx------    1 0        0               64 Nov 19 12:01 7 -> socket:[38170]
+pid 3662 ppid 162 /nova/bin/user
+lrwx------    1 0        0               64 Nov 19 12:01 3 -> socket:[38119]
+--- memoria ---
+MemTotal:         189508 kB
+MemFree:           90144 kB
+MemAvailable:     107776 kB
+Buffers:            5844 kB
+Cached:            51880 kB
+SwapCached:            0 kB
+Active:            25492 kB
+Inactive:          41740 kB
+Active(anon):      17236 kB
+Inactive(anon):    26112 kB
+Active(file):       8256 kB
+Inactive(file):    15628 kB
+Unevictable:           0 kB
+Mlocked:               0 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+Dirty:                 0 kB
+Writeback:             0 kB
+AnonPages:          9540 kB
+Mapped:            11752 kB
+Shmem:             33840 kB
+KReclaimable:       1732 kB
+Slab:               8188 kB
+SReclaimable:       1732 kB
+SUnreclaim:         6456 kB
+KernelStack:         544 kB
+PageTables:          616 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:       94752 kB
+Committed_AS:      51328 kB
+VmallocTotal:     261940 kB
+VmallocUsed:       20812 kB
+VmallocChunk:          0 kB
+Percpu:               32 kB
+--- dmesg (tail) ---
+poe_v4: Unknown symbol spi_bus_unlock (err -2)
+poe_v4: Unknown symbol spi_bus_lock (err -2)
+poe_v4: Unknown symbol spi_sync (err -2)
+poe_v4: Unknown symbol led_trigger_unregister (err -2)
+poe_v4: Unknown symbol spi_sync_locked (err -2)
+poe_v4: Unknown symbol __spi_register_driver (err -2)
+poe_v4: Unknown symbol led_trigger_register (err -2)
+poe_v4: Unknown symbol led_trigger_event (err -2)
+logring: buf size:8192, syslog buf size:32768, console_loglevel:7
+printk: console [logring0] enabled
+random: crng init done
+ar7100wdt: Unknown symbol is_honeybee (err -2)
+ar7100wdt: Unknown symbol is_scorpion (err -2)
+ar7100wdt: Unknown symbol is_wasp (err -2)
+lcd: Unknown symbol spi_sync (err -2)
+lcd: Unknown symbol music_reset_notify (err -2)
+lcd: Unknown symbol spi_async (err -2)
+lcd: Unknown symbol __spi_register_driver (err -2)
+spi_program_sector 00000001
+ts: Unknown symbol spi_sync (err -2)
+ts: Unknown symbol music_reset_notify (err -2)
+ts: Unknown symbol __spi_register_driver (err -2)
+lcd: Unknown symbol spi_sync (err -2)
+lcd: Unknown symbol music_reset_notify (err -2)
+lcd: Unknown symbol spi_async (err -2)
+lcd: Unknown symbol __spi_register_driver (err -2)
+ledgroup: Unknown symbol led_trigger_unregister (err -2)
+ledgroup: Unknown symbol led_trigger_register (err -2)
+ledgroup: Unknown symbol led_trigger_event (err -2)
+ticker: Unknown symbol rb_beepled (err -2)
+ticker: Unknown symbol rb400_beep (err -2)
+fancon: Unknown symbol rb400_change_cfg (err -2)
+ts: Unknown symbol spi_sync (err -2)
+ts: Unknown symbol music_reset_notify (err -2)
+ts: Unknown symbol __spi_register_driver (err -2)
+voltage: Unknown symbol rb_change_cfg (err -2)
+voltage: Unknown symbol spi_async (err -2)
+ts: Unknown symbol spi_sync (err -2)
+ts: Unknown symbol music_reset_notify (err -2)
+ts: Unknown symbol __spi_register_driver (err -2)
+voltage: Unknown symbol rb_change_cfg (err -2)
+voltage: Unknown symbol spi_async (err -2)
+rb: starting...
+rb: started
+rb_ioctl, cmd: 0x2000520f, arg: 0x0
+rb: RB_GET_TYPE
+rb_ioctl, cmd: 0x20005201, arg: 0x0
+rb: RB_CFG_SIZE
+rb_ioctl, cmd: 0x20005203, arg: 0x466c90
+rb: RB_READ_CFG
+rb_ioctl, cmd: 0x20005202, arg: 0x0
+rb: RB_INFO_SIZE
+rb_ioctl, cmd: 0x20005204, arg: 0x467ca0
+rb: RB_READ_INFO
+probe_er_radio_data chunkid 3 caldataid 3
+usbler: Unknown symbol is_scorpion (err -2)
+usbler: Unknown symbol is_wasp (err -2)
+flash: writing cfg id = 23, size = 4
+flash_ioctl: programming injected settings id 23
+spi_program_sector 00000000
+ts: Unknown symbol spi_sync (err -2)
+ts: Unknown symbol music_reset_notify (err -2)
+ts: Unknown symbol __spi_register_driver (err -2)
+voltage: Unknown symbol rb_change_cfg (err -2)
+voltage: Unknown symbol spi_async (err -2)
+ts: Unknown symbol spi_sync (err -2)
+ts: Unknown symbol music_reset_notify (err -2)
+ts: Unknown symbol __spi_register_driver (err -2)
+voltage: Unknown symbol rb_change_cfg (err -2)
+voltage: Unknown symbol spi_async (err -2)
+ts: Unknown symbol spi_sync (err -2)
+ts: Unknown symbol music_reset_notify (err -2)
+ts: Unknown symbol __spi_register_driver (err -2)
+voltage: Unknown symbol rb_change_cfg (err -2)
+voltage: Unknown symbol spi_async (err -2)
+ts: Unknown symbol spi_sync (err -2)
+ts: Unknown symbol music_reset_notify (err -2)
+ts: Unknown symbol __spi_register_driver (err -2)
+voltage: Unknown symbol rb_change_cfg (err -2)
+voltage: Unknown symbol spi_async (err -2)
+--- oom / killed ---
+--- jiffies / tick ---
+ 0000684a 00000000
+total 16
+-rw-r--r--    1 0        0              361 Jan  1  1970 autorun.scr
+-rw-------    1 0        0             8787 Nov 19 12:01 cfg.0000
+net/vrf
+r5/bfd/cfgH
+r5/version
+rosmodeJ
+bservL
+led_triggers
+lcdtouch
+1234
+log-actions
+log	
+memory
+log	
+disk
+log	
+echo
+log	
+remote
+log-rules
+group|
+read|
+write|
+full
+user
+system default user!
+admin
+port_lock
+/dev/ttyS0
+serial0
+/dev/ttyS1
+serial1
+/dev/ttyS2
+serial2
+main
+/dev/ttyS3
+serial3
+serial-login
+vt102
+system default user!
+W<G1
+jm|^Y
+admin
+net/qos/txq$
+r5/routing/ubgp/cfg
+default
+default$
+net/queuetypes
+default
+default-small
+ethernet-default
+wireless-default
+diskd-smb-user
+guest
+diskd-smb-share
+!	flash/pub
+synchronous-default
+hotspot-default
+multi-queue-ethernet-default
+only-hardware-queue
+pcq-download-default
+pcq-upload-default
+net/apn
+internet	
+default
+sim_settings
+firmware
+net/devices0
+)@M2
+net/raw
+leds
+led0:green:gphy
+led10:yellow:gphy
+led11:yellow:gphy
+led12:yellow:gphy
+led13:green:internet
+led14:green:uplink
+led1:green:gphy
+led2:green:gphy
+led3:green:gphy
+led4:green:gphy
+led5:green:catv
+led6:green:wireless
+led7:green:voice
+led8:yellow:gphy
+led9:yellow:gphy
+--- /flash/rw/user.log ---
+user loaded
+WatchDir-/flash/rw/pckg/flash/skins/: inotify_add_watch: No such file or directory
+SkinMap::refresh
+--- /flash/rw/netup.log ---
+12:00:01 br0 creado con ether1..4/lan1..4
+12:00:01 httpd diag en 8080 (/flash/rw)
+12:00:01 dhcp en br0 (192.168.1.100-199)
+12:00:01 br0 creado con ether1..4/lan1..4
+12:00:01 dhcp en br0 (192.168.1.100-199)
+12:00:01 br0 creado con ether1..4/lan1..4
+12:00:01 dhcp en br0 (192.168.1.100-199)
+12:00:02 br0 creado con ether1..4/lan1..4
+12:00:02 dhcp en br0 (192.168.1.100-199)
+12:00:02 br0 creado con ether1..4/lan1..4
+12:00:02 dhcp en br0 (192.168.1.100-199)
+12:00:02 br0 creado con ether1..4/lan1..4
+12:00:02 dhcp en br0 (192.168.1.100-199)
+12:00:02 br0 creado con ether1..4/lan1..4
+12:00:02 dhcp en br0 (192.168.1.100-199)
+12:00:03 br0 creado con ether1..4/lan1..4
+12:00:03 dhcp en br0 (192.168.1.100-199)
+12:00:03 br0 creado con ether1..4/lan1..4
+12:00:03 dhcp en br0 (192.168.1.100-199)
+12:00:03 br0 creado con ether1..4/lan1..4
+12:00:03 dhcp en br0 (192.168.1.100-199)
+12:00:04 br0 creado con ether1..4/lan1..4
+12:00:04 dhcp en br0 (192.168.1.100-199)
+12:00:04 br0 creado con ether1..4/lan1..4
+12:00:04 dhcp en br0 (192.168.1.100-199)
+12:00:05 br0 creado con ether1..4/lan1..4
+12:00:05 dhcp en br0 (192.168.1.100-199)
+12:00:05 br0 creado con ether1..4/lan1..4
+12:00:05 dhcp en br0 (192.168.1.100-199)
+12:00:05 br0 creado con ether1..4/lan1..4
+12:00:05 dhcp en br0 (192.168.1.100-199)
+12:00:06 br0 creado con ether1..4/lan1..4
+12:00:06 dhcp en br0 (192.168.1.100-199)
+12:00:06 br0 creado con ether1..4/lan1..4
+12:00:06 dhcp en br0 (192.168.1.100-199)
+12:00:06 br0 creado con ether1..4/lan1..4
+12:00:06 dhcp en br0 (192.168.1.100-199)
+12:00:06 br0 creado con ether1..4/lan1..4
+12:00:06 dhcp en br0 (192.168.1.100-199)
+12:00:07 br0 creado con ether1..4/lan1..4
+12:00:07 dhcp en br0 (192.168.1.100-199)
+12:00:07 br0 creado con ether1..4/lan1..4
+12:00:07 dhcp en br0 (192.168.1.100-199)
+12:00:07 br0 creado con ether1..4/lan1..4
+12:00:08 dhcp en br0 (192.168.1.100-199)
+12:00:08 br0 creado con ether1..4/lan1..4
+12:00:08 dhcp en br0 (192.168.1.100-199)
+12:00:08 br0 creado con ether1..4/lan1..4
+12:00:08 dhcp en br0 (192.168.1.100-199)
+12:00:08 br0 creado con ether1..4/lan1..4
+12:00:08 dhcp en br0 (192.168.1.100-199)
+12:00:09 br0 creado con ether1..4/lan1..4
+12:00:09 dhcp en br0 (192.168.1.100-199)
+12:00:09 br0 creado con ether1..4/lan1..4
+12:00:09 dhcp en br0 (192.168.1.100-199)
+12:00:09 br0 creado con ether1..4/lan1..4
+12:00:09 dhcp en br0 (192.168.1.100-199)
+12:00:10 br0 creado con ether1..4/lan1..4
+12:00:10 dhcp en br0 (192.168.1.100-199)
+12:00:10 br0 creado con ether1..4/lan1..4
+12:00:10 dhcp en br0 (192.168.1.100-199)
+Num       RefCount Protocol Flags    Type St Inode Path
+416bd859: 00000002 00000000 00000000 0001 01 38045 @route:0a@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+89c2d646: 00000002 00000000 00000000 0001 01 38170 /ram/conssock
+3dd30c92: 00000002 00000000 00000000 0001 01 38003 @route:09@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+35e6a3ce: 00000002 00000000 00000000 0001 01 38001 @route:08@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+cbfb6e16: 00000002 00000000 00000000 0001 01 37958 @route:07@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+7b22af95: 00000002 00000000 00000000 0001 01 37926 @route:06@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+8f241410: 00000002 00000000 00000000 0001 01 37924 @route:05@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+27b995c1: 00000002 00000000 00000000 0001 01 37848 @route:04@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ce45b51b: 00000002 00000000 00000000 0001 01 37837 @route:03@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+7f51006c: 00000002 00000000 00000000 0001 01 37794 @route:02@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+0994cd03: 00000002 00000000 00000000 0001 01 37640 @route:01@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ce038ef0: 00000002 00000000 00000000 0001 01  1849 /tmp/log.sock
+1387acdf: 00000002 00000000 00010000 0005 01  4165 /ram/storereg
+22e5b482: 00000002 00000000 00010000 0002 01 37473 /ram/novasock
+bb09ddc1: 00000002 00000000 00010000 0002 01 37850 /ram/logsocket
+df74f858: 00000002 00000000 00000000 0001 01 37956 @route:0c@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+e07fac3d: 00000002 00000000 00000000 0001 01 38075 @route:0b@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+231568ee: 00000003 00000000 00000000 0002 03 37477
+9f0d977a: 00000003 00000000 00000000 0002 03 37596
+35dd30b9: 00000003 00000000 00000000 0002 03 38098
+398f93ec: 00000003 00000000 00000000 0002 03 38323 /ram/logsocket
+1bf78bbe: 00000003 00000000 00000000 0002 03 37559
+ed6681ac: 00000003 00000000 00000000 0002 03 38120 /ram/novasock
+75349c07: 00000003 00000000 00000000 0002 03 37575
+6d6f21db: 00000003 00000000 00000000 0002 03 37509
+2a3cf718: 00000003 00000000 00000000 0005 03 37416 /ram/storereg
+7bd480dd: 00000003 00000000 00000000 0002 03 37571
+7713d6f7: 00000003 00000000 00000000 0002 03 37533
+c96898b2: 00000003 00000000 00000000 0002 03 37492
+6c5ce167: 00000003 00000000 00000000 0002 03 37553
+429f71aa: 00000003 00000000 00000000 0002 03 38365
+0a2685e1: 00000003 00000000 00000000 0002 03 37574
+0a7e3d6c: 00000003 00000000 00000000 0002 03 37510
+c95eedd5: 00000003 00000000 00000000 0002 03 38409 /ram/logsocket
+146c7458: 00000003 00000000 00000000 0002 03 37487
+7ec11753: 00000003 00000000 00000000 0002 03 37504
+651ed6eb: 00000003 00000000 00000000 0002 03 38209
+702edb36: 00000003 00000000 00000000 0002 03 38099
+5982dae9: 00000003 00000000 00000000 0002 03 37541
+f4b552d6: 00000003 00000000 00000000 0002 03 37530
+cf244461: 00000003 00000000 00000000 0002 03 37604
+35b90ad2: 00000003 00000000 00000000 0002 03 37497
+3d9009c1: 00000003 00000000 00000000 0002 03 38066
+0871c74e: 00000003 00000000 00000000 0002 03 38022 /ram/logsocket
+63efca9f: 00000003 00000000 00000000 0002 03 37505
+4097a363: 00000003 00000000 00000000 0002 03 37782
+e754024a: 00000003 00000000 00000000 0002 03 37570
+07f6d449: 00000003 00000000 00000000 0002 03 38366 /ram/logsocket
+6a4953d9: 00000003 00000000 00000000 0002 03 37603
+f659973b: 00000003 00000000 00000000 0002 03 37531
+6e1f0300: 00000003 00000000 00000000 0002 03 37855
+8c1d8ad8: 00000003 00000000 00000000 0002 03 37491
+aa8754ec: 00000003 00000000 00000000 0002 03 37684 /ram/novasock
+2b88750b: 00000003 00000000 00000000 0002 03 37498
+9b7d9181: 00000003 00000000 00000000 0002 03 37590
+b9be736e: 00000003 00000000 00000000 0002 03 38337 /ram/logsocket
+69cf9d87: 00000003 00000000 00000000 0002 03 37534
+864befa1: 00000003 00000000 00000000 0002 03 38211
+3ded6bca: 00000003 00000000 00000000 0002 03 37522
+b789a698: 00000003 00000000 00000000 0002 03 37560
+46d5dda2: 00000003 00000000 00000000 0002 03 37499
+53373ba0: 00000003 00000000 00000000 0002 03 37589
+dae7dfdd: 00000003 00000000 00000000 0002 03 37540
+fabbf90a: 00000003 00000000 00000000 0002 03 38336
+7aeb7300: 00000003 00000000 00000000 0002 03 38119
+91a9a56e: 00000003 00000000 00000000 0005 03 37415
+411d8d56: 00000003 00000000 00000000 0002 03 38322 /ram/logsocket
+e200cd17: 00000003 00000000 00000000 0002 03 37496
+dc149f64: 00000003 00000000 00000000 0002 03 37523
+9a31f78c: 00000003 00000000 00000000 0002 03 38067
+3be11561: 00000003 00000000 00000000 0002 03 38021
+e31fde65: 00000003 00000000 00000000 0002 03 37554
+b984c0bf: 00000003 00000000 00000000 0002 03 37856
+776b910d: 00000003 00000000 00000000 0002 03 37783
+8c9032cc: 00000003 00000000 00000000 0002 03 38408
+ddabaf44: 00000003 00000000 00000000 0002 03 37488
+697fd3ac: 00000003 00000000 00000000 0002 03 37597
