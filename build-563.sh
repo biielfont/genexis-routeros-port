@@ -57,6 +57,9 @@ ${CROSS}gcc -static -O2 -o /opt/ros-port/initramfs/bin/phyreg "$AQUI/phyreg.c" \
 # contadores RMON del switch (ETHTOOL_GSTATS)
 ${CROSS}gcc -static -O2 -o /opt/ros-port/initramfs/bin/swstats "$AQUI/swstats.c" \
   || echo "swstats FALLO"
+# reloj de jiffies en userspace (sustituye al jiffies.ko roto del rootfs)
+${CROSS}gcc -static -O2 -o /opt/ros-port/initramfs/bin/tickfile "$AQUI/tools/tickfile.c" \
+  || { echo "tickfile FALLO"; exit 1; }
 # mini-strace ptrace para localizar el broken path de sysinit
 ${CROSS}gcc -static -O2 -o /opt/ros-port/initramfs/bin/sysopen "$AQUI/sysopen.c" \
   || echo "sysopen FALLO"

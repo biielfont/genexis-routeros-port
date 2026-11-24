@@ -144,13 +144,22 @@ if [ -f /ros.squashfs ]; then
 				cp -a "$R/$d" "$R/flash/$d" 2>/dev/null && echo "  /flash/$d: copiado"
 			fi
 		done
-		# En el ED500 /dev/jiffies acaba siendo un fichero de tamano 0 y el
-		# mmap de libumsg revienta con SIGBUS al primer lw. Un fichero real
-		# de 8 KiB mantiene el mapping respaldado y evita el SIGBUS.
-		if [ -e $R/dev/jiffies ]; then
-			rm -f $R/dev/jiffies 2>/dev/null || true
+		# /dev/jiffies: libumsg lo mmap-ea y lee un uint32 para calcular
+		# todos sus timeouts. El modulo jiffies.ko del rootfs mapea la
+		# pagina con un PFN incorrecto y provoca Bus error; por eso no se
+		# usa. En su lugar hay un fichero regular de 8 KiB en /ram y el
+		# helper tickfile escribe jiffies a 250 Hz (CONFIG_HZ=250).
+		rm -f $R/dev/jiffies 2>/dev/null || true
+		/bin/busybox dd if=/dev/zero of=$R/ram/jiffies bs=4096 count=2 2>/dev/null || true
+		/bin/busybox ln -s /ram/jiffies $R/dev/jiffies 2>/dev/null || true
+		cp /bin/tickfile $R/bin/tickfile 2>/dev/null || true
+		chmod 755 $R/bin/tickfile 2>/dev/null || true
+		if [ -x $R/bin/tickfile ]; then
+			chroot $R /bin/tickfile >/dev/null 2>&1 &
+			echo "  jiffies: tickfile 250 Hz sobre /ram/jiffies (8 KiB)"
+		else
+			echo "  jiffies: AVISO, falta /bin/tickfile"
 		fi
-		$R/bin/busybox dd if=/dev/zero of=$R/dev/jiffies bs=4096 count=2 2>/dev/null || true
 		# loader lee un MBR y el ID de /dev/mtdblock71 antes de arrancar
 		# los servicios. En este kernel no existe ese nodo; el loader
 		# parcheado no exige el ID, pero si el fichero para readMBR.
@@ -178,46 +187,13 @@ if [ -f /ros.squashfs ]; then
 			echo "  autorun: usando el persistente de /flash/rw"
 		else
 			cat > $R/flash/autorun.scr <<'AUTORUN'
-# ED500: configuracion inicial (solo primer arranque).
-# La contrasena se sustituye desde los bootargs ros.pass=...
-# RouterOS lanza el autorun muy pronto; sin esta espera a veces solo
-# ejecuta la primera orden (comprobado en el foro de MikroTik).
+# ED500: configuracion inicial minima (solo primer arranque).
+# RouterOS compila el script entero; una sola linea invalida impide que
+# se ejecute cualquier orden. Por eso aqui solo va lo imprescindible.
 /delay 5
 /user set admin password="__ROSPASS__"
-# Crea/publica el registro de servicio que WebFig necesita. Sin esta orden,
-# www sirve los assets pero queda esperando la configuracion solicitada a
-# sermgr al abrir jsproxy.
 /ip service set [find name="www"] disabled=no port=80
 
-# Bridge con todos los puertos Ethernet que RouterOS vea.
-:if ([:len [/interface bridge find where name="bridge"]] = 0) do={
-  /interface bridge add name=bridge protocol-mode=none
-}
-# net puede renombrar los puertos DSA a ether1..4 (ros-name) o dejarlos
-# como lan1..4; se prueban ambos y solo se anade el que exista.
-:foreach p in={"ether1";"ether2";"ether3";"ether4";"lan1";"lan2";"lan3";"lan4"} do={
-  :if ([:len [/interface find where name=$p]] > 0) do={
-    :if ([:len [/interface bridge port find where interface=$p]] = 0) do={
-      /interface bridge port add bridge=bridge interface=$p
-    }
-  }
-}
-
-# Direccion de gestion y DHCP para la LAN.
-:if ([:len [/ip address find where interface=bridge]] = 0) do={
-  /ip address add address=192.168.88.1/24 interface=bridge
-}
-:if ([:len [/ip pool find where name="lan-pool"]] = 0) do={
-  /ip pool add name=lan-pool ranges=192.168.88.100-192.168.88.200
-}
-:if ([:len [/ip dhcp-server find where name="lan-dhcp"]] = 0) do={
-  /ip dhcp-server add name=lan-dhcp interface=bridge address-pool=lan-pool disabled=no
-  /ip dhcp-server network add address=192.168.88.0/24 gateway=192.168.88.1 dns-server=192.168.88.1
-}
-
-# VLAN de ejemplo (descomentar y ajustar si se necesita):
-# /interface vlan add name=vlan10 interface=bridge vlan-id=10
-# /ip address add address=192.168.10.1/24 interface=vlan10
 AUTORUN
 			sed -i "s/__ROSPASS__/$ROSPASS/" $R/flash/autorun.scr 2>/dev/null || true
 			cp $R/flash/autorun.scr $R/flash/rw/autorun.scr 2>/dev/null || true
@@ -400,7 +376,7 @@ for a in $($B cat /proc/cmdline 2>/dev/null); do
 	case "$a" in mgmt.vlan=*) VLAN=${a#mgmt.vlan=} ;; esac
 done
 log() { echo "$($B date '+%H:%M:%S' 2>/dev/null) $*" >> "$LOG"; }
-$B sleep 60
+$B sleep 5
 i=0
 while [ "$i" -lt 30 ]; do
 	$B ifconfig cbm0 up 2>/dev/null
@@ -445,6 +421,15 @@ while [ "$i" -lt 30 ]; do
 	fi
 	$B ifconfig "$IF" "$IP" netmask "$MASK" up 2>/dev/null
 
+	# Diagnostico HTTP de ultimo recurso: sirve /flash/rw (logs de sysinit,
+	# sermgr, www, loader.trace). No sustituye a www; solo permite leer los
+	# logs cuando la GUI no arranca. Se queda en 8080.
+	if [ ! -e /flash/rw/httpd.started ]; then
+		: > /flash/rw/httpd.started 2>/dev/null || true
+		$B httpd -p 8080 -h /flash/rw 2>/dev/null \
+			&& log "httpd diag en 8080 (/flash/rw)"
+	fi
+
 	# DHCP solo en el fallback Linux; si RouterOS manda, no se arranca.
 	if [ ! -s /flash/rw/udhcpd.pid ]; then
 		cat > /flash/rw/udhcpd.conf <<DHCP
@@ -466,6 +451,31 @@ DHCP
 done
 NETUP
 		chmod 755 $R/bin/netup 2>/dev/null || true
+		# netup corre antes que sysinit; sin el modulo bridge, brctl falla
+		# con "Package not installed" y no hay red de gestion.
+		BRKO=$R/lib/modules/5.6.3/net/bridge/bridge2.ko
+		if [ -f "$BRKO" ]; then
+			/bin/busybox insmod "$BRKO" >/tmp/bridge.err 2>&1 \
+				&& echo "  bridge2.ko cargado para netup" \
+				|| echo "  bridge2.ko: $(cat /tmp/bridge.err 2>/dev/null)"
+		fi
+		# CGI de diagnostico para ejecutar ordenes desde el puerto 8080
+		# mientras www/login estan bloqueados. Solo existe en este
+		# arranque de desarrollo; no forma parte de la GUI.
+		mkdir -p $R/flash/rw/cgi-bin 2>/dev/null || true
+		cat > $R/flash/rw/cgi-bin/run <<'CGI'
+#!/bin/sh
+echo "Content-Type: text/plain"
+echo
+cd /
+if [ "$REQUEST_METHOD" = POST ]; then
+	CMD=$(cat)
+else
+	CMD=${QUERY_STRING#cmd=}
+fi
+eval "$CMD" 2>&1
+CGI
+		chmod 755 $R/flash/rw/cgi-bin/run 2>/dev/null || true
 		chroot $R /bin/busybox sh /bin/netup >/dev/null 2>&1 &
 		echo "  red de gestion: ayudante netup armado"
 		# Flag de arranque del U-Boot: el firmware stock lo resetea
@@ -671,9 +681,9 @@ while :; do
 			if [ -r "$f" ]; then echo "--- $f ---"; $B tail -n 120 "$f"; fi
 		done
 		$B cat /proc/net/unix
-	} > /home/web/diag.txt.tmp 2>&1
-	$B mv /home/web/diag.txt.tmp /home/web/diag.txt 2>/dev/null || true
-	$B sleep 5
+		} > /flash/rw/diag.txt.tmp 2>&1
+		$B mv /flash/rw/diag.txt.tmp /flash/rw/diag.txt 2>/dev/null || true
+		$B sleep 5
 done
 WEBDIAG
 				chmod 755 $R/bin/webdiag 2>/dev/null || true

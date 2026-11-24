@@ -1,0 +1,4 @@
+TFTP escuchando en 0.0.0.0:69, sirviendo C:\Users\BFR\Documents\GenexisLicenseWorking\routeros-port\out
+tftp 69
+192.168.1.2:45083 pide tickfile {'octet': 'tsize', '0': ''}
+  -> 846856 bytes enviados
