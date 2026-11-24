@@ -17,6 +17,9 @@
 
 #define HZ 250
 #define NS_PER_TICK (1000000000ULL / HZ)
+/* Linux arranca jiffies en INITIAL_JIFFIES = -300*HZ; libumsg espera
+ * ese valor, no un contador que empieza en cero. */
+#define INITIAL_JIFFIES ((uint32_t)(-300 * HZ))
 
 int main(void)
 {
@@ -36,7 +39,8 @@ int main(void)
             return 3;
         uint64_t now_ns = (uint64_t)ts.tv_sec * 1000000000ULL +
                           (uint64_t)ts.tv_nsec;
-        uint32_t j = (uint32_t)((now_ns - base_ns) / NS_PER_TICK);
+        uint32_t j = (uint32_t)((now_ns - base_ns) / NS_PER_TICK) -
+                     INITIAL_JIFFIES;
         unsigned char b[4] = {
             (unsigned char)(j >> 24),
             (unsigned char)(j >> 16),
