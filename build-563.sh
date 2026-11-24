@@ -67,6 +67,14 @@ ${CROSS}gcc -static -O2 -o /opt/ros-port/initramfs/bin/swstats "$AQUI/swstats.c"
 # reloj de jiffies en userspace (sustituye al jiffies.ko roto del rootfs)
 ${CROSS}gcc -static -O2 -o /opt/ros-port/initramfs/bin/tickfile "$AQUI/tools/tickfile.c" \
   || { echo "tickfile FALLO"; exit 1; }
+# libumsg::getJiffies() suma 30000 = 300*100: RouterOS espera 100 Hz
+# aunque el kernel vaya a 250. Si tickfile vuelve a 250, el login caduca
+# antes de autenticar y el proceso muere con SIGSEGV.
+if ! grep -q '^#define ROS_HZ 100$' "$AQUI/tools/tickfile.c"; then
+  echo "TICKFILE FALLO: ROS_HZ debe ser 100 (libumsg espera 100 Hz)"
+  exit 1
+fi
+echo "tickfile: ROS_HZ=100 (getJiffies 0-based a 100 Hz)"
 # mini-strace ptrace para localizar el broken path de sysinit
 ${CROSS}gcc -static -O2 -o /opt/ros-port/initramfs/bin/sysopen "$AQUI/sysopen.c" \
   || echo "sysopen FALLO"

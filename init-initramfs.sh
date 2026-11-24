@@ -168,10 +168,10 @@ if [ -f /ros.squashfs ]; then
 			if [ "$ROS_TICKWATCH" = 1 ]; then
 				# Vigilante opcional: si tickfile muere, relanzarlo y dejar el rc.
 				( cd $R && chroot $R /bin/busybox sh -c 'while :; do /bin/tickfile; echo "tickfile rc=$? at $(/bin/busybox cat /proc/uptime)" >>/flash/rw/tick.log; /bin/busybox sleep 1; done' >/dev/null 2>&1 ) &
-				echo "  jiffies: tickfile 250 Hz + vigilante (ros.tickwatch=1)"
+				echo "  jiffies: tickfile 100 Hz + vigilante (ros.tickwatch=1)"
 			else
 				chroot $R /bin/tickfile >/dev/null 2>&1 &
-				echo "  jiffies: tickfile 250 Hz sobre /ram/jiffies (8 KiB)"
+				echo "  jiffies: tickfile 100 Hz sobre /ram/jiffies (8 KiB)"
 			fi
 		else
 			echo "  jiffies: AVISO, falta /bin/tickfile"
@@ -772,6 +772,18 @@ while :; do
 	{
 		echo "=== RouterOS diagnostic ==="
 		$B cat /proc/uptime
+		echo "--- red ---"
+		$B ifconfig -a 2>&1
+		echo "--- bridge ---"
+		$B brctl show 2>&1
+		echo "--- /proc/net/dev ---"
+		$B cat /proc/net/dev 2>&1
+		echo "--- bridge members ---"
+		for d in /sys/class/net/*/brif; do
+			[ -d "$d" ] || continue
+			echo "${d%/brif}:"
+			$B ls "$d" 2>/dev/null
+		done
 		echo "--- tty ---"
 		$B ls -l /dev/tty* /dev/console 2>&1
 		echo "--- sermgr / messages ---"
@@ -790,11 +802,27 @@ while :; do
 		$B cat /proc/meminfo
 		echo "--- dmesg (tail) ---"
 		$B dmesg | $B tail -n 80
+		echo "--- dmesg: Oops/segfault/BadVA ---"
+		$B dmesg | $B grep -E 'Oops|segfault|BadVA' | $B tail -n 40
 		echo "--- oom / killed ---"
 		$B dmesg | $B grep -E 'Killed process|Out of memory|oom-kill' | $B tail -n 20
 		echo "--- jiffies / tick ---"
 		$B od -An -tx4 -N8 /ram/jiffies 2>&1
 		$B tail -n 20 /flash/rw/tick.log 2>/dev/null
+		echo "--- jiffies rate (esperado 100 Hz) ---"
+		J1=$($B od -An -tx4 -N4 /ram/jiffies 2>/dev/null | $B sed 's/ //g')
+		U1=$($B sed 's/\..*//' /proc/uptime 2>/dev/null)
+		$B sleep 2
+		J2=$($B od -An -tx4 -N4 /ram/jiffies 2>/dev/null | $B sed 's/ //g')
+		U2=$($B sed 's/\..*//' /proc/uptime 2>/dev/null)
+		[ -n "$U1" ] || U1=0
+		[ -n "$U2" ] || U2=0
+		if [ -n "$J1" ] && [ -n "$J2" ]; then
+			echo "jiffies: 0x$J1 -> 0x$J2 (delta $(( (0x$J2 - 0x$J1) & 0xffffffff )) ticks)"
+		else
+			echo "jiffies: sin lectura"
+		fi
+		echo "uptime: ${U1}s -> ${U2}s (delta $((U2 - U1)) s)"
 		$B ls -ln /rw/store 2>&1
 		$B strings /rw/store/cfg.0000 2>/dev/null | $B head -n 160
 		for f in /flash/rw/sstore.log /flash/rw/sermgr.log /flash/rw/www.log /flash/rw/user.log /flash/rw/netup.log /flash/rw/logs/messages; do
