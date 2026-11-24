@@ -43,3 +43,7 @@ license.key
 
 # Binarios de terceros descargados para pruebas
 tools/winbox/
+
+# Claves de rescate (nunca versionar)
+logs/ed500-rescue
+logs/ed500-rescue.pub
