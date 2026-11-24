@@ -61,6 +61,11 @@ if [ -f /ros.squashfs ]; then
 		# como "ERROR: ROSMode::save failed". Un fichero normal en devtmpfs
 		# basta y es volatil: no toca NAND ni licencia.
 		: > $R/dev/jiffies 2>/dev/null || true
+		# flash.ko registra el misc 10:248. Si el nodo no existe cuando
+		# sstore arranca, se queda esperando el store. Se crea el char
+		# (no un fichero regular: este dispara Demo license expired).
+		[ -e $R/dev/flash ] || mknod $R/dev/flash c 10 248 2>/dev/null || true
+		chmod 600 $R/dev/flash 2>/dev/null || true
 		mount -t devpts devpts $R/dev/pts 2>/dev/null
 		mount -t tmpfs  tmpfs  $R/ram 2>/dev/null
 		mount -t tmpfs  tmpfs  $R/tmp 2>/dev/null
@@ -164,8 +169,8 @@ if [ -f /ros.squashfs ]; then
 		# los servicios. En este kernel no existe ese nodo; el loader
 		# parcheado no exige el ID, pero si el fichero para readMBR.
 		$R/bin/busybox dd if=/dev/zero of=$R/dev/mtdblock71 bs=512 count=1 2>/dev/null || true
-		# No crear /ram/userseq.console vacio: login lo usa para la
-		# secuencia de consola y un fichero vacio puede bloquearlo.
+		# No crear /ram/userseq.console vacio: sysinit/loader se cuelgan
+		# antes de arrancar los servicios. Parser lo crea cuando hace falta.
 		rm -f $R/ram/userseq.console 2>/dev/null || true
 		# /rw es un enlace a /flash/rw en el rootfs. sysinit y /nova
 		# esperan logs/store; sin ellos el logger falla con broken path.
@@ -192,7 +197,6 @@ if [ -f /ros.squashfs ]; then
 # se ejecute cualquier orden. Solo se fija la contrasena; www ya viene
 # habilitado en el rootfs. Nada de /delay: el login no debe interrumpirlo.
 /user set admin password="__ROSPASS__"
-/ip service set [find name="api"] disabled=no
 
 AUTORUN
 			sed -i "s/__ROSPASS__/$ROSPASS/" $R/flash/autorun.scr 2>/dev/null || true
@@ -267,6 +271,8 @@ AUTORUN
 				echo "  fallo: $(cat /tmp/rbcfg.err 2>/dev/null)"
 			fi
 		fi
+		# flash.ko lo carga sysinit despues de este punto; no forzarlo
+		# aqui para no bloquear el arranque antes de UBI/loader.
 		echo "--- UBI ---"
 		ubi_attach_ed500
 		ls -l /dev/ubi* 2>&1 | sed 's/^/  /'
@@ -613,6 +619,10 @@ LOGINWRAP
 			if [ "$ROS_STARTUSER" = 1 ]; then
 				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'while :; do while [ ! -S /ram/novasock ] || [ ! -S /ram/storereg ] || [ ! -S /ram/logsocket ]; do /bin/busybox sleep 1; done; /bin/busybox sleep 2; /nova/bin/user; echo "user exit=$?" >> /flash/rw/user.log; /bin/busybox sleep 10; done' >$R/flash/rw/user.log 2>&1 ) &
 				echo "  user: espera a /ram/storereg (desde 20 s)"
+				# Si sysinit se queda esperando a sstore, loader no llega a
+				# arrancar. En cuanto exista storereg, lanzarlo desde aqui.
+				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'while :; do while [ ! -S /ram/storereg ]; do /bin/busybox sleep 1; done; /bin/busybox sleep 8; if ! /bin/busybox pidof loader >/dev/null 2>&1; then /nova/bin/loader; fi; /bin/busybox sleep 5; done' >$R/flash/rw/loader.manual.log 2>&1 ) &
+				echo "  loader: ayudante tras /ram/storereg"
 			fi
 			if [ "$ROS_REALLOGIN" = 1 ]; then
 				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'sleep 55; exec /nova/bin/login console' </dev/console >/dev/console 2>&1 ) &
