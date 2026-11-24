@@ -61,11 +61,8 @@ if [ -f /ros.squashfs ]; then
 		# como "ERROR: ROSMode::save failed". Un fichero normal en devtmpfs
 		# basta y es volatil: no toca NAND ni licencia.
 		: > $R/dev/jiffies 2>/dev/null || true
-		# flash.ko registra el misc 10:248. Si el nodo no existe cuando
-		# sstore arranca, se queda esperando el store. Se crea el char
-		# (no un fichero regular: este dispara Demo license expired).
-		[ -e $R/dev/flash ] || mknod $R/dev/flash c 10 248 2>/dev/null || true
-		chmod 600 $R/dev/flash 2>/dev/null || true
+		# No crear /dev/flash a mano. flash.ko lo registra con la
+		# identidad RouterBoot; se carga tras UBI, antes de sysinit.
 		mount -t devpts devpts $R/dev/pts 2>/dev/null
 		mount -t tmpfs  tmpfs  $R/ram 2>/dev/null
 		mount -t tmpfs  tmpfs  $R/tmp 2>/dev/null
@@ -280,6 +277,11 @@ AUTORUN
 		# aqui para no bloquear el arranque antes de UBI/loader.
 		echo "--- UBI ---"
 		ubi_attach_ed500
+		# Con UBI/mtdram listos, flash.ko puede registrar /dev/flash
+		# (misc 10:248) y sstore lo abre sin bloquearse.
+		if [ -f $R/lib/modules/5.6.3/misc/flash.ko ]; then
+			chroot $R /bin/busybox insmod /lib/modules/5.6.3/misc/flash.ko 2>&1 | sed 's/^/  flash.ko: /'
+		fi
 		ls -l /dev/ubi* 2>&1 | sed 's/^/  /'
 		for d in /sys/class/ubi/ubi0_*; do
 			[ -r "$d/name" ] || continue
