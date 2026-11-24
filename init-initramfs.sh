@@ -178,6 +178,10 @@ if [ -f /ros.squashfs ]; then
 		# los destinos, no el enlace, o mkdir falla y set -e mata al init.
 		mkdir -p $R/ram/pckg/branding/rw $R/flash/pckg/branding/rw \
 			$R/flash/rw/tmp $R/flash/rw/logs $R/flash/rw/store 2>/dev/null || true
+		# La clave va en la imagen, nunca al repositorio; se copia al
+		# almacenamiento volatil para que el autorun la importe.
+		cp /license.key $R/flash/rw/license.key 2>/dev/null || true
+		cp /license.key $R/flash/license.key 2>/dev/null || true
 		: > $R/ram/pckg/branding/rw/autorun.scr 2>/dev/null || true
 		: > $R/flash/pckg/branding/rw/autorun.scr 2>/dev/null || true
 		# Autorun de RouterOS: se ejecuta en el arranque de sysinit. Deja la
@@ -197,6 +201,7 @@ if [ -f /ros.squashfs ]; then
 # se ejecute cualquier orden. Solo se fija la contrasena; www ya viene
 # habilitado en el rootfs. Nada de /delay: el login no debe interrumpirlo.
 /user set admin password="__ROSPASS__"
+/system license import file-name="license.key"
 
 AUTORUN
 			sed -i "s/__ROSPASS__/$ROSPASS/" $R/flash/autorun.scr 2>/dev/null || true
@@ -619,10 +624,6 @@ LOGINWRAP
 			if [ "$ROS_STARTUSER" = 1 ]; then
 				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'while :; do while [ ! -S /ram/novasock ] || [ ! -S /ram/storereg ] || [ ! -S /ram/logsocket ]; do /bin/busybox sleep 1; done; /bin/busybox sleep 2; /nova/bin/user; echo "user exit=$?" >> /flash/rw/user.log; /bin/busybox sleep 10; done' >$R/flash/rw/user.log 2>&1 ) &
 				echo "  user: espera a /ram/storereg (desde 20 s)"
-				# Si sysinit se queda esperando a sstore, loader no llega a
-				# arrancar. En cuanto exista storereg, lanzarlo desde aqui.
-				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'while :; do while [ ! -S /ram/storereg ]; do /bin/busybox sleep 1; done; /bin/busybox sleep 8; if ! /bin/busybox pidof loader >/dev/null 2>&1; then /nova/bin/loader; fi; /bin/busybox sleep 5; done' >$R/flash/rw/loader.manual.log 2>&1 ) &
-				echo "  loader: ayudante tras /ram/storereg"
 			fi
 			if [ "$ROS_REALLOGIN" = 1 ]; then
 				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'sleep 55; exec /nova/bin/login console' </dev/console >/dev/console 2>&1 ) &

@@ -37,3 +37,9 @@ __pycache__/
 # --- Sistema ---
 .DS_Store
 Thumbs.db
+
+# Clave de licencia local (no redistribuir)
+license.key
+
+# Binarios de terceros descargados para pruebas
+tools/winbox/

@@ -50,6 +50,13 @@ cp "$AQUI/ros/rb_hardconfig.bin" /opt/ros-port/initramfs/rb_hardconfig.bin || {
   exit 1
 }
 echo "initramfs: hard config RouterBoot sintetico incluido"
+if [ -s "$AQUI/license.key" ]; then
+  cp "$AQUI/license.key" /opt/ros-port/initramfs/license.key || {
+    echo "license FALLO: no se pudo copiar al initramfs"
+    exit 1
+  }
+  echo "initramfs: license.key incluida"
+fi
 
 # herramienta de diagnostico del PHY (lee BMCR/BMSR por MDIO)
 ${CROSS}gcc -static -O2 -o /opt/ros-port/initramfs/bin/phyreg "$AQUI/phyreg.c" \
