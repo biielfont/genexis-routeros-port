@@ -164,9 +164,9 @@ if [ -f /ros.squashfs ]; then
 		# los servicios. En este kernel no existe ese nodo; el loader
 		# parcheado no exige el ID, pero si el fichero para readMBR.
 		$R/bin/busybox dd if=/dev/zero of=$R/dev/mtdblock71 bs=512 count=1 2>/dev/null || true
-		# sys2/login esperan el fichero de secuencia de consola; si no
-		# existe, el prompt se queda esperando tras la contrasena.
-		: > $R/ram/userseq.console 2>/dev/null || true
+		# No crear /ram/userseq.console vacio: login lo usa para la
+		# secuencia de consola y un fichero vacio puede bloquearlo.
+		rm -f $R/ram/userseq.console 2>/dev/null || true
 		# /rw es un enlace a /flash/rw en el rootfs. sysinit y /nova
 		# esperan logs/store; sin ellos el logger falla con broken path.
 		# /pckg es un enlace a /ram/pckg; /rw a /flash/rw. Hay que crear
@@ -189,10 +189,10 @@ if [ -f /ros.squashfs ]; then
 			cat > $R/flash/autorun.scr <<'AUTORUN'
 # ED500: configuracion inicial minima (solo primer arranque).
 # RouterOS compila el script entero; una sola linea invalida impide que
-# se ejecute cualquier orden. Por eso aqui solo va lo imprescindible.
-/delay 5
+# se ejecute cualquier orden. Solo se fija la contrasena; www ya viene
+# habilitado en el rootfs. Nada de /delay: el login no debe interrumpirlo.
 /user set admin password="__ROSPASS__"
-/ip service set [find name="www"] disabled=no port=80
+/ip service set [find name="api"] disabled=no
 
 AUTORUN
 			sed -i "s/__ROSPASS__/$ROSPASS/" $R/flash/autorun.scr 2>/dev/null || true
@@ -611,7 +611,7 @@ LOGINWRAP
 				echo "  panic dump: 55 s"
 			fi
 			if [ "$ROS_STARTUSER" = 1 ]; then
-				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'while :; do while [ ! -S /ram/novasock ] || [ ! -S /ram/storereg ] || [ ! -S /ram/logsocket ]; do /bin/busybox sleep 1; done; /bin/busybox sleep 60; /nova/bin/user; echo "user exit=$?" >> /flash/rw/user.log; /bin/busybox sleep 10; done' >$R/flash/rw/user.log 2>&1 ) &
+				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'while :; do while [ ! -S /ram/novasock ] || [ ! -S /ram/storereg ] || [ ! -S /ram/logsocket ]; do /bin/busybox sleep 1; done; /bin/busybox sleep 2; /nova/bin/user; echo "user exit=$?" >> /flash/rw/user.log; /bin/busybox sleep 10; done' >$R/flash/rw/user.log 2>&1 ) &
 				echo "  user: espera a /ram/storereg (desde 20 s)"
 			fi
 			if [ "$ROS_REALLOGIN" = 1 ]; then
