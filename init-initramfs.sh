@@ -14,7 +14,7 @@ ROS_LOGINWRAP=0
 # is backed before switch_root, so its mmap has valid storage.
 ROS_STARTSTORE=0
 # user se crea a demanda por loader cuando llega la peticion de login.
-ROS_STARTUSER=0
+ROS_STARTUSER=1
 ROS_REALLOGIN=0
 ROS_PANICDUMP=0
 case " $(cat /proc/cmdline 2>/dev/null) " in
@@ -611,7 +611,7 @@ LOGINWRAP
 				echo "  panic dump: 55 s"
 			fi
 			if [ "$ROS_STARTUSER" = 1 ]; then
-				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'sleep 20; while [ ! -S /ram/storereg ]; do /bin/busybox sleep 1; done; exec /nova/bin/user' >$R/flash/rw/user.log 2>&1 ) &
+				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'while :; do while [ ! -S /ram/novasock ] || [ ! -S /ram/storereg ] || [ ! -S /ram/logsocket ]; do /bin/busybox sleep 1; done; /bin/busybox sleep 60; /nova/bin/user; echo "user exit=$?" >> /flash/rw/user.log; /bin/busybox sleep 10; done' >$R/flash/rw/user.log 2>&1 ) &
 				echo "  user: espera a /ram/storereg (desde 20 s)"
 			fi
 			if [ "$ROS_REALLOGIN" = 1 ]; then
