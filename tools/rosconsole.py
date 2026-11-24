@@ -100,8 +100,10 @@ class RosConsole:
                 if not self.wait((b"Login:", b"login:"), 8):
                     print("[!] no vuelve el prompt de login")
                     return False
-            self.write_slow(user)
             self.buf = b""
+            self.write_slow(user)
+            # write_slow() ya lee el eco; no borrar el buffer aqui o se
+            # pierde el "Password:" que llega dentro de esos 0.3 s.
             if not self.wait((b"Password:", b"password:"), 8):
                 print("[!] no pide contrasena; salida:")
                 print(self.limpiar(self.buf[-1200:]))
