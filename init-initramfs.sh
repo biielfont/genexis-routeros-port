@@ -7,7 +7,10 @@ export PATH
 # Se puede pedir el shell con ros.shell=1 en los bootargs.
 ROS_SHELL=0
 # sstore real de sysinit (sin stub) + user esperando el store.
-ROS_POST=0
+# 1 = postdiag a los 45 s: procesos, montajes, sockets y shell en /dev/console.
+# Se activa por defecto para diagnosticar por que `user` no arranca;
+# `ros.post=0` en los bootargs lo desactiva.
+ROS_POST=1
 ROS_TTYSHELL=0
 ROS_LOGINWRAP=0
 # Let sysinit start the real sstore with its normal arguments. /dev/jiffies
@@ -615,43 +618,69 @@ BOOTOK
 				cat > $R/bin/postdiag <<'POST'
 #!/bin/sh
 cd /
-sleep 45
-exec >/dev/console 2>&1
+# H20: consola real y arranque del daemon `log` (crea /ram/logsocket).
+if [ -c /dev/ttyLTQ0 ]; then CON=/dev/ttyLTQ0; else CON=/dev/console; fi
+exec >$CON 2>&1
 echo
-echo "=== POSTDIAG: procesos tras sysinit ==="
-/bin/busybox ps
-echo "=== POSTDIAG: sockets unix ==="
-/bin/busybox cat /proc/net/unix
-echo "=== POSTDIAG: montajes ==="
-/bin/busybox cat /proc/mounts
-echo "=== POSTDIAG: mensajes ==="
-if [ -f /flash/rw/logs/messages ]; then
-	/bin/busybox tail -n 120 /flash/rw/logs/messages
-else
-	echo "sin /flash/rw/logs/messages"
-fi
-echo "=== POSTDIAG: backtrace ==="
-if [ -f /flash/rw/logs/backtrace.log ]; then
-	/bin/busybox tail -n 80 /flash/rw/logs/backtrace.log
-else
-	echo "sin backtrace.log"
-fi
-echo "=== POSTDIAG: dmesg final ==="
-/bin/busybox dmesg | /bin/busybox tail -n 80
-echo "=== POSTDIAG: matando login colgado ==="
-for n in login parser; do
-	for p in $(/bin/busybox pidof $n 2>/dev/null); do
-		echo "  kill -9 $n $p"
-		/bin/busybox kill -9 $p 2>/dev/null
-	done
+echo "=== H20: inicio ==="
+i=0
+while [ $i -lt 1200 ]; do
+	[ -S /ram/storereg ] && break
+	/bin/busybox sleep 1
+	i=$((i+1))
 done
-sleep 1
-echo "=== POSTDIAG: shell de inspeccion ==="
-exec /bin/busybox sh -i 0</dev/console 1>/dev/console 2>&1
+echo "=== H20: storereg tras $i vueltas ==="
+/bin/busybox ps
+# Lanzar log varias veces: si muere, se vuelve a lanzar para que quede
+# rastro del fallo en serie (connect failed, signal 6, ...) y asi poder
+# razonar la cadena de sockets con un solo arranque.
+L=0
+while [ $L -lt 3 ]; do
+	echo
+echo "=== H20: lanzo /nova/bin/log (intento $((L+1))) ==="
+( /nova/bin/log </dev/null >$CON 2>&1 ) &
+LP=$!
+M=0
+while [ $M -lt 15 ]; do
+	/bin/busybox kill -0 $LP 2>/dev/null && break
+	/bin/busybox sleep 1
+	M=$((M+1))
+done
+if ! /bin/busybox kill -0 $LP 2>/dev/null; then
+	echo "=== H20: log muerto tras ${M}s (intentos: $L) ==="
+fi
+L=$((L+1))
+done
+j=0
+while [ $j -lt 300 ]; do
+	[ -S /ram/logsocket ] && break
+	/bin/busybox sleep 1
+	j=$((j+1))
+done
+echo "=== H20: logsocket tras $j vueltas ==="
+for p in /ram/storereg /ram/novasock /ram/logsocket; do
+	if [ -e "$p" ]; then /bin/busybox ls -ld "$p"; else echo "missing: $p"; fi
+done
+echo "=== H20: procesos ==="
+/bin/busybox ps
+echo "=== H20: unix ==="
+/bin/busybox cat /proc/net/unix
+echo "=== H20: espero 200 vueltas mas ==="
+/bin/busybox sleep 200
+echo "=== H20: procesos finales ==="
+/bin/busybox ps
+echo "=== H20: nodos finales ==="
+for p in /ram/storereg /ram/novasock /ram/logsocket; do
+	if [ -e "$p" ]; then /bin/busybox ls -ld "$p"; else echo "missing: $p"; fi
+done
+echo "=== H20: user.log ==="
+/bin/busybox cat /flash/rw/user.log 2>&1
+echo "=== H20: fin ==="
+exit 0
 POST
 				chmod 755 $R/bin/postdiag 2>/dev/null || true
 				( cd $R && chroot $R /bin/busybox sh /bin/postdiag ) &
-				echo "  postdiag: armado (45 s)"
+				echo "  postdiag: armado (H20, logsocket triple)"
 			fi
 			if [ "$ROS_LOGINWRAP" = 1 ] && [ -x $R/nova/bin/login ]; then
 				cp -a $R/nova/bin/login $R/nova/bin/login.real 2>/dev/null || true
