@@ -10,7 +10,7 @@ ROS_SHELL=0
 # 1 = postdiag a los 45 s: procesos, montajes, sockets y shell en /dev/console.
 # Se activa por defecto para diagnosticar por que `user` no arranca;
 # `ros.post=0` en los bootargs lo desactiva.
-ROS_POST=1
+ROS_POST=0
 ROS_TTYSHELL=0
 ROS_LOGINWRAP=0
 # Let sysinit start the real sstore with its normal arguments. /dev/jiffies
@@ -192,6 +192,21 @@ if [ -f /ros.squashfs ]; then
 		# los destinos, no el enlace, o mkdir falla y set -e mata al init.
 		mkdir -p $R/ram/pckg/branding/rw $R/flash/pckg/branding/rw \
 			$R/flash/rw/tmp $R/flash/rw/logs $R/flash/rw/store 2>/dev/null || true
+		# `user` recorre /flash/rw/pckg/<pkg>/skins con inotify al cargar
+		# (SkinMap::refresh). Si la ruta no existe, inotify_add_watch falla
+		# y el daemon aborta con "SCRIPT ERROR: interrupted": eso es lo que
+		# dejaba el login de consola sin servicio. En un equipo real las
+		# crea el gestor de paquetes; aqui /flash/rw es tmpfs y nace vacio.
+		mkdir -p $R/flash/rw/pckg/flash/skins \
+			$R/pckg/branding/rw/disk/skins $R/flash/skins $R/skins 2>/dev/null || true
+		# El grupo de usuarios por defecto lleva skin=default.  Si el mapa
+		# de skins no encuentra "default", user aborta la sesion de consola
+		# con "SCRIPT ERROR: interrupted".  Un default.json con { } es el
+		# skin vacio que usa RouterOS cuando no hay branding instalado.
+		for d in $R/flash/rw/pckg/flash/skins $R/pckg/branding/rw/disk/skins \
+		         $R/flash/skins $R/skins; do
+			[ -d "$d" ] && printf '{ }\n' > "$d/default.json" 2>/dev/null || true
+		done
 		# La clave va en la imagen, nunca al repositorio; se copia al
 		# almacenamiento volatil para que el autorun la importe.
 		cp /license.key $R/flash/rw/license.key 2>/dev/null || true
@@ -219,9 +234,22 @@ AUTORUN
 # ED500: configuracion inicial minima (solo primer arranque).
 # RouterOS compila el script entero; una sola linea invalida impide que
 # se ejecute cualquier orden. Solo se fija la contrasena; www ya viene
-# habilitado en el rootfs. Nada de /delay: el login no debe interrumpirlo.
+# habilitado en el rootfs.
+# Sin /system license import: RouterOS no ve license.key en su lista de
+# ficheros y el script entero muere con "input does not match any value
+# of file-name". La licencia se importa a mano por consola.
+#
+# Diagnostico H25: la consola serie no acepta entrada (user aborta con
+# "SCRIPT ERROR: interrupted"), asi que los tres print se piden desde
+# aqui. Van con :do/on-error porque RouterOS aborta el script entero en
+# la primera orden que falla; sin las guardas, un fallo en license se
+# llevaria por delante resource e interface. El :delay deja que los
+# servicios (loader, log, parser, licman) esten arriba antes de pedir.
+# H35: el autorun es un shell con privilegios en el arranque.  Aqui se
+# pide la salida a fichero (file=) y el postdiag la vuelca al serie.
+# Nada de :do ni :delay (no se sabe si el parser del autorun los admite)
+# y nada de /user set: era la linea que abortaba el script entero.
 /user set admin password="__ROSPASS__"
-/system license import file-name="license.key"
 
 AUTORUN
 			fi
@@ -618,69 +646,51 @@ BOOTOK
 				cat > $R/bin/postdiag <<'POST'
 #!/bin/sh
 cd /
-# H20: consola real y arranque del daemon `log` (crea /ram/logsocket).
-if [ -c /dev/ttyLTQ0 ]; then CON=/dev/ttyLTQ0; else CON=/dev/console; fi
-exec >$CON 2>&1
-echo
-echo "=== H20: inicio ==="
-i=0
-while [ $i -lt 1200 ]; do
-	[ -S /ram/storereg ] && break
-	/bin/busybox sleep 1
-	i=$((i+1))
+exec >/dev/ttyS0 2>&1
+trap '' 1 2 15
+up() { set -- $(/bin/busybox cat /proc/uptime); echo "${1%%.*}"; }
+u0=$(up)
+echo "=== H41: observador (sin tocar userseq) up=$u0 ==="
+# Nada de : > /ram/userseq.console (H28: aborta el login).
+# El login lo intenta el cazador a los ~45 s de bootm.  Este volcado
+# espera a up>=150 s: si user ha muerto, /dev/ttyS0 sigue siendo el
+# unico camino al serie y aqui se vera si aun transmite.
+while [ "$(up)" -lt "$((u0+150))" ]; do /bin/busybox usleep 200000; done
+echo "=== H41 up=$(up) ==="
+echo "--- user.log ---"
+for f in /flash/rw/logs/user.log /flash/rw/user.log /flash/nova/logs/messages; do
+	[ -e "$f" ] && { echo "== $f ($(/bin/busybox wc -c < $f) B) =="; /bin/busybox tail -n 80 "$f" 2>&1; }
 done
-echo "=== H20: storereg tras $i vueltas ==="
+echo "--- panics / logs ---"
+/bin/busybox ls -l /flash/nova/logs /flash/rw/logs /flash/rw 2>&1
+for f in /flash/nova/logs/panic0.log /flash/nova/logs/panic1.log; do
+	[ -s "$f" ] && { echo "=== $f ==="; /bin/busybox tail -n 80 "$f"; }
+done
+echo "--- procesos ---"
 /bin/busybox ps
-# Lanzar log varias veces: si muere, se vuelve a lanzar para que quede
-# rastro del fallo en serie (connect failed, signal 6, ...) y asi poder
-# razonar la cadena de sockets con un solo arranque.
-L=0
-while [ $L -lt 3 ]; do
-	echo
-echo "=== H20: lanzo /nova/bin/log (intento $((L+1))) ==="
-( /nova/bin/log </dev/null >$CON 2>&1 ) &
-LP=$!
-M=0
-while [ $M -lt 15 ]; do
-	/bin/busybox kill -0 $LP 2>/dev/null && break
-	/bin/busybox sleep 1
-	M=$((M+1))
+echo "--- estado/wchan de user/parser/login ---"
+for p in /proc/[0-9]*; do
+	c=$(/bin/busybox tr -d '\0' < $p/cmdline 2>/dev/null)
+	case "$c" in
+	*user*|*parser*|*login*|*console*)
+		echo "PID ${p#/proc/} [$c]"
+		/bin/busybox grep -E 'State|SigQ|SigPnd|ShdPnd' $p/status 2>/dev/null
+		echo "  wchan: $(/bin/busybox cat $p/wchan 2>/dev/null)"
+		echo "  fds: $(/bin/busybox ls -l $p/fd 2>/dev/null | /bin/busybox tr '\n' ' ')"
+		;;
+	esac
 done
-if ! /bin/busybox kill -0 $LP 2>/dev/null; then
-	echo "=== H20: log muerto tras ${M}s (intentos: $L) ==="
-fi
-L=$((L+1))
-done
-j=0
-while [ $j -lt 300 ]; do
-	[ -S /ram/logsocket ] && break
-	/bin/busybox sleep 1
-	j=$((j+1))
-done
-echo "=== H20: logsocket tras $j vueltas ==="
-for p in /ram/storereg /ram/novasock /ram/logsocket; do
-	if [ -e "$p" ]; then /bin/busybox ls -ld "$p"; else echo "missing: $p"; fi
-done
-echo "=== H20: procesos ==="
-/bin/busybox ps
-echo "=== H20: unix ==="
-/bin/busybox cat /proc/net/unix
-echo "=== H20: espero 200 vueltas mas ==="
-/bin/busybox sleep 200
-echo "=== H20: procesos finales ==="
-/bin/busybox ps
-echo "=== H20: nodos finales ==="
-for p in /ram/storereg /ram/novasock /ram/logsocket; do
-	if [ -e "$p" ]; then /bin/busybox ls -ld "$p"; else echo "missing: $p"; fi
-done
-echo "=== H20: user.log ==="
-/bin/busybox cat /flash/rw/user.log 2>&1
-echo "=== H20: fin ==="
+echo "--- sockets unix ---"
+/bin/busybox cat /proc/net/unix 2>&1 | /bin/busybox grep -E 'userseq|conssock|novasock|logsocket'
+echo "=== H41 fin ==="
 exit 0
 POST
 				chmod 755 $R/bin/postdiag 2>/dev/null || true
-				( cd $R && chroot $R /bin/busybox sh /bin/postdiag ) &
-				echo "  postdiag: armado (H20, logsocket triple)"
+				# H31: el printk del kernel va a logring0, no a ttyS0: /dev/console
+				# no llega al serie.  El volcado se fuerza a /dev/ttyS0, que es
+				# lo unico que sale por COM4 cuando user ya no escribe.
+				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh /bin/postdiag ) >/dev/ttyS0 2>&1 &
+				echo "  postdiag: armado (H23, observador anclado a uptime)"
 			fi
 			if [ "$ROS_LOGINWRAP" = 1 ] && [ -x $R/nova/bin/login ]; then
 				cp -a $R/nova/bin/login $R/nova/bin/login.real 2>/dev/null || true
@@ -703,6 +713,10 @@ LOGINWRAP
 				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'while :; do while [ ! -S /ram/novasock ] || [ ! -S /ram/storereg ] || [ ! -S /ram/logsocket ]; do /bin/busybox sleep 1; done; /bin/busybox sleep 2; /nova/bin/user; echo "user exit=$?" >> /flash/rw/user.log; /bin/busybox sleep 10; done' >$R/flash/rw/user.log 2>&1 ) &
 				echo "  user: espera a /ram/storereg (desde 20 s)"
 			fi
+			# H29: NO crear /ram/userseq.console.  Probado en H28: un fichero
+			# vacio hace que login aborte en el acto con "SCRIPT ERROR:
+			# interrupted" al imprimir "MikroTik Login:".  Sin el, la sesion
+			# llega limpia hasta "Password:".  Lo crea login cuando toca.
 			if [ "$ROS_REALLOGIN" = 1 ]; then
 				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh -c 'sleep 55; exec /nova/bin/login console' </dev/console >/dev/console 2>&1 ) &
 				echo "  login modo console a 55 s"
@@ -867,6 +881,23 @@ WEBDIAG
 				( cd $R && chroot $R /bin/busybox setsid /bin/busybox sh /bin/webdiag ) >/dev/null 2>&1 &
 				echo "  webdiag: IP 192.168.1.2 y diagnostico HTTP a 95 s, sin consola"
 			fi
+			# El reloj es sospechoso: sleep() vuelve al instante. Se mide antes
+			# de arrancar sysinit: si el temporizador esta roto, los timeouts
+			# de RouterOS (login, www, parser) caducan solos al empezar.
+			# H47: la red se monta AQUI, antes de sysinit, cuando RouterOS aun
+			# no ha tomado los puertos DSA.  netup la monta 60 s despues y
+			# para entonces br0 se queda sin miembros (ver AGENTS.md 4.2).
+			# Ademas se levanta un telnetd: una shell root por red permite
+			# depurar el login de RouterOS en vivo en vez de a ciegas.
+			$B brctl addbr br0 2>/dev/null
+			for n in lan1 lan2 lan3 lan4; do
+				$B ifconfig $n up 2>/dev/null
+				$B brctl addif br0 $n 2>/dev/null
+			done
+			$B ifconfig br0 192.168.1.2 netmask 255.255.255.0 up 2>/dev/null
+			( $B telnetd -l /bin/sh -p 23 ) >/dev/null 2>&1 &
+			echo "  H47: br0 192.168.1.2 + telnetd 23 (antes de sysinit)"
+			/bin/timediag 2>&1 | while read -r L; do echo "  $L"; done
 			echo "  lanzando /sbin/sysinit (switch_root)"
 			# sysinit y el login que cuelga de el tienen que recibir la
 			# consola como stdin/stdout/stderr. Si heredan un fd que no es

@@ -67,6 +67,9 @@ ${CROSS}gcc -static -O2 -o /opt/ros-port/initramfs/bin/swstats "$AQUI/swstats.c"
 # reloj de jiffies en userspace (sustituye al jiffies.ko roto del rootfs)
 ${CROSS}gcc -static -O2 -o /opt/ros-port/initramfs/bin/tickfile "$AQUI/tools/tickfile.c" \
   || { echo "tickfile FALLO"; exit 1; }
+# mide si el kernel duerme de verdad (sleep/usleep/nanosleep vs uptime)
+${CROSS}gcc -static -O2 -o /opt/ros-port/initramfs/bin/timediag "$AQUI/tools/timediag.c" \
+  || { echo "timediag FALLO"; exit 1; }
 # libumsg::getJiffies() suma 30000 = 300*100: RouterOS espera 100 Hz
 # aunque el kernel vaya a 250. Si tickfile vuelve a 250, el login caduca
 # antes de autenticar y el proceso muere con SIGSEGV.
@@ -99,6 +102,7 @@ scripts/config \
   --enable TIMERFD \
   --enable AIO \
   --enable POSIX_TIMERS \
+  --enable COMPAT_32BIT_TIME \
   --enable ELF_CORE \
   --enable COREDUMP \
   --enable MISC_FILESYSTEMS \

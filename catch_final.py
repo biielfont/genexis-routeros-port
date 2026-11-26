@@ -59,6 +59,15 @@ def main():
     ap.add_argument("--pc-ip", help="forzar mi IP (por defecto se detecta sola)")
     ap.add_argument("--seguir", action="store_true",
                     help="seguir vigilando tras arrancar (no libera COM4)")
+    ap.add_argument("--post", type=int, default=45,
+                    help="segundos de consola tras bootm antes de soltar COM4")
+    ap.add_argument("--login", action="store_true",
+                    help="tras bootm, entrar al login con el puerto ya abierto")
+    ap.add_argument("--user", default="admin",
+                    help="usuario a probar en el login (H46: uno falso para"
+                         " ver si el canal de mensajes de login funciona)")
+    ap.add_argument("--ciego", default="/system resource print",
+                    help="comando a enviar si no aparece prompt")
     args = ap.parse_args()
 
     os.makedirs("logs", exist_ok=True)
@@ -120,9 +129,18 @@ def main():
                 break
 
             w(f"\n### PROMPT U-BOOT CAZADO (intento {intento}) ###\n".encode())
-            say(f"prompt cazado (intento {intento}): cargando por TFTP")
+            # H43: el tamano se relee en CADA intento.  Si se recompila la
+            # imagen con el cazador ya armado, el valor de arranque queda
+            # obsoleto y el chequeo aborta sin hacer bootm: la placa se
+            # queda en bucle bajando la imagen una y otra vez (visto en
+            # H42: "TAMANO DISTINTO: 23949872 != 23949728" x16).
+            ruta = os.path.join("out", IMG)
+            tam = os.path.getsize(ruta) if os.path.exists(ruta) else 0
+            say(f"prompt cazado (intento {intento}): cargando por TFTP ({tam} B)")
             ok = _arrancar(s, rd, rd_until, w, say, puerto, tam, pc_ip,
-                           post=300 if args.seguir else 45)
+                           post=300 if args.seguir else args.post,
+                           login=args.login, usuario=args.user,
+                           ciego=args.ciego)
             if not ok:
                 say("no se pudo cargar la imagen; sigo esperando U-Boot...")
                 continue
@@ -156,7 +174,65 @@ def _cazar(s, rd, limite):
     return False
 
 
-def _arrancar(s, rd, rd_until, w, say, puerto, tam, pc_ip, post=45):
+def _login(s, rd, say, usuario="admin", ciego=None):
+    """Login usando la MISMA sesion serie abierta.
+
+    Cerrar y reabrir COM4 genera un break en la linea, y RouterOS lo
+    interpreta como un Ctrl-C: la sesion muere en el acto con
+    "SCRIPT ERROR: interrupted" (visto en H36: al conectar salia el error
+    sin haber enviado nada).  Por eso el login se hace aqui, sin soltar
+    el puerto.
+    """
+    def esperar(pals, seg, paso=0.4):
+        o = b""
+        t = time.time()
+        while time.time() - t < seg:
+            o += rd(paso)
+            if any(p in o.lower() for p in pals):
+                break
+        return o
+
+    def enviar(txt, pausa=0.07):
+        for c in txt.encode():
+            s.write(bytes([c]))
+            time.sleep(pausa)
+
+    # H45: el prompt no sale a los 45 s sino hacia up=140 (cuando `user`
+    # arranca de verdad).  Con 35 s de espera el intento se rendia justo
+    # antes de que apareciera.  Se espera hasta 190 s.
+    o = esperar([b"login:"], 190)
+    say("[login] prompt: " + ("si" if b"login:" in o.lower() else "NO"))
+    for clave, et in (("ed500", "ed500"), ("", "vacia")):
+        enviar(usuario + "\r")
+        o = esperar([b"assword"], 10)
+        if b"assword" not in o.lower():
+            say(f"[login] {et}: no pide contrasena")
+            break
+        enviar(clave + "\r")
+        r = rd(60)
+        txt = r.decode("utf-8", "replace")
+        say(f"[login] {et}: {txt.strip()[-160:]!r}")
+        if ciego and not ("] >" in txt or "\n> " in txt):
+            # H46: si no hay prompt, mandar un comando a ciegas.  Si
+            # responde, la sesion existe aunque el banner falle.
+            enviar(ciego + "\r")
+            r2 = rd(15)
+            say("[login] tras comando ciego: "
+                f"{r2.decode('utf-8', 'replace').strip()[-240:]!r}")
+        if "] >" in txt or "\n> " in txt:
+            say(f"[login] {et}: SESION ABIERTA")
+            for cmd in ("/system license print",
+                        "/system resource print",
+                        "/interface print"):
+                enviar(cmd + "\r")
+                print(f"--- {cmd} ---")
+                print(rd(12).decode("utf-8", "replace"))
+            return True
+    return False
+
+
+def _arrancar(s, rd, rd_until, w, say, puerto, tam, pc_ip, post=45,
+              login=False, usuario="admin", ciego=None):
 
 
 
@@ -212,6 +288,11 @@ def _arrancar(s, rd, rd_until, w, say, puerto, tam, pc_ip, post=45):
     s.write(b"bootm 0x80500000\r")
     salida = rd(post)
     w(b"\n### FIN bootm ###\n")
+    if login:
+        _login(s, rd, say, usuario, ciego)
+        # H41: el postdiag vuelca a up=150 s; seguir leyendo para cazarlo.
+        say("[diag] leyendo hasta el volcado H41")
+        w(rd(90))
 
     # --- 6. veredicto, para no tener que leer el log entero ---
     veredicto = _veredicto(salida)
