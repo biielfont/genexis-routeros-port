@@ -1,0 +1,141 @@
+fastpath: netif_receive_try_fp ya estaba exportado
+clk: clk_ignore_unused ya estaba activado
+netfilter: ya estaba protegido
+switch: el bus ya estaba bien
+version: ya esta normalizada
+dma: alias uncached ya corregido
+net-sysfs: ya registra todas las interfaces
+probe: ya registra los fallos
+reset: RESET_LANTIQ ya es visible en INTEL_MIPS
+tag: ya marca la cola del puerto
+phy: la direccion del PHY ya se programa en mac_link_up
+trazas: ya puestas
+phylink: las callbacks del MAC ya estan registradas
+velocidad: ya estaba parcheado
+nand: driver EBU xrx500 portado y enganchado en Kconfig/Makefile
+dts: NAND del ED500 a ECC BCH-4 + BBT y particiones uboot/ubi
+mtdram: ya se llama RouterBoot
+mtd: los simbolos ya se exportan sin GPL-only
+export: GPL-only ya desactivado para modulos propietarios
+dts: ros-name ya estaba en lan1..lan4
+bridge2: br_init ya es un stub
+bridge2: las exportaciones duplicadas ya estaban retiradas
+abi: stubs rb + mips_machtype + lzo exportados
+  leds-intel-sso.c -> /opt/ros-port/linux-5.6.3/drivers/leds/leds-intel-sso.c
+  leds-sk9822.c -> /opt/ros-port/linux-5.6.3/drivers/leds/leds-sk9822.c
+  ed500-buttons.c -> /opt/ros-port/linux-5.6.3/drivers/gpio/ed500-buttons.c
+  norrland-ed500.dtsi -> /opt/ros-port/linux-5.6.3/arch/mips/boot/dts/intel-mips/norrland-ed500.dtsi
+  /opt/ros-port/linux-5.6.3/drivers/leds/Kconfig: already patched
+  /opt/ros-port/linux-5.6.3/drivers/leds/Makefile: already patched
+  /opt/ros-port/linux-5.6.3/drivers/gpio/Kconfig: already patched
+  /opt/ros-port/linux-5.6.3/drivers/gpio/Makefile: already patched
+  /opt/ros-port/linux-5.6.3/drivers/pinctrl/pinctrl-equilibrium.c: already patched
+  /opt/ros-port/linux-5.6.3/drivers/net/phy/intel-xway.c: already patched
+  /opt/ros-port/linux-5.6.3/arch/mips/boot/dts/intel-mips/norrland.dts: already includes ED500 fragment
+initramfs: rootfs de RouterOS incluido
+/mnt/c/Users/BFR/Documents/GenexisLicenseWorkingNewNew/routeros-port/ros/rb_hardconfig.bin: 65536 bytes (hard config en 0x1000 y 0xf000)
+initramfs: hard config RouterBoot sintetico incluido
+initramfs: license.key incluida
+tickfile: ROS_HZ=100 (getJiffies 0-based a 100 Hz)
+fwenv: 991296 bytes -> /opt/ros-port/initramfs/usr/sbin/fw_printenv
+olddefconfig=0
+CONFIG_BINFMT_SCRIPT -> CONFIG_BINFMT_SCRIPT=y
+CONFIG_RESET_CONTROLLER -> CONFIG_RESET_CONTROLLER=y
+CONFIG_RESET_LANTIQ -> CONFIG_RESET_LANTIQ=y
+CONFIG_POWER_RESET -> CONFIG_POWER_RESET=y
+CONFIG_POWER_RESET_SYSCON -> CONFIG_POWER_RESET_SYSCON=y
+CONFIG_NET_DSA_TAG_GSWIP3 -> CONFIG_NET_DSA_TAG_GSWIP3=y
+CONFIG_NET_DSA_TAG_GSWIP -> CONFIG_NET_DSA_TAG_GSWIP=y
+CONFIG_FUTEX -> CONFIG_FUTEX=y
+CONFIG_EPOLL -> CONFIG_EPOLL=y
+CONFIG_EVENTFD -> CONFIG_EVENTFD=y
+CONFIG_TIMERFD -> CONFIG_TIMERFD=y
+CONFIG_POSIX_TIMERS -> CONFIG_POSIX_TIMERS=y
+CONFIG_NETFILTER -> CONFIG_NETFILTER=y
+CONFIG_NF_CONNTRACK -> CONFIG_NF_CONNTRACK=y
+CONFIG_MULTIUSER -> CONFIG_MULTIUSER=y
+CONFIG_BRIDGE -> CONFIG_BRIDGE=y
+CONFIG_SHMEM -> CONFIG_SHMEM=y
+CONFIG_BLOCK -> CONFIG_BLOCK=y
+CONFIG_IP_ADVANCED_ROUTER -> CONFIG_IP_ADVANCED_ROUTER=y
+CONFIG_TMPFS -> CONFIG_TMPFS=y
+CONFIG_SQUASHFS -> CONFIG_SQUASHFS=y
+CONFIG_SQUASHFS_XZ -> CONFIG_SQUASHFS_XZ=y
+CONFIG_BLK_DEV_LOOP -> CONFIG_BLK_DEV_LOOP=y
+CONFIG_INOTIFY_USER -> CONFIG_INOTIFY_USER=y
+CONFIG_SYSVIPC -> CONFIG_SYSVIPC=y
+CONFIG_FHANDLE -> CONFIG_FHANDLE=y
+CONFIG_IP_MULTIPLE_TABLES -> CONFIG_IP_MULTIPLE_TABLES=y
+CONFIG_MIPS_FP_SUPPORT -> CONFIG_MIPS_FP_SUPPORT=y
+CONFIG_FW_LOADER -> CONFIG_FW_LOADER=y
+CONFIG_EXTRA_FIRMWARE -> CONFIG_EXTRA_FIRMWARE="lantiq/xrx500-phy-fw.bin"
+CONFIG_INTEL_GRX500_CGU_CLK -> CONFIG_INTEL_GRX500_CGU_CLK=y
+CONFIG_SERIAL_LANTIQ -> CONFIG_SERIAL_LANTIQ=y
+CONFIG_NET_DSA -> CONFIG_NET_DSA=y
+CONFIG_NET_SWITCHDEV -> CONFIG_NET_SWITCHDEV=y
+CONFIG_NET_DSA_XR_GSWIP -> CONFIG_NET_DSA_XR_GSWIP=y
+CONFIG_INTEL_XRX500_NET -> CONFIG_INTEL_XRX500_NET=y
+CONFIG_INTEL_XRX500_BM -> CONFIG_INTEL_XRX500_BM=y
+CONFIG_INTEL_XRX500_CBM_CONDUIT -> CONFIG_INTEL_XRX500_CBM_CONDUIT=y
+CONFIG_INTEL_XWAY_PHY -> CONFIG_INTEL_XWAY_PHY=y
+CONFIG_MTD -> CONFIG_MTD=y
+CONFIG_MTD_BLOCK -> CONFIG_MTD_BLOCK=y
+CONFIG_MTD_RAW_NAND -> CONFIG_MTD_RAW_NAND=y
+CONFIG_MTD_NAND_CORE -> CONFIG_MTD_NAND_CORE=y
+CONFIG_MTD_NAND_ECC_SW_HAMMING -> CONFIG_MTD_NAND_ECC_SW_HAMMING=y
+CONFIG_MTD_NAND_ECC_SW_BCH -> CONFIG_MTD_NAND_ECC_SW_BCH=y
+CONFIG_MTD_NAND_LANTIQ_XRX500 -> CONFIG_MTD_NAND_LANTIQ_XRX500=y
+CONFIG_MTD_OF_PARTS -> CONFIG_MTD_OF_PARTS=y
+CONFIG_MTD_UBI -> CONFIG_MTD_UBI=y
+CONFIG_MTD_UBI_BLOCK -> CONFIG_MTD_UBI_BLOCK=y
+CONFIG_MTD_MTDRAM -> CONFIG_MTD_MTDRAM=y
+CONFIG_MTDRAM_TOTAL_SIZE -> CONFIG_MTDRAM_TOTAL_SIZE=16384
+CONFIG_MTDRAM_ERASE_SIZE -> CONFIG_MTDRAM_ERASE_SIZE=128
+CONFIG_UBIFS_FS -> CONFIG_UBIFS_FS=y
+CONFIG_UBIFS_FS_ADVANCED_COMPR -> CONFIG_UBIFS_FS_ADVANCED_COMPR=y
+CONFIG_UBIFS_FS_LZO -> CONFIG_UBIFS_FS_LZO=y
+CONFIG_UBIFS_FS_ZLIB -> CONFIG_UBIFS_FS_ZLIB=y
+CONFIG_UBIFS_FS_ZSTD -> CONFIG_UBIFS_FS_ZSTD=y
+CONFIG_BCH -> CONFIG_BCH=y
+CONFIG_LZO_DECOMPRESS -> CONFIG_LZO_DECOMPRESS=y
+CONFIG_DEVTMPFS -> CONFIG_DEVTMPFS=y
+CONFIG_VLAN_8021Q -> CONFIG_VLAN_8021Q=y
+CONFIG_BRIDGE_VLAN_FILTERING -> CONFIG_BRIDGE_VLAN_FILTERING=y
+CONFIG_JUMP_LABEL -> CONFIG_JUMP_LABEL=y
+CONFIG_NAMESPACES -> CONFIG_NAMESPACES=y
+CONFIG_USER_NS -> CONFIG_USER_NS=y
+CONFIG_XFRM -> CONFIG_XFRM=y
+CONFIG_INET_XFRM_TUNNEL -> CONFIG_INET_XFRM_TUNNEL=y
+CONFIG_INET6_XFRM_TUNNEL -> CONFIG_INET6_XFRM_TUNNEL=y
+CONFIG_INET_IPCOMP -> CONFIG_INET_IPCOMP=y
+CONFIG_INET6_IPCOMP -> CONFIG_INET6_IPCOMP=y
+CONFIG_NET_SCHED -> CONFIG_NET_SCHED=y
+CONFIG_MPLS -> CONFIG_MPLS=y
+CONFIG_MPLS_ROUTING -> CONFIG_MPLS_ROUTING=y
+CONFIG_NETFILTER_XTABLES -> CONFIG_NETFILTER_XTABLES=y
+CONFIG_NF_NAT -> CONFIG_NF_NAT=y
+CONFIG_IP_NF_IPTABLES -> CONFIG_IP_NF_IPTABLES=y
+CONFIG_IP_NF_NAT -> CONFIG_IP_NF_NAT=y
+CONFIG_MII -> CONFIG_MII=y
+CONFIG_I2C -> CONFIG_I2C=y
+CONFIG_GPIOLIB -> CONFIG_GPIOLIB=y
+CONFIG_PINCTRL -> CONFIG_PINCTRL=y
+CONFIG_PINCTRL_EQUILIBRIUM -> CONFIG_PINCTRL_EQUILIBRIUM=y
+CONFIG_GPIO_ED500_BUTTONS -> CONFIG_GPIO_ED500_BUTTONS=y
+CONFIG_HWMON -> CONFIG_HWMON=y
+CONFIG_NEW_LEDS -> CONFIG_NEW_LEDS=y
+CONFIG_LEDS_CLASS -> CONFIG_LEDS_CLASS=y
+CONFIG_LEDS_INTEL_SSO -> CONFIG_LEDS_INTEL_SSO=y
+CONFIG_LEDS_SK9822 -> CONFIG_LEDS_SK9822=y
+CONFIG_KEYS -> CONFIG_KEYS=y
+CONFIG_LWTUNNEL -> CONFIG_LWTUNNEL=y
+CONFIG_NET_FOU -> CONFIG_NET_FOU=y
+CONFIG_NET_UDP_TUNNEL -> CONFIG_NET_UDP_TUNNEL=y
+CONFIG_SKB_EXTENSIONS -> CONFIG_SKB_EXTENSIONS=y
+== compilando vmlinux ==
+build=0
+abi: dev_addr=476 pcpu_refcnt=672
+dtb: BCH-4 + BBT + ubi.mtd=ubi + ros-name ether1..4
+vmlinux: 114425900 bytes
+entry=0x80500000
+uImage: 23951696 bytes

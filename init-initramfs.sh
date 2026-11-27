@@ -895,9 +895,44 @@ WEBDIAG
 				$B brctl addif br0 $n 2>/dev/null
 			done
 			$B ifconfig br0 192.168.1.2 netmask 255.255.255.0 up 2>/dev/null
-			( $B telnetd -l /bin/sh -p 23 ) >/dev/null 2>&1 &
-			echo "  H47: br0 192.168.1.2 + telnetd 23 (antes de sysinit)"
+			# H47a: el telnetd tiene que vivir DENTRO de $R.  sysinit hace
+			# switch_root y borra el initramfs; si el telnetd se queda en el
+			# root viejo, su /bin/sh desaparece y no puede servir sesiones.
+			[ -x "$R/bin/busybox" ] && ln -sf busybox "$R/bin/sh" 2>/dev/null
+			( while : ; do
+				chroot "$R" /bin/busybox telnetd -l /bin/sh -p 23 \
+					>/flash/rw/telnetd.log 2>&1
+				echo "  H47a: telnetd salio rc=$?"
+				$B sleep 5
+			  done ) >/dev/null 2>&1 &
+			$B sleep 2
+			echo "  H47: ifconfig br0 = $($B ifconfig br0 2>&1 | tr '\n' ' ')"
+			echo "  H47: brif = $($B ls /sys/class/net/br0/brif 2>&1 | tr '\n' ' ')"
+			echo "  H47: listen = $($B netstat -ltn 2>&1 | tr '\n' ' ')"
 			/bin/timediag 2>&1 | while read -r L; do echo "  $L"; done
+			# H48: CAUSA RAIZ del "SCRIPT ERROR: interrupted".
+			# /sbin/sysinit ejecuta los scripts de configuracion por defecto
+			# (defconf) con un RPC nv::message cuyo timeout es 12000 ms
+			# (addiu $a3,$zero,0x2ee0 en 0x4047c0).  get-custom-defconf espera
+			# en bucle hasta 30 s a que aparezca una interfaz "loopback", y
+			# defconf-caps / defconf-wps-sync esperan igual a "ethernet".
+			# En este arranque esas interfaces no llegan a existir, el script
+			# pasa del timeout, sysinit lo interrumpe y el motor de scripts
+			# devuelve el error "interrupted": sysinit imprime
+			# "SCRIPT ERROR: interrupted" (unico sitio del rootfs que tiene
+			# ese literal, 0x404854) y la sesion de consola se queda sin
+			# arrancar.  La configuracion la ponemos nosotros (autorun y
+			# netup), no defconf: se vacian los scripts para que terminen al
+			# instante y el RPC responda sin error.
+			for f in $R/nova/lib/defconf/defconf \
+				 $R/nova/lib/defconf/get-custom-defconf \
+				 $R/nova/lib/defconf/defconf-caps \
+				 $R/nova/lib/defconf/defconf-wps-sync; do
+				if [ -f "$f" ]; then
+					echo "  H48: defconf neutralizado (${f#$R} $(wc -c <"$f" 2>/dev/null) B -> 0 B)"
+					: > "$f" 2>/dev/null || true
+				fi
+			done
 			echo "  lanzando /sbin/sysinit (switch_root)"
 			# sysinit y el login que cuelga de el tienen que recibir la
 			# consola como stdin/stdout/stderr. Si heredan un fd que no es

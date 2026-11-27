@@ -16,6 +16,23 @@
 >
 > **Regla de oro:** no se declara "arreglado" sin consola/login en la placa.
 >
+> **2026-11-27 — H48: CAUSA RAIZ ENCONTRADA Y PARCHEADA (defconf).**
+> El `SCRIPT ERROR: interrupted` lo imprime `/sbin/sysinit` en `0x404854`
+> (unico sitio del rootfs con ese literal) y **solo** despues de ejecutar un
+> script por RPC: `nv::message` con timeout de **12000 ms**
+> (`addiu $a3,$zero,0x2ee0`, `0x4047c0`). Los tres unicos llamantes son los
+> scripts de configuracion por defecto:
+> `/nova/lib/defconf/get-custom-defconf`, `defconf` y
+> `defconf-caps`/`defconf-wps-sync`. `get-custom-defconf` espera en bucle
+> **hasta 30 s** a que exista una interfaz `loopback`
+> (`:while ([:len [/interface find where type="loopback"]] = 0 && $count < 30)`);
+> `defconf-caps`/`defconf-wps-sync` esperan igual a `ethernet`. En este
+> arranque esas interfaces no aparecen, el script pasa del timeout de 12 s,
+> sysinit lo interrumpe y el motor de scripts devuelve `interrupted`.
+> **H48 vacia los cuatro scripts antes de `switch_root`** para que terminen
+> al instante. Imagen `out/uImage-563`, **23.951.696 B**, MD5
+> `5f6a7e955f8215e09bdfb4eefc6a6fd1`, BUILD_RC=0. **Pendiente de placa.**
+>
 > **ESTADO 12:35 — H12 ejecutada. CAUSA RAÍZ IDENTIFICADA: `loader` no puede
 > leer `/dev/mtdblock18`; H13 construida con el enlace, falta ciclo de corriente.**
 >
@@ -83,23 +100,21 @@
 - **Objetivo:** entrar en RouterOS 7.17 del ED500 por consola, WebFig o Winbox,
   ejecutar `/system license print`, `/system resource print` e `/interface print`,
   y que el sistema siga vivo.
-- **Última imagen construida:** **H47**, `routeros-port/out/uImage-563`,
-  **23.950.632 B**, BUILD_RC=0, `ROS_POST=0`. Autorun con
-  `/user set admin password="__ROSPASS__"`, sin `userseq.console`. Incluye
-  H47 (red/bridge antes de sysinit + telnetd).
-- **Estado actual:** causa raíz del login **acotada al arranque de la sesión de
-  consola**. El login acepta cualquier credencial (incluido `zzz` inexistente) y
-  siempre responde `SCRIPT ERROR: interrupted` justo tras la contraseña; el
-  canal de mensajes de `login` funciona, así que **no es autenticación**. El
-  fallo está en lo que `sysinit`/`parser` intenta ejecutar como script de
-  consola (`/ram/userseq.console`). Temporizadores y señales del kernel **sí
-  funcionan** (alarma, setitimer, timerfd, clock_nanosleep validados en placa:
-  H44). Cadena de servicios completa a los 46-76 s; `admin` presente en
-  `cfg.0000`. Imagen H47 además levanta `br0` con IP y telnetd **antes** de
-  `sysinit` para tener shell root por red y depurar en vivo.
-- **Próximo paso:** con H47, telnet a `192.168.1.2:23` (si la red sobrevive a
-  sysinit) y depurar `/ram/userseq.console` / `login`/`parser` en vivo. Si la
-  red la roba RouterOS, caer a H48 (shell offline).
+- **Última imagen construida:** **H48**, `routeros-port/out/uImage-563`,
+  **23.951.696 B**, MD5 `5f6a7e955f8215e09bdfb4eefc6a6fd1`, BUILD_RC=0,
+  `ROS_POST=0`. Autorun con `/user set admin password="__ROSPASS__"`, sin
+  `userseq.console`, H47 (red/bridge + telnetd antes de sysinit) y **H48:
+  los cuatro scripts de defconf vaciados**.
+- **Estado actual:** causa raiz del login **identificada**: `sysinit` ejecuta
+  los scripts de defconf por RPC con timeout de 12 s; `get-custom-defconf`
+  espera hasta 30 s a una interfaz `loopback` que aqui nunca aparece, el
+  script se interrumpe y `sysinit` imprime `SCRIPT ERROR: interrupted`
+  dejando la sesion de consola sin arrancar. No era autenticacion ni el
+  reloj (H44/H46 ya lo descartaron). H48 quita defconf de la ecuacion.
+- **Próximo paso:** arrancar H48 y comprobar que el error desaparece y que
+  `admin` obtiene prompt `[admin@MikroTik] >`; si sale, ejecutar los tres
+  `print`. Si sigue el `SCRIPT ERROR`, la siguiente prueba es `:delay`/jiffies
+  dentro del motor de scripts (unico consumidor que queda).
 
 ## 1. Objetivo, hardware y restricciones
 
@@ -342,6 +357,55 @@ y los logs delante, en vez de a ciegas con un ciclo de corriente por intento.
 Si RouterOS se lleva `br0`, la alternativa es reservar `lan4` para Linux
 (quitar su `ros-name` en el DTS) y poner la IP directa en `lan4` sin bridge.
 
+### 4.0.3 H48: de donde sale exactamente `SCRIPT ERROR: interrupted`
+
+Desensamblado de `/sbin/sysinit` (ELF32 MSB, `0x402060`+`.text`, PLT resuelta
+con `tools/pltmap.py`):
+
+- `0x408ea8` = `"SCRIPT ERROR: "`, `0x408eb8` = `"error while running "`,
+  `0x408ed0` = `" script: "`. Solo se referencian en `0x40485c` y `0x404a00`,
+  dentro de la misma funcion (`0x40461c`).
+- Esa funcion construye un `nv::message` (`insert<u32_id>`,
+  `insert<string_id>`, `insert<string_array_id>`) con la ruta del script y
+  sus argumentos, y lo envia con `nv::getLooper()->sendMessage(msg, 12000)`
+  (`0x4047c0: addiu $a3,$zero,0x2ee0`).
+- Si la respuesta trae el flag de error, imprime `SCRIPT ERROR: <salida>` y
+  luego `error while running <script> script: <salida>`. En placa solo sale
+  la primera linea; la segunda no aparece nunca en
+  `logs/try563_v2.log` (`grep -c "error while running"` = 0).
+- **Los tres unicos llamantes** (`0x40868c`, `0x4086e8`, `0x408934`) pasan
+  `"/nova/lib/defconf/defconf"`, `"customized default configuration"` +
+  `"/nova/lib/defconf/get-custom-defconf"` y los de caps/wps-sync.
+
+Es decir: el texto `interrupted` **no lo genera sysinit**, lo devuelve el
+motor de scripts (`parser`, unico binario con la cadena `interrupted`);
+ sysinit solo lo decora. Y el script que se interrumpe es, por descarte, uno
+ de los de defconf: es el unico camino que lleva a ese `cout`.
+
+Por que se interrumpe: `get-custom-defconf` empieza con
+
+```
+:local count 0;
+:while ([:len [/interface find where type="loopback"]] = 0 && $count < 30) do={
+    :set count ($count +1);
+    :delay 1s;
+}
+```
+
+y `defconf-caps`/`defconf-wps-sync` hacen lo mismo con `/interface ethernet
+find`. En este port no hay interfaz `loopback` (y `net` tarda en publicar las
+ethernet), asi que el script se va a 30 s mientras el RPC de sysinit solo
+espera 12 s: sysinit lo interrumpe, el motor devuelve `interrupted`, y la
+consola se queda a medias (el prompt sale, pero la sesion no llega a
+arrancar). Eso explica el sintoma completo: mismo error con `admin` que con
+`zzz`, comando ciego sin respuesta y consola muda despues.
+
+**Arreglo H48:** en `init-initramfs.sh`, justo antes de `switch_root`, se
+vacian (`: > f`) `/nova/lib/defconf/{defconf,get-custom-defconf,
+defconf-caps,defconf-wps-sync}`. Un script vacio termina al instante, el RPC
+responde sin error y sysinit sigue con la consola. La configuracion la sigue
+poniendo el autorun (contrasena) y `netup` (red); defconf solo aplica la
+configuracion de fabrica, que aqui no queremos.
 ### 4.1 H1: base de tiempo (la hipótesis que se está probando)
 
 Evidencia:
@@ -547,6 +611,7 @@ reloj: el SIGSEGV ya no aparece. Es un fallo distinto, del autorun.
 | 26/11 | H45 | consola **virgen**, `ROS_POST=0`, login esperando al prompt real (up≈140) | **FALLO**: `admin` + contraseña del autorun → `SCRIPT ERROR: interrupted`; sin nadie más en `ttyS0` | `logs/catch-h45.out` |
 | 26/11 | H46 | usuario **inexistente** `zzz` + comando ciego | **DECISIVO**: mismo `SCRIPT ERROR: interrupted`, nunca `Login failed, incorrect username` → **no es autenticación**; el ciego no responde | `logs/catch-h46.out` |
 | 26/11 | H47 | `br0`+`192.168.1.2`+`telnetd 23` **antes** de `sysinit` | **ARMADA** (23.950.632 B): pendiente de ciclo de corriente y de probar `telnet 192.168.1.2` | `logs/catch-h47.out` |
+| 27/11 | H48 | defconf neutralizado (4 scripts a 0 B) antes de `switch_root` | **ARMADA** (23.951.696 B, MD5 `5f6a7e95…`): pendiente de ciclo de corriente; se espera que desaparezca `SCRIPT ERROR: interrupted` | `logs/build-H48.log` |
 
 > La fila H1 no es un fallo: es una prueba **no ejecutada**. No cambiar
 > "PENDIENTE" por "FUNCIONA" sin la consola y los `print`.
@@ -646,6 +711,12 @@ reloj: el SIGSEGV ya no aparece. Es un fallo distinto, del autorun.
 - `routeros-port/docs/HANDOFF-2026-11-24.md`: handoff histórico (#161). Está
   desactualizado respecto a H1; este `AGENTS.md` manda para el estado actual.
 
+- `routeros-port/tools/xref.py`: busca cadenas en un ELF MIPS y desensambla
+  alrededor de sus referencias (usa `mipsdis.py`).
+- `routeros-port/tools/pltmap.py`: resuelve la PLT (`lui $t7,hi; lw
+  $t9,imm($t7)`) de un binario de RouterOS y anota cada `jal` con el nombre
+  del simbolo; con esto se leyo el flujo de `sysinit` que imprime
+  `SCRIPT ERROR: `.
 ## 11. Instrucciones del repo
 
 `routeros-port/AGENTS.md`:
